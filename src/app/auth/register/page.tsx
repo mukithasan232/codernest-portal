@@ -1,19 +1,17 @@
 'use client';
 
 /**
- * Register Page — Firebase Email/Password + Google OAuth
- * Auto-creates Firestore user profile on first sign-up.
+ * Register Page — Supabase Email/Password + Google OAuth
  */
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
 import { UserPlus, Mail, Lock, User, Chrome, Eye, EyeOff, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { createClient } from '@/utils/supabase/client';
 
 export default function RegisterPage() {
-  const { signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -23,6 +21,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,14 +34,27 @@ export default function RegisterPage() {
       toast.error('Password must be at least 6 characters.');
       return;
     }
+    
     setLoading(true);
+    
     try {
-      await signUp(email, password, name);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast.success('Account created! Welcome to CoderNest 🚀');
       router.push('/dashboard');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
-      toast.error(msg.includes('already registered') ? 'Email already registered.' : msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -50,11 +63,16 @@ export default function RegisterPage() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      await signInWithGoogle();
-      toast.success('Welcome to CoderNest!');
-      router.push('/dashboard');
-    } catch {
-      toast.error('Google sign-in failed.');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Google sign-in failed.';
+      toast.error(msg);
     } finally {
       setGoogleLoading(false);
     }

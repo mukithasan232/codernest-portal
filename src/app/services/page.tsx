@@ -1,127 +1,161 @@
-import { motion } from "framer-motion";
-import {
-    Laptop,
-    Database,
-    Cpu,
-    Layout,
-    CheckCircle2,
-    Rocket,
-    Zap,
-    ShieldCheck
-} from "lucide-react";
-import Link from "next/link";
-
-const services = [
-    {
-        title: "Web Development",
-        description: "High-performance, modern websites built with Next.js, React, and Tailwind CSS. We focus on speed, SEO, and accessibility.",
-        icon: Laptop,
-        features: ["Next.js 15 Implementation", "Responsive Design", "Fast TTI", "SEO Optimized", "CMS Integration"],
-        color: "blue",
-    },
-    {
-        title: "SaaS Development",
-        description: "Scalable software-as-a-service platforms with advanced authentication, subscription management, and multi-tenancy.",
-        icon: Database,
-        features: ["Stripe Subscriptions", "User Roles & Permissions", "Analytics Dashboard", "API Ready", "Cloud Scalability"],
-        color: "purple",
-    },
-    {
-        title: "AI Integration",
-        description: "Custom AI solutions leveraging LLMs, vector databases, and machine learning to automate business processes.",
-        icon: Cpu,
-        features: ["OpenAI/Anthropic Integration", "Vector Search (Pinecone)", "AI Chatbots", "Smart Data Analysis", "Workflow Automation"],
-        color: "pink",
-    },
-    {
-        title: "UI/UX Design",
-        description: "Strategic design systems that prioritize user experience and drive conversion through psychological design principles.",
-        icon: Layout,
-        features: ["Figma Prototyping", "Design Systems", "User Testing", "Conversion Optimization", "Micro-interactions"],
-        color: "green",
-    },
-];
+import Link from 'next/link'
+import { Code2, Globe, LayoutDashboard, BrainCircuit, Palette, Sparkles, ArrowRight } from 'lucide-react'
+import { MotionDiv, MotionH1, MotionP, MotionSection } from '@/components/ui/motion'
 
 export default function ServicesPage() {
-    return (
-        <div className="pt-32 pb-24">
-            <div className="container mx-auto px-4 md:px-6">
-                <div className="text-center mb-24 space-y-6">
-                    <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight">Our Expertise</h1>
-                    <p className="text-slate-400 text-lg max-w-3xl mx-auto leading-relaxed">
-                        We don't just write code; we solve business problems with engineering excellence. Explore our core service verticals.
-                    </p>
-                </div>
+  return (
+    <main className="relative min-h-screen bg-[#030712] text-slate-50 overflow-hidden pt-28 pb-24">
+      {/* Background ambient glows */}
+      <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-[#3B82F6]/10 to-transparent blur-[120px] pointer-events-none -z-10" />
+      <div className="absolute bottom-20 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-[#00F2FE]/10 to-transparent blur-[120px] pointer-events-none -z-10" />
 
-                <div className="space-y-32">
-                    {services.map((service, index) => (
-                        <div
-                            key={service.title}
-                            className={`flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-16`}
-                        >
-                            <div className="flex-1 space-y-8">
-                                <div className={`w-16 h-16 rounded-2xl bg-${service.color}-500/10 flex items-center justify-center`}>
-                                    <service.icon className={`w-8 h-8 text-${service.color}-500`} />
-                                </div>
-                                <h2 className="text-4xl font-bold text-white">{service.title}</h2>
-                                <p className="text-slate-400 text-lg leading-relaxed">
-                                    {service.description}
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {service.features.map((feature) => (
-                                        <div key={feature} className="flex items-center gap-3 text-slate-300">
-                                            <CheckCircle2 className={`w-5 h-5 text-${service.color}-500`} />
-                                            <span className="text-sm font-semibold">{feature}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <Link
-                                    href="/contact"
-                                    className={`inline-block px-10 py-5 rounded-2xl bg-${service.color}-600 text-white font-bold hover:bg-${service.color}-700 transition-all shadow-xl shadow-${service.color}-600/20`}
-                                >
-                                    Discuss your project
-                                </Link>
-                            </div>
+      {/* Header */}
+      <div className="max-w-7xl mx-auto px-4 text-center mb-24">
+        <MotionH1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6"
+        >
+          Our <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00F2FE] to-[#3B82F6]">Core Offerings</span>
+        </MotionH1>
+        <MotionP
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-lg text-slate-400 max-w-2xl mx-auto"
+        >
+          Two distinct disciplines, one standard of excellence. We deliver elite digital experiences through world-class software engineering and breathtaking visual production.
+        </MotionP>
+      </div>
 
-                            <div className="flex-1 w-full lg:w-auto">
-                                <div className="aspect-square rounded-[3rem] bg-gradient-to-br from-slate-900 to-slate-950 border border-white/5 relative overflow-hidden flex items-center justify-center p-12">
-                                    <div className={`absolute inset-0 bg-${service.color}-600/5 mix-blend-overlay`} />
-                                    <service.icon className={`w-40 h-40 text-${service.color}-500/20 animate-pulse`} />
+      {/* SECTION A: Enterprise Web Development */}
+      <section id="web" className="max-w-7xl mx-auto px-4 mb-32">
+        <MotionDiv
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-semibold mb-4">
+            <Code2 className="w-4 h-4" /> Section A
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold mb-6">Enterprise Web Development</h2>
+          <p className="text-slate-400 text-lg max-w-3xl">
+            We architect and build scalable, secure, and blazing-fast web applications. From internal tools to complex multi-tenant SaaS products, our engineering team handles it all.
+          </p>
+        </MotionDiv>
 
-                                    {/* Abstract design elements */}
-                                    <div className="absolute top-10 right-10 w-20 h-20 border border-white/10 rounded-full" />
-                                    <div className="absolute bottom-20 left-10 w-32 h-32 border border-white/5 rounded-full" />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Value Props Section */}
-                <div className="mt-40 grid grid-cols-1 md:grid-cols-3 gap-12 bg-white/5 rounded-[3rem] border border-white/5 p-16">
-                    <div className="text-center space-y-4">
-                        <div className="w-16 h-16 bg-blue-600/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <Rocket className="w-8 h-8 text-blue-500" />
-                        </div>
-                        <h4 className="text-xl font-bold">Speed to Market</h4>
-                        <p className="text-slate-400 text-sm">Launch your MVP in weeks, not months, with our optimized dev cycles.</p>
-                    </div>
-                    <div className="text-center space-y-4">
-                        <div className="w-16 h-16 bg-green-600/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <ShieldCheck className="w-8 h-8 text-green-500" />
-                        </div>
-                        <h4 className="text-xl font-bold">Secure by Design</h4>
-                        <p className="text-slate-400 text-sm">Industrial-grade security protocols integrated from the very first line of code.</p>
-                    </div>
-                    <div className="text-center space-y-4">
-                        <div className="w-16 h-16 bg-purple-600/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                            <Zap className="w-8 h-8 text-purple-500" />
-                        </div>
-                        <h4 className="text-xl font-bold">Peak Performance</h4>
-                        <p className="text-slate-400 text-sm">Lighthouse scores of 90+ guaranteed for all our public-facing web products.</p>
-                    </div>
-                </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            {
+              title: "Custom SaaS Platforms",
+              desc: "Multi-tenant architectures built with Next.js and Supabase. Scalable, secure, and ready for global audiences.",
+              icon: Globe,
+            },
+            {
+              title: "Internal Admin Panels",
+              desc: "Streamline your operations with complex, data-heavy dashboards tailored to your exact business logic.",
+              icon: LayoutDashboard,
+            },
+            {
+              title: "Headless CMS Integrations",
+              desc: "Omnichannel content delivery systems that give marketing teams absolute freedom without compromising performance.",
+              icon: Code2,
+            }
+          ].map((item, i) => (
+            <MotionDiv
+              key={item.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white/[0.02] border border-white/10 backdrop-blur-md rounded-2xl p-8 hover:bg-white/[0.04] transition-colors"
+            >
+              <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+                <item.icon className="w-6 h-6 text-slate-300" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-100 mb-3">{item.title}</h3>
+              <p className="text-slate-400">{item.desc}</p>
+            </MotionDiv>
+          ))}
         </div>
-    );
+      </section>
+
+      {/* SECTION B: Premium Image Studio */}
+      <section id="image" className="max-w-7xl mx-auto px-4">
+        <MotionDiv
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          className="mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-semibold mb-4">
+            <Sparkles className="w-4 h-4" /> Section B
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold mb-6">Premium Image Studio</h2>
+          <p className="text-slate-400 text-lg max-w-3xl">
+            A dual-engine approach to visual perfection. Choose between blazing-fast AI automation for bulk processing, or hire our pro retouchers for high-end campaigns.
+          </p>
+        </MotionDiv>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* AI Automated */}
+          <MotionDiv
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative overflow-hidden rounded-3xl p-1 bg-gradient-to-b from-white/10 to-transparent"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#00F2FE]/10 to-transparent opacity-50" />
+            <div className="relative h-full bg-[#030712]/90 backdrop-blur-xl rounded-[23px] p-8 md:p-12">
+              <BrainCircuit className="w-12 h-12 text-[#00F2FE] mb-6" />
+              <h3 className="text-3xl font-bold mb-4">AI Automated Processing</h3>
+              <p className="text-slate-400 mb-8 text-lg">
+                Perfect for e-commerce catalogs and bulk editing. Our custom AI pipeline handles background removal, color correction, and shadow generation in milliseconds.
+              </p>
+              <ul className="space-y-3 mb-8 text-slate-300">
+                <li className="flex items-center gap-2"><ArrowRight className="w-4 h-4 text-[#00F2FE]" /> 1,000+ images per hour</li>
+                <li className="flex items-center gap-2"><ArrowRight className="w-4 h-4 text-[#00F2FE]" /> 99.9% consistency rate</li>
+                <li className="flex items-center gap-2"><ArrowRight className="w-4 h-4 text-[#00F2FE]" /> API access available</li>
+              </ul>
+              <Link href="/pricing#image">
+                <button className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors w-full sm:w-auto">
+                  View AI Pricing
+                </button>
+              </Link>
+            </div>
+          </MotionDiv>
+
+          {/* Pro Human Retouching */}
+          <MotionDiv
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="relative overflow-hidden rounded-3xl p-1 bg-gradient-to-b from-blue-500/30 to-transparent"
+          >
+            <div className="absolute inset-0 bg-gradient-to-bl from-[#3B82F6]/20 to-transparent opacity-50" />
+            <div className="relative h-full bg-[#030712]/90 backdrop-blur-xl rounded-[23px] p-8 md:p-12">
+              <Palette className="w-12 h-12 text-[#3B82F6] mb-6" />
+              <h3 className="text-3xl font-bold mb-4">Pro Human Retouching</h3>
+              <p className="text-slate-400 mb-8 text-lg">
+                For magazine covers, hero banners, and high-end advertising. Our in-house digital artists obsess over every pixel to create masterpieces.
+              </p>
+              <ul className="space-y-3 mb-8 text-slate-300">
+                <li className="flex items-center gap-2"><ArrowRight className="w-4 h-4 text-[#3B82F6]" /> High-end beauty retouching</li>
+                <li className="flex items-center gap-2"><ArrowRight className="w-4 h-4 text-[#3B82F6]" /> Complex compositing</li>
+                <li className="flex items-center gap-2"><ArrowRight className="w-4 h-4 text-[#3B82F6]" /> Creative direction included</li>
+              </ul>
+              <Link href="/contact">
+                <button className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#00F2FE] to-[#3B82F6] text-white font-medium shadow-[0_0_20px_-5px_rgba(59,130,246,0.5)] hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.7)] transition-all w-full sm:w-auto">
+                  Request Custom Quote
+                </button>
+              </Link>
+            </div>
+          </MotionDiv>
+        </div>
+      </section>
+    </main>
+  )
 }

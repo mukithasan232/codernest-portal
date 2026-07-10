@@ -5,7 +5,7 @@
  */
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 import type { User as AppUser } from '@/types';
 import { Session, User } from '@supabase/supabase-js';
 
