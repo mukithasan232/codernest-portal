@@ -25,8 +25,8 @@ const sidebarLinks = [
   { name: 'CRM / Leads', href: '/crm', icon: Users },
   { name: 'CMS / Blog', href: '/cms', icon: FileText },
   { name: 'CMS / Reviews', href: '/cms/reviews', icon: MessageSquareQuote },
-  { name: 'Portfolio Manager', href: '/portfolio-manager', icon: Briefcase },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Portfolio Manager', href: '/admin/portfolio', icon: Briefcase },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export function DashboardShell({
