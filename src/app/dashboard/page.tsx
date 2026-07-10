@@ -15,7 +15,7 @@ import ImageOrderCard from '@/components/dashboard/ImageOrderCard';
 import Link from 'next/link';
 import {
   FolderKanban, Image as ImageIcon, DollarSign, Zap,
-  ArrowRight, MessageSquare, Plus
+  ArrowRight, MessageSquare, Plus, Users, FileText
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -87,33 +87,63 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">
             Welcome back, {appUser?.displayName?.split(' ')[0] ?? 'there'}! 👋
           </h1>
-          <p className="text-slate-400 mt-1">Here&apos;s what&apos;s happening with your work.</p>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">Here&apos;s what&apos;s happening with your work.</p>
         </div>
         <Link
           href="/image-studio/upload"
           id="dashboard-upload-btn"
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex-shrink-0"
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all flex-shrink-0 shadow-[0_0_15px_-3px_rgba(37,99,235,0.4)]"
         >
           <Plus className="w-4 h-4" /> New Image Order
         </Link>
       </div>
+
+      {/* Admin App Hub (Visible only to admins) */}
+      {(appUser?.role === 'admin' || appUser?.role === 'super_admin') && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">App Workspace</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <Link 
+              href="/crm"
+              className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-md shadow-sm dark:shadow-lg cursor-pointer hover:-translate-y-2 hover:border-blue-500/50 dark:hover:border-[#00F2FE]/50 transition-all duration-300 group"
+            >
+              <div className="p-4 rounded-full bg-slate-100 text-blue-600 dark:bg-white/10 dark:text-[#00F2FE] group-hover:scale-110 transition-transform mb-4">
+                <Users className="w-8 h-8" />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white">CRM / Leads</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage client pipeline</p>
+            </Link>
+            
+            <Link 
+              href="/cms"
+              className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-md shadow-sm dark:shadow-lg cursor-pointer hover:-translate-y-2 hover:border-purple-500/50 dark:hover:border-[#A855F7]/50 transition-all duration-300 group"
+            >
+              <div className="p-4 rounded-full bg-slate-100 text-purple-600 dark:bg-white/10 dark:text-[#A855F7] group-hover:scale-110 transition-transform mb-4">
+                <FileText className="w-8 h-8" />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white">CMS / Blog</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage public content</p>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map(s => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="glass p-5 rounded-2xl border border-white/5">
+            <div key={s.label} className="bg-white dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/5 backdrop-blur-md shadow-sm dark:shadow-none">
               <div className="flex items-center gap-3">
                 <div className={`p-2.5 rounded-xl ${s.bg}`}>
                   <Icon className={`w-5 h-5 ${s.color}`} />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">{s.label}</p>
-                  <p className="text-2xl font-extrabold text-white">{s.value}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
+                  <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{s.value}</p>
                 </div>
               </div>
             </div>
@@ -125,30 +155,30 @@ export default function DashboardPage() {
         {/* Projects with milestones */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Active Projects</h2>
-            <Link href="/dashboard/projects" className="text-sm text-blue-400 hover:underline flex items-center gap-1">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Active Projects</h2>
+            <Link href="/dashboard/projects" className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {activeProjects.length === 0 ? (
-            <div className="glass rounded-2xl border border-white/5 p-10 text-center space-y-3">
-              <FolderKanban className="w-10 h-10 text-slate-600 mx-auto" />
-              <p className="text-slate-400">No active projects yet.</p>
-              <Link href="/pricing" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-500 transition-all">
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 p-10 text-center space-y-3 backdrop-blur-md shadow-sm dark:shadow-none">
+              <FolderKanban className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto" />
+              <p className="text-slate-500 dark:text-slate-400">No active projects yet.</p>
+              <Link href="/pricing" className="inline-block px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-500 transition-all shadow-[0_0_15px_-3px_rgba(37,99,235,0.4)]">
                 Browse Packages
               </Link>
             </div>
           ) : (
             <div className="space-y-4">
               {activeProjects.slice(0, 3).map(project => (
-                <div key={project.id} className="glass rounded-2xl border border-white/10 p-5 hover:border-white/20 transition-all">
+                <div key={project.id} className="bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 p-5 hover:border-blue-500/50 dark:hover:border-white/20 transition-all shadow-sm dark:shadow-none backdrop-blur-md">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="font-bold text-white">{project.title}</h3>
+                      <h3 className="font-bold text-slate-900 dark:text-white">{project.title}</h3>
                       <p className="text-xs text-slate-500 capitalize mt-0.5">{project.type} project</p>
                     </div>
-                    <Link href={`/dashboard/projects/${project.id}`} className="text-xs text-blue-400 hover:underline">
+                    <Link href={`/dashboard/projects/${project.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
                       Details
                     </Link>
                   </div>
@@ -162,17 +192,17 @@ export default function DashboardPage() {
         {/* Image Orders + Support */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Recent Image Orders</h2>
-            <Link href="/dashboard/image-orders" className="text-sm text-blue-400 hover:underline flex items-center gap-1">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Recent Image Orders</h2>
+            <Link href="/dashboard/image-orders" className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
               View all <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {orders.length === 0 ? (
-            <div className="glass rounded-2xl border border-white/5 p-8 text-center space-y-3">
-              <ImageIcon className="w-10 h-10 text-slate-600 mx-auto" />
-              <p className="text-slate-400 text-sm">No image orders yet.</p>
-              <Link href="/image-studio/upload" className="inline-block px-5 py-2 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-500 transition-all">
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 p-8 text-center space-y-3 backdrop-blur-md shadow-sm dark:shadow-none">
+              <ImageIcon className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto" />
+              <p className="text-slate-500 dark:text-slate-400 text-sm">No image orders yet.</p>
+              <Link href="/image-studio/upload" className="inline-block px-5 py-2 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-500 transition-all shadow-[0_0_15px_-3px_rgba(147,51,234,0.4)]">
                 Try Image Studio
               </Link>
             </div>
@@ -186,13 +216,13 @@ export default function DashboardPage() {
 
           {/* Quick links */}
           <div className="grid grid-cols-2 gap-3">
-            <Link href="/dashboard/invoices" className="glass rounded-2xl border border-white/10 p-4 flex items-center gap-3 hover:border-white/20 transition-all">
-              <DollarSign className="w-5 h-5 text-green-400" />
-              <span className="text-sm font-semibold text-white">Invoices</span>
+            <Link href="/dashboard/invoices" className="bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 p-4 flex items-center gap-3 hover:border-green-500/50 dark:hover:border-white/20 transition-all shadow-sm dark:shadow-none backdrop-blur-md">
+              <DollarSign className="w-5 h-5 text-green-500 dark:text-green-400" />
+              <span className="text-sm font-semibold text-slate-900 dark:text-white">Invoices</span>
             </Link>
-            <Link href="/contact" className="glass rounded-2xl border border-white/10 p-4 flex items-center gap-3 hover:border-white/20 transition-all">
-              <MessageSquare className="w-5 h-5 text-blue-400" />
-              <span className="text-sm font-semibold text-white">Support</span>
+            <Link href="/contact" className="bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 p-4 flex items-center gap-3 hover:border-blue-500/50 dark:hover:border-white/20 transition-all shadow-sm dark:shadow-none backdrop-blur-md">
+              <MessageSquare className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+              <span className="text-sm font-semibold text-slate-900 dark:text-white">Support</span>
             </Link>
           </div>
         </div>

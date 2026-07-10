@@ -193,7 +193,7 @@ function LeadCard({
 
       <div className="flex items-center gap-1 text-[10px] text-slate-600 pt-1 border-t border-white/5">
         <Calendar className="w-3 h-3" />
-        {new Date(lead.createdAt).toLocaleDateString()}
+        {new Date(lead.createdAt || lead.created_at || new Date().toISOString()).toLocaleDateString()}
       </div>
     </div>
   );

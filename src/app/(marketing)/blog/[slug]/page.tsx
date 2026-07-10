@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft, Clock, Share2, Twitter, Linkedin } from "lucide-react";
 import Link from "next/link";
@@ -6,27 +7,19 @@ import { notFound } from "next/navigation";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const supabase = await createClient();
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    
     const { data: post } = await supabase
-        .from('blog_posts')
+        .from('blogs')
         .select('*')
         .eq('slug', slug)
+        .eq('status', 'published')
         .single();
 
     if (!post) {
-        // For demo, if not found in DB, check if it's one of our mock ones
-        if (slug !== "future-of-ai-saas" && slug !== "nextjs-15-agencies") {
-            return notFound();
-        }
-        // Return dummy content for mock slugs
+        return notFound();
     }
-
-    const displayPost = post || {
-        title: slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-        content: "This is a detailed analysis of " + slug + ". In this article, we explore the deep implications of modern technology and how it helps businesses scale effectively. AI and Cloud Computing are at the forefront of this revolution...",
-        created_at: new Date().toISOString(),
-        image_url: "https://images.unsplash.com/photo-1498050108023-c5249f4df085"
-    };
 
     return (
         <article className="pt-40 pb-24">
@@ -39,22 +32,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                     <div className="space-y-6">
                         <div className="flex items-center gap-6 text-sm text-slate-500 font-medium">
                             <span className="flex items-center gap-2"><Clock className="w-4 h-4" /> 5 min read</span>
-                            <span>{formatDate(displayPost.created_at)}</span>
+                            <span>{formatDate(post.created_at)}</span>
                         </div>
                         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
-                            {displayPost.title}
+                            {post.title}
                         </h1>
                     </div>
 
                     <div className="aspect-[21/9] rounded-[2.5rem] overflow-hidden border border-white/5 relative">
-                        <img src={displayPost.image_url} alt={displayPost.title} className="w-full h-full object-cover" />
+                        <img 
+                            src={post.cover_image || "https://images.unsplash.com/photo-1498050108023-c5249f4df085"} 
+                            alt={post.title} 
+                            className="w-full h-full object-cover" 
+                        />
                     </div>
 
-                    <div className="prose prose-invert prose-lg max-w-none prose-p:text-slate-400 prose-headings:text-white prose-strong:text-white">
-                        <p className="whitespace-pre-wrap leading-relaxed">
-                            {displayPost.content}
-                        </p>
-                    </div>
+                    <div 
+                        className="prose prose-invert prose-lg max-w-none prose-p:text-slate-400 prose-headings:text-white prose-strong:text-white prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-img:rounded-xl"
+                        dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
 
                     <div className="pt-12 border-t border-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-4">

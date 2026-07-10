@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'client';
+export type UserRole = 'admin' | 'super_admin' | 'client';
 
 export interface User {
   id: string;  // UUID from Supabase Auth
@@ -21,8 +21,8 @@ export interface Lead {
   message?: string;
   budget?: string;
   status: LeadStatus;
-  source: string;
-  createdAt: string;
+  created_at: string;
+  createdAt?: string;
 }
 
 export type ProjectType = 'web' | 'image-studio';
@@ -133,3 +133,14 @@ export interface Invoice {
 
 // ── Constants ───────────────────────────────────────────────────────────────
 export const FREE_IMAGE_CREDIT_LIMIT = 5;
+
+export interface Testimonial {
+  id: string;
+  client_name: string;
+  designation_company?: string;
+  review_text: string;
+  rating: number; // 1-5
+  avatar_url?: string;
+  is_published: boolean;
+  created_at: string;
+}

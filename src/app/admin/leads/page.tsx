@@ -221,7 +221,7 @@ export default function AdminLeadsPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500">{lead.email} · {new Date(lead.createdAt).toLocaleDateString()}</p>
+                  <p className="text-xs text-slate-500">{lead.email} · {new Date(lead.createdAt || lead.created_at || new Date().toISOString()).toLocaleDateString()}</p>
                   {lead.message && (
                     <p className="text-xs text-slate-400 mt-1 truncate">{lead.message}</p>
                   )}

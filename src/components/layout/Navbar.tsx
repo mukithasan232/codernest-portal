@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Menu, X, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { createClient } from "@/utils/supabase/client";
+import toast from "react-hot-toast";
 
 const navLinks = [
     { name: "Services", href: "/services" },
@@ -19,6 +23,8 @@ export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
+    const { appUser, loading } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -27,6 +33,14 @@ export default function Navbar() {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    const handleSignOut = async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.refresh();
+        router.push('/');
+        toast.success('Successfully logged out');
+    };
 
     return (
         <nav
@@ -43,7 +57,7 @@ export default function Navbar() {
                         <div className="p-2 bg-blue-600 rounded-lg group-hover:rotate-12 transition-transform">
                             <Rocket className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-xl font-bold tracking-tighter">
+                        <span className="text-xl font-bold tracking-tighter text-slate-900 dark:text-white">
                             Coder<span className="text-blue-500">Nest</span>
                         </span>
                     </Link>
@@ -56,27 +70,53 @@ export default function Navbar() {
                                 href={link.href}
                                 className={cn(
                                     "text-sm font-medium transition-colors hover:text-blue-500",
-                                    pathname === link.href ? "text-blue-500" : "text-slate-400"
+                                    pathname === link.href ? "text-blue-500" : "text-slate-600 dark:text-slate-400"
                                 )}
                             >
                                 {link.name}
                             </Link>
                         ))}
-                        <Link
-                            href="/auth/login"
-                            className="px-5 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-colors"
-                        >
-                            Sign In
-                        </Link>
+                        <div className="flex items-center gap-4">
+                            <ThemeToggle />
+                            
+                            {!loading && (
+                                appUser ? (
+                                    <div className="flex items-center gap-3">
+                                        <Link
+                                            href={appUser.role === 'admin' ? '/crm' : '/dashboard'}
+                                            className="px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
+                                        >
+                                            Dashboard
+                                        </Link>
+                                        <button
+                                            onClick={handleSignOut}
+                                            className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                        >
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <Link
+                                        href="/auth/login"
+                                        className="px-5 py-2 rounded-full bg-slate-900 text-white dark:bg-white dark:text-black text-sm font-semibold hover:opacity-90 transition-opacity"
+                                    >
+                                        Sign In
+                                    </Link>
+                                )
+                            )}
+                        </div>
                     </div>
 
-                    {/* Mobile Menu Button */}
-                    <button
-                        className="md:hidden text-slate-300"
-                        onClick={() => setIsOpen(!isOpen)}
-                    >
-                        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                    </button>
+                    {/* Mobile Menu Button & Theme Toggle */}
+                    <div className="md:hidden flex items-center gap-4">
+                        <ThemeToggle />
+                        <button
+                            className="text-slate-600 dark:text-slate-300"
+                            onClick={() => setIsOpen(!isOpen)}
+                        >
+                            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -85,25 +125,45 @@ export default function Navbar() {
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="md:hidden glass absolute top-full left-0 w-full border-b border-white/10 py-6 px-4 space-y-4"
+                    className="md:hidden glass absolute top-full left-0 w-full border-b border-slate-200 dark:border-white/10 py-6 px-4 space-y-4 shadow-xl dark:shadow-none"
                 >
                     {navLinks.map((link) => (
                         <Link
                             key={link.name}
                             href={link.href}
-                            className="block text-lg font-medium text-slate-300 hover:text-blue-500"
+                            className="block text-lg font-medium text-slate-700 dark:text-slate-300 hover:text-blue-500 transition-colors"
                             onClick={() => setIsOpen(false)}
                         >
                             {link.name}
                         </Link>
                     ))}
-                    <Link
-                        href="/auth/login"
-                        className="block w-full py-3 rounded-xl bg-blue-600 text-center font-bold"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        Get Started
-                    </Link>
+                    {!loading && (
+                        appUser ? (
+                            <div className="space-y-3 pt-2">
+                                <Link
+                                    href={appUser.role === 'admin' ? '/crm' : '/dashboard'}
+                                    className="block w-full py-3 rounded-xl bg-blue-600 text-white text-center font-bold"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    Dashboard
+                                </Link>
+                                <button
+                                    onClick={() => { handleSignOut(); setIsOpen(false); }}
+                                    className="block w-full py-3 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white text-center font-bold"
+                                >
+                                    Sign Out
+                                </button>
+                            </div>
+                        ) : (
+                            <Link
+                                href="/auth/login"
+                                className="block w-full py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black text-center font-bold mt-2"
+                                onClick={() => setIsOpen(false)}
+                            >
+                                Get Started
+                            </Link>
+                        )
+                    )}
                 </motion.div>
             )}
         </nav>

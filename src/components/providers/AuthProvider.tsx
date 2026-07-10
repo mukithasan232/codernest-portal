@@ -66,8 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (!insertError) {
           setAppUser(newUser);
+        } else if (insertError.code === '23505') {
+          // Unique violation: The Postgres handle_new_user trigger already created the user!
+          // We can safely assume the user exists, but we couldn't select them initially (possibly due to RLS).
+          // Let's try to fetch again, or just fall back to the newUser object to unblock the UI.
+          const { data: retryUser } = await supabase.from('users').select('*').eq('id', sessionUser.id).single();
+          setAppUser((retryUser as AppUser) || newUser);
         } else {
-          console.error('Error creating user record:', insertError);
+          console.error('Error creating user record in Supabase:', insertError.message || insertError);
         }
       }
       setLoading(false);

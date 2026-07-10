@@ -1,8 +1,13 @@
 import Link from 'next/link'
-import { Code2, Camera, ArrowRight, ExternalLink, Sparkles, SlidersHorizontal } from 'lucide-react'
+import { Code2, Camera, ArrowRight, ExternalLink, Sparkles, SlidersHorizontal, ImageIcon } from 'lucide-react'
 import { MotionDiv, MotionH1, MotionP, MotionSection } from '@/components/ui/motion'
+import ImageSlider from '@/components/ui/ImageSlider'
+import { getPortfolioImages } from '@/lib/actions/portfolio.actions'
 
-export default function PortfolioPage() {
+export default async function PortfolioPage() {
+  const { data: images, success } = await getPortfolioImages();
+  const portfolioImages = success && images ? images : [];
+
   return (
     <main className="relative min-h-screen bg-[#030712] text-slate-50 overflow-hidden pt-28 pb-24">
       {/* Background ambient glows */}
@@ -115,36 +120,33 @@ export default function PortfolioPage() {
           <h2 className="text-3xl font-bold">Image Studio Gallery</h2>
         </MotionDiv>
 
-        {/* Before & After UI Placeholder */}
-        <MotionDiv
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative rounded-3xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-md p-2"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 opacity-30" />
-          
-          <div className="relative h-[400px] md:h-[600px] w-full rounded-2xl overflow-hidden bg-[#0a0a0a] flex items-center justify-center border border-white/5">
-            {/* Split Screen Simulator */}
-            <div className="absolute inset-y-0 left-0 w-1/2 bg-[url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')] bg-cover bg-center grayscale opacity-50 border-r-2 border-white/50" />
-            <div className="absolute inset-y-0 right-0 w-1/2 bg-[url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')] bg-cover bg-center brightness-125 contrast-125" />
-            
-            {/* Slider Handle */}
-            <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-white/20 -translate-x-1/2 flex items-center justify-center cursor-ew-resize">
-              <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-lg border border-white/30 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                <SlidersHorizontal className="w-5 h-5 text-white" />
-              </div>
+        {/* Before & After Dynamic UI */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {portfolioImages.length === 0 ? (
+            <div className="col-span-full py-20 text-center border border-dashed border-white/20 rounded-3xl bg-white/[0.02]">
+              <ImageIcon className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-slate-300 mb-2">More coming soon</h3>
+              <p className="text-slate-500">We are currently curating our finest image enhancements.</p>
             </div>
-
-            {/* Labels */}
-            <div className="absolute bottom-6 left-6 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-sm font-medium">
-              RAW / Original
-            </div>
-            <div className="absolute bottom-6 right-6 px-4 py-2 rounded-full bg-blue-500/20 backdrop-blur-md border border-blue-500/30 text-blue-200 text-sm font-medium flex items-center gap-2">
-              <Sparkles className="w-4 h-4" /> Pro Retouched
-            </div>
-          </div>
-        </MotionDiv>
+          ) : (
+            portfolioImages.map((img, i) => (
+              <MotionDiv
+                key={img.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="w-full"
+              >
+                <ImageSlider 
+                  title={img.title}
+                  originalImage={img.original_image_url}
+                  processedImage={img.processed_image_url}
+                />
+              </MotionDiv>
+            ))
+          )}
+        </div>
       </section>
     </main>
   )
