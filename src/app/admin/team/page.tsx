@@ -79,7 +79,7 @@ export default function TeamManagementPage() {
             <Users className="w-6 h-6 text-blue-600" />
             Team Management
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Manage admin access, editors, and clients</p>
+          <p className="text-slate-500 text-sm mt-1">Manage internal team: admins and editors</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -197,7 +197,6 @@ export default function TeamManagementPage() {
                 >
                   <option value="EDITOR">Editor (CMS Access Only)</option>
                   <option value="SUPER_ADMIN">Super Admin (Full Access)</option>
-                  <option value="CLIENT">Client</option>
                 </select>
                 {errors.role && <p className="text-xs text-red-500 mt-1">{errors.role.message}</p>}
               </div>

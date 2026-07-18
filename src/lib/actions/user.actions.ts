@@ -14,6 +14,7 @@ export async function getTeamMembers() {
     }
 
     const users = await prisma.user.findMany({
+      where: { role: { in: ['SUPER_ADMIN', 'EDITOR'] } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -25,6 +26,31 @@ export async function getTeamMembers() {
     });
     
     return { success: true, data: users };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getClients() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== 'SUPER_ADMIN') {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const clients = await prisma.user.findMany({
+      where: { role: 'CLIENT' },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      }
+    });
+    
+    return { success: true, data: clients };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
