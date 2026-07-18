@@ -2,6 +2,15 @@
 @config "../../tailwind.config.ts";
 @plugin "@tailwindcss/typography";
 
+/* Tailwind v4 safelist: force-include dynamic classes used at runtime */
+@source inline("{m,p,mt,mb,ml,mr,pt,pb,pl,pr}-{0,1,2,3,4,5,6,8,10,12,16,20,24,32}");
+@source inline("{w,h}-{1,2,3,4,5,6,8,10,12,16,20,24,32,full,screen,auto}");
+@source inline("max-w-{none,xs,sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,7xl,full}");
+@source inline("min-h-{0,full,screen}");
+@source inline("{text,bg,border}-{slate,blue,purple,green,red,yellow,orange,pink,cyan,white,black}-{50,100,200,300,400,500,600,700,800,900,950}");
+@source inline("{flex,grid,gap,items,justify,hidden,block,inline-block,rounded,shadow}");
+@source inline("prose prose-invert max-w-none dark:prose-invert");
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {
