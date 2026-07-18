@@ -1,14 +1,13 @@
-export type UserRole = 'admin' | 'super_admin' | 'client';
+export type UserRole = 'SUPER_ADMIN' | 'EDITOR' | 'CLIENT';
 
 export interface User {
-  id: string;  // UUID from Supabase Auth
+  id: string;
   email: string;
-  displayName?: string;
-  photoURL?: string;
-  role: UserRole;
-  /** Number of free image processing credits used (max 5) */
-  freeCreditsUsed: number;
-  createdAt: string;
+  name?: string | null;
+  image?: string | null;
+  role: UserRole | string;
+  freeCredits: number;
+  createdAt: string | Date;
 }
 
 export type LeadStatus = 'new' | 'contacted' | 'proposal' | 'converted' | 'closed';
@@ -17,12 +16,13 @@ export interface Lead {
   id: string;
   name: string;
   email: string;
-  company?: string;
-  message?: string;
-  budget?: string;
-  status: LeadStatus;
-  created_at: string;
-  createdAt?: string;
+  company?: string | null;
+  message?: string | null;
+  budget?: string | null;
+  status: LeadStatus | string;
+  source?: string;
+  serviceRequested?: string | null;
+  createdAt?: string | Date;
 }
 
 export type ProjectType = 'web' | 'image-studio';
@@ -38,11 +38,11 @@ export interface Project {
   id: string;
   clientId: string;
   title: string;
-  type: ProjectType;
-  status: ProjectStatus;
+  type: ProjectType | string;
+  status: ProjectStatus | string;
   milestones: Milestone[];
-  createdAt: string;
-  completedAt?: string;
+  createdAt: string | Date;
+  completedAt?: string | Date | null;
 }
 
 export type ImageTier = 'A-automated' | 'B-human';
@@ -51,58 +51,67 @@ export type ImageOrderStatus = 'pending' | 'processing' | 'completed' | 'failed'
 export interface ImageOrder {
   id: string;
   clientId: string;
-  clientEmail?: string;
-  tier: ImageTier;
-  status: ImageOrderStatus;
+  clientEmail?: string | null;
+  tier: ImageTier | string;
+  status: ImageOrderStatus | string;
   originalUrl: string;
-  processedUrl?: string;
-  instructions?: string;
-  createdAt: string;
-  completedAt?: string;
+  processedUrl?: string | null;
+  instructions?: string | null;
+  createdAt: string | Date;
+  completedAt?: string | Date | null;
 }
 
 export interface BlogPost {
   id: string;
   title: string;
   slug: string;
-  excerpt?: string;
+  excerpt?: string | null;
   content: string; // Markdown
-  imageUrl?: string;
+  imageUrl?: string | null;
+  cover_image?: string | null;
   tags?: string[];
-  published: boolean;
-  createdAt: string;
-  updatedAt?: string;
+  published?: boolean;
+  status?: string;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface CaseStudy {
   id: string;
   title: string;
   slug: string;
-  sector: ProjectType;
-  clientName?: string;
+  sector: ProjectType | string;
+  clientName?: string | null;
   challenge: string;
   solution: string;
-  results?: string;
+  results?: string | null;
   techStack: string[];
-  imageUrl?: string;
-  githubUrl?: string;
-  liveDemoUrl?: string;
+  imageUrl?: string | null;
+  githubUrl?: string | null;
+  liveDemoUrl?: string | null;
   featured: boolean;
-  createdAt: string;
-  updatedAt?: string;
+  metaTitle?: string | null;
+  metaDesc?: string | null;
+  keywords?: string | null;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface ServicePricing {
   id: string;
   name: string;
-  sector: ProjectType;
-  tier: 'starter' | 'pro' | 'enterprise';
+  sector: ProjectType | string;
+  tier: 'starter' | 'pro' | 'enterprise' | string;
   price: number;
-  priceLabel?: string;
+  priceLabel?: string | null;
   features: string[];
   ctaLabel: string;
-  stripePriceId?: string;
+  stripePriceId?: string | null;
   isPopular?: boolean;
+  customHtml?: string | null;
+  displayOrder?: number;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface Message {
@@ -110,7 +119,7 @@ export interface Message {
   projectId: string;
   senderId: string;
   text: string;
-  createdAt: string;
+  createdAt: string | Date;
 }
 
 export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue';
@@ -118,17 +127,17 @@ export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue';
 export interface Invoice {
   id: string;
   clientId: string;
-  clientEmail?: string;
-  amount: number; // in cents or dollars, standardizing on dollars for now
+  clientEmail?: string | null;
+  amount: number;
   currency: string;
-  status: InvoiceStatus;
-  dueDate?: string;
-  paymentMethod?: string;
-  stripePaymentLink?: string;
-  paypalLink?: string;
-  escrowLink?: string;
-  createdAt: string;
-  paidAt?: string;
+  status: InvoiceStatus | string;
+  dueDate?: string | Date | null;
+  paymentMethod?: string | null;
+  stripePaymentLink?: string | null;
+  paypalLink?: string | null;
+  escrowLink?: string | null;
+  createdAt: string | Date;
+  paidAt?: string | Date | null;
 }
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -137,10 +146,10 @@ export const FREE_IMAGE_CREDIT_LIMIT = 5;
 export interface Testimonial {
   id: string;
   client_name: string;
-  designation_company?: string;
+  designation_company?: string | null;
   review_text: string;
   rating: number; // 1-5
-  avatar_url?: string;
+  avatar_url?: string | null;
   is_published: boolean;
-  created_at: string;
+  createdAt: string | Date;
 }

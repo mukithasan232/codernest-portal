@@ -1,12 +1,7 @@
 import { stripe } from "@/lib/stripe";
-import { createClient } from "@supabase/supabase-js"; // Use service role for webhooks
+import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy'
-);
 
 export async function POST(req: Request) {
     const body = await req.text();
@@ -33,35 +28,33 @@ export async function POST(req: Request) {
         // 1. Create or Update Project
         let finalProjectId = projectId;
         if (projectId === "new") {
-            const { data: newProject, error: projError } = await supabaseAdmin
-                .from("projects")
-                .insert([
-                    {
-                        client_id: userId,
-                        title: `${planName} Package Project`,
-                        status: "pending",
-                        price: session.amount_total / 100,
-                    },
-                ])
-                .select()
-                .single();
+            const newProject = await prisma.project.create({
+                data: {
+                    clientId: userId,
+                    title: `${planName} Package Project`,
+                    type: "package",
+                    status: "pending",
+                }
+            });
 
-            if (!projError) finalProjectId = newProject.id;
+            finalProjectId = newProject.id;
         }
 
-        // 2. Save Payment record
-        await supabaseAdmin.from("payments").insert([
-            {
-                project_id: finalProjectId,
-                amount: session.amount_total / 100,
-                status: "succeeded",
-                stripe_session_id: session.id,
-            },
-        ]);
-
+        // We can update the invoice if this was tied to an invoice
+        if (session.metadata?.invoiceId) {
+            await prisma.invoice.update({
+                where: { id: session.metadata.invoiceId },
+                data: {
+                    status: 'paid',
+                    paidAt: new Date()
+                }
+            });
+        }
+        
         // 3. Optional: Send onboarding email via Resend
         // ... logic for email
     }
 
     return NextResponse.json({ received: true });
 }
+

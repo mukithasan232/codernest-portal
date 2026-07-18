@@ -1,135 +1,23 @@
 'use client';
 
-/**
- * AuthProvider — Supabase Authentication Context
- */
-
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import type { User as AppUser } from '@/types';
-import { Session, User } from '@supabase/supabase-js';
-
-interface AuthContextType {
-  appUser: AppUser | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name?: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  logOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType>({
-  appUser: null,
-  loading: true,
-  signIn: async () => {},
-  signUp: async () => {},
-  signInWithGoogle: async () => {},
-  logOut: async () => {},
-});
+import { SessionProvider, useSession, signOut } from "next-auth/react";
+import { ReactNode } from "react";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [appUser, setAppUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
-
-  useEffect(() => {
-    // Sync Supabase Auth with custom users table
-    const syncUser = async (sessionUser: User | null) => {
-      if (!sessionUser) {
-        setAppUser(null);
-        setLoading(false);
-        return;
-      }
-
-      // Check if user exists in the public.users table
-      const { data: existingUser, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', sessionUser.id)
-        .single();
-
-      if (existingUser) {
-        setAppUser(existingUser as AppUser);
-      } else {
-        // Create new user record
-        const newUser: AppUser = {
-          id: sessionUser.id,
-          email: sessionUser.email || '',
-          displayName: sessionUser.user_metadata?.full_name || undefined,
-          photoURL: sessionUser.user_metadata?.avatar_url || undefined,
-          role: 'client',
-          freeCreditsUsed: 0,
-          createdAt: new Date().toISOString(),
-        };
-
-        const { error: insertError } = await supabase.from('users').insert(newUser);
-        
-        if (!insertError) {
-          setAppUser(newUser);
-        } else if (insertError.code === '23505') {
-          // Unique violation: The Postgres handle_new_user trigger already created the user!
-          // We can safely assume the user exists, but we couldn't select them initially (possibly due to RLS).
-          // Let's try to fetch again, or just fall back to the newUser object to unblock the UI.
-          const { data: retryUser } = await supabase.from('users').select('*').eq('id', sessionUser.id).single();
-          setAppUser((retryUser as AppUser) || newUser);
-        } else {
-          console.error('Error creating user record in Supabase:', insertError.message || insertError);
-        }
-      }
-      setLoading(false);
-    };
-
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      syncUser(session?.user ?? null);
-    });
-
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      syncUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-  };
-
-  const signUp = async (email: string, password: string, name?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-        },
-      },
-    });
-    if (error) throw error;
-  };
-
-  const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  };
-
-  const logOut = async () => {
-    await supabase.auth.signOut();
-  };
-
   return (
-    <AuthContext.Provider value={{ appUser, loading, signIn, signUp, signInWithGoogle, logOut }}>
+    <SessionProvider>
       {children}
-    </AuthContext.Provider>
+    </SessionProvider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+// A helper hook to provide a similar interface to the old useAuth
+export const useAuth = () => {
+  const { data: session, status } = useSession();
+  
+  return {
+    appUser: session?.user ? { ...session.user, displayName: session.user.name, photoURL: session.user.image } : null,
+    loading: status === "loading",
+    logOut: () => signOut({ callbackUrl: '/' })
+  };
+};

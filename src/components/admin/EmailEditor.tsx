@@ -20,7 +20,7 @@ export default function EmailEditor({ initialTemplate, onSuccess }: { initialTem
     content: initialTemplate?.html_body || '<p>Hello {{first_name}},</p><p>Welcome to CoderNest!</p>',
     editorProps: {
       attributes: {
-        class: 'prose prose-invert prose-blue max-w-none min-h-[300px] focus:outline-none p-4 bg-black/20 rounded-b-xl border border-t-0 border-white/10',
+        class: 'prose prose-invert prose-blue max-w-none min-h-[300px] focus:outline-none p-4 bg-slate-100 dark:bg-black/20 rounded-b-xl border border-t-0 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white',
       },
     },
   });
@@ -59,15 +59,15 @@ export default function EmailEditor({ initialTemplate, onSuccess }: { initialTem
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-white">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
           {initialTemplate ? 'Edit Template' : 'Create New Template'}
         </h2>
         <div className="flex items-center gap-4">
-          <div className="flex bg-white/5 rounded-xl p-1 border border-white/10">
+          <div className="flex bg-slate-200 dark:bg-white/5 rounded-xl p-1 border border-slate-300 dark:border-white/10">
             <button
               onClick={() => setIsPreview(false)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                !isPreview ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'
+                !isPreview ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Editor
@@ -75,7 +75,7 @@ export default function EmailEditor({ initialTemplate, onSuccess }: { initialTem
             <button
               onClick={() => setIsPreview(true)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                isPreview ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'
+                isPreview ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               Preview
@@ -100,7 +100,7 @@ export default function EmailEditor({ initialTemplate, onSuccess }: { initialTem
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Welcome Email"
-            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-all"
+            className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-all"
           />
         </div>
         <div>
@@ -110,7 +110,7 @@ export default function EmailEditor({ initialTemplate, onSuccess }: { initialTem
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Welcome to CoderNest!"
-            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-all"
+            className="w-full bg-slate-100 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-all"
           />
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function EmailEditor({ initialTemplate, onSuccess }: { initialTem
         
         {isPreview ? (
           <div 
-            className="w-full min-h-[300px] bg-white text-black p-8 rounded-xl overflow-auto border border-white/10"
+            className="w-full min-h-[300px] bg-white text-black p-8 rounded-xl overflow-auto border border-slate-200 dark:border-white/10"
             dangerouslySetInnerHTML={{ 
               __html: editor?.getHTML()
                 .replace('{{first_name}}', '<strong>John</strong>')
@@ -137,14 +137,14 @@ export default function EmailEditor({ initialTemplate, onSuccess }: { initialTem
           />
         ) : (
           <div className="flex flex-col">
-            <div className="flex items-center gap-1 p-2 bg-black/40 border border-white/10 rounded-t-xl border-b-0">
-              <button onClick={() => editor?.chain().focus().toggleBold().run()} className={`p-2 rounded hover:bg-white/10 transition-colors ${editor?.isActive('bold') ? 'bg-white/10 text-blue-400' : 'text-slate-400'}`}><Bold className="w-4 h-4" /></button>
-              <button onClick={() => editor?.chain().focus().toggleItalic().run()} className={`p-2 rounded hover:bg-white/10 transition-colors ${editor?.isActive('italic') ? 'bg-white/10 text-blue-400' : 'text-slate-400'}`}><Italic className="w-4 h-4" /></button>
-              <div className="w-px h-4 bg-white/10 mx-1" />
-              <button onClick={() => editor?.chain().focus().toggleBulletList().run()} className={`p-2 rounded hover:bg-white/10 transition-colors ${editor?.isActive('bulletList') ? 'bg-white/10 text-blue-400' : 'text-slate-400'}`}><List className="w-4 h-4" /></button>
-              <button onClick={() => editor?.chain().focus().toggleOrderedList().run()} className={`p-2 rounded hover:bg-white/10 transition-colors ${editor?.isActive('orderedList') ? 'bg-white/10 text-blue-400' : 'text-slate-400'}`}><ListOrdered className="w-4 h-4" /></button>
-              <div className="w-px h-4 bg-white/10 mx-1" />
-              <button onClick={() => editor?.chain().focus().toggleCodeBlock().run()} className={`p-2 rounded hover:bg-white/10 transition-colors ${editor?.isActive('codeBlock') ? 'bg-white/10 text-blue-400' : 'text-slate-400'}`}><Code className="w-4 h-4" /></button>
+            <div className="flex items-center gap-1 p-2 bg-slate-200 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-t-xl border-b-0">
+              <button onClick={() => editor?.chain().focus().toggleBold().run()} className={`p-2 rounded hover:bg-slate-300 dark:hover:bg-white/10 transition-colors ${editor?.isActive('bold') ? 'bg-slate-300 dark:bg-white/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}><Bold className="w-4 h-4" /></button>
+              <button onClick={() => editor?.chain().focus().toggleItalic().run()} className={`p-2 rounded hover:bg-slate-300 dark:hover:bg-white/10 transition-colors ${editor?.isActive('italic') ? 'bg-slate-300 dark:bg-white/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}><Italic className="w-4 h-4" /></button>
+              <div className="w-px h-4 bg-slate-300 dark:bg-white/10 mx-1" />
+              <button onClick={() => editor?.chain().focus().toggleBulletList().run()} className={`p-2 rounded hover:bg-slate-300 dark:hover:bg-white/10 transition-colors ${editor?.isActive('bulletList') ? 'bg-slate-300 dark:bg-white/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}><List className="w-4 h-4" /></button>
+              <button onClick={() => editor?.chain().focus().toggleOrderedList().run()} className={`p-2 rounded hover:bg-slate-300 dark:hover:bg-white/10 transition-colors ${editor?.isActive('orderedList') ? 'bg-slate-300 dark:bg-white/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}><ListOrdered className="w-4 h-4" /></button>
+              <div className="w-px h-4 bg-slate-300 dark:bg-white/10 mx-1" />
+              <button onClick={() => editor?.chain().focus().toggleCodeBlock().run()} className={`p-2 rounded hover:bg-slate-300 dark:hover:bg-white/10 transition-colors ${editor?.isActive('codeBlock') ? 'bg-slate-300 dark:bg-white/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}><Code className="w-4 h-4" /></button>
             </div>
             <EditorContent editor={editor} />
           </div>

@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { uploadUserImage } from '@/lib/actions/image.actions';
 import { Upload, Image as ImageIcon, X, CheckCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -29,7 +29,6 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const supabase = createClient();
 
   const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   const MAX_SIZE_MB = 10;
@@ -48,8 +47,6 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
     setUploadedFile({ file, preview, progress: 0, status: 'uploading' });
 
     try {
-      const filePath = `uploads/${userId}/${Date.now()}_${file.name}`;
-      
       // Simulate progress for UX
       const progressInterval = setInterval(() => {
         setUploadedFile(prev => {
@@ -59,18 +56,18 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
         });
       }, 300);
 
-      const { error: uploadError, data } = await supabase.storage
-        .from('images')
-        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+      const formData = new FormData();
+      formData.append('file', file);
 
+      const res = await uploadUserImage(formData);
       clearInterval(progressInterval);
 
-      if (uploadError) throw uploadError;
+      if (!res.success || !res.publicUrl) {
+        throw new Error(res.error || 'Upload failed');
+      }
 
-      const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(data.path);
-
-      setUploadedFile(prev => prev ? { ...prev, status: 'done', downloadUrl: publicUrl, progress: 100 } : null);
-      onUploadComplete(publicUrl, file.name);
+      setUploadedFile(prev => prev ? { ...prev, status: 'done', downloadUrl: res.publicUrl, progress: 100 } : null);
+      onUploadComplete(res.publicUrl, file.name);
       toast.success('Image uploaded successfully!');
 
     } catch (err) {
@@ -78,7 +75,7 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
       setUploadedFile(prev => prev ? { ...prev, status: 'error', progress: 0 } : null);
       toast.error('Upload failed. Please try again.');
     }
-  }, [userId, onUploadComplete, supabase]);
+  }, [userId, onUploadComplete]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -112,10 +109,10 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
           className={`
             relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all
             ${disabled
-              ? 'border-slate-700 bg-slate-900/30 cursor-not-allowed opacity-50'
+              ? 'border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/30 cursor-not-allowed opacity-50'
               : dragActive
-                ? 'border-blue-500 bg-blue-500/10 scale-[1.01]'
-                : 'border-white/20 bg-white/5 hover:border-blue-400 hover:bg-blue-500/5'
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 scale-[1.01]'
+                : 'border-slate-300 dark:border-white/20 bg-slate-50 dark:bg-white/5 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/5'
             }
           `}
         >
@@ -130,11 +127,11 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
           />
 
           <div className="flex flex-col items-center gap-4">
-            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center transition-all ${dragActive ? 'bg-blue-500/30' : 'bg-white/10'}`}>
-              <Upload className={`w-10 h-10 transition-colors ${dragActive ? 'text-blue-400' : 'text-slate-400'}`} />
+            <div className={`w-20 h-20 rounded-2xl flex items-center justify-center transition-all ${dragActive ? 'bg-blue-100 dark:bg-blue-500/30' : 'bg-slate-200 dark:bg-white/10'}`}>
+              <Upload className={`w-10 h-10 transition-colors ${dragActive ? 'text-blue-500 dark:text-blue-400' : 'text-slate-400'}`} />
             </div>
             <div>
-              <p className="text-lg font-semibold text-white">
+              <p className="text-lg font-semibold text-slate-900 dark:text-white">
                 {dragActive ? 'Drop your image here!' : 'Drag & drop your image'}
               </p>
               <p className="text-sm text-slate-400 mt-1">
@@ -144,10 +141,10 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
           </div>
         </div>
       ) : (
-        <div className="glass rounded-2xl border border-white/10 p-6">
+        <div className="bg-white dark:bg-white/[0.02] shadow-sm dark:shadow-none rounded-2xl border border-slate-200 dark:border-white/10 p-6">
           <div className="flex items-start gap-4">
             {/* Preview */}
-            <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-white/5">
+            <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-white/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={uploadedFile.preview} alt="Preview" className="w-full h-full object-cover" />
             </div>
@@ -157,7 +154,7 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <ImageIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                  <span className="text-sm font-medium text-white truncate">{uploadedFile.file.name}</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-white truncate">{uploadedFile.file.name}</span>
                 </div>
                 {uploadedFile.status !== 'uploading' && (
                   <button onClick={clearFile} className="text-slate-500 hover:text-red-400 transition flex-shrink-0">
@@ -176,10 +173,10 @@ export default function ImageUploader({ userId, onUploadComplete, disabled }: Im
                     {uploadedFile.status === 'uploading' ? `Uploading ${uploadedFile.progress}%` :
                      uploadedFile.status === 'done' ? 'Upload complete' : 'Upload failed'}
                   </span>
-                  {uploadedFile.status === 'uploading' && <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />}
-                  {uploadedFile.status === 'done' && <CheckCircle className="w-3 h-3 text-green-400" />}
+                  {uploadedFile.status === 'uploading' && <Loader2 className="w-3 h-3 text-blue-500 dark:text-blue-400 animate-spin" />}
+                  {uploadedFile.status === 'done' && <CheckCircle className="w-3 h-3 text-green-500 dark:text-green-400" />}
                 </div>
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${
                       uploadedFile.status === 'done' ? 'bg-green-500' :

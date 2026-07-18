@@ -13,21 +13,13 @@ import {
   Menu,
   X,
   Zap,
-  MessageSquareQuote
+  MessageSquareQuote,
+  DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useAuth } from '@/components/providers/AuthProvider';
 import toast from 'react-hot-toast';
-
-const sidebarLinks = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'CRM / Leads', href: '/crm', icon: Users },
-  { name: 'CMS / Blog', href: '/cms', icon: FileText },
-  { name: 'CMS / Reviews', href: '/cms/reviews', icon: MessageSquareQuote },
-  { name: 'Portfolio Manager', href: '/admin/portfolio', icon: Briefcase },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
-];
 
 export function DashboardShell({
   children,
@@ -38,6 +30,19 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const { logOut, appUser } = useAuth();
+  
+  const isAdmin = appUser?.role === 'SUPER_ADMIN' || session.user.role === 'EDITOR';
+
+  const sidebarLinks = [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Image Orders', href: '/dashboard/image-orders', icon: Zap },
+    { name: 'Invoices', href: '/dashboard/invoices', icon: DollarSign },
+    ...(isAdmin ? [
+      { name: 'Admin Panel', href: '/admin', icon: Briefcase },
+      { name: 'CRM / Leads', href: '/admin/leads', icon: Users },
+      { name: 'CMS / Blog', href: '/admin/cms/blog', icon: FileText },
+    ] : []),
+  ];
 
   const handleSignOut = async () => {
     await logOut();

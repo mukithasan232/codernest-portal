@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Register Page — Supabase Email/Password + Google OAuth
+ * Register Page — NextAuth Email/Password + Google OAuth
  */
 
 import { useState } from 'react';
@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, Mail, Lock, User, Chrome, Eye, EyeOff, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createClient } from '@/utils/supabase/client';
+import { signIn } from 'next-auth/react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,8 +21,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,20 +36,32 @@ export default function RegisterPage() {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: name }
-        }
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
       });
 
-      if (error) {
-        throw error;
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Registration failed');
       }
 
       toast.success('Account created! Welcome to CoderNest 🚀');
+      
+      // Automatically log them in after registration
+      const signInRes = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (signInRes?.error) {
+        throw new Error(signInRes.error);
+      }
+
       router.push('/dashboard');
+      router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Registration failed';
       toast.error(msg);
@@ -63,17 +73,10 @@ export default function RegisterPage() {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
+      await signIn('google', { callbackUrl: '/dashboard' });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Google sign-in failed.';
       toast.error(msg);
-    } finally {
       setGoogleLoading(false);
     }
   }

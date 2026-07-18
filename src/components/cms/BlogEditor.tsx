@@ -1,12 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Upload, X, Save, Image as ImageIcon, CheckCircle2, CircleDashed, Code, Bold, Italic, List, ListOrdered } from 'lucide-react';
+import { Upload, X, Save, Image as ImageIcon, CheckCircle2, CircleDashed, Copy, Check } from 'lucide-react';
 import { createBlog, updateBlog, uploadBlogImage } from '@/lib/actions/blog.actions';
 import toast from 'react-hot-toast';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
 
 export default function BlogEditor({ 
   initialData, 
@@ -21,68 +18,24 @@ export default function BlogEditor({
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialData?.cover_image || null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [rawHtml, setRawHtml] = useState(initialData?.content || '');
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // SEO
+  const [metaTitle, setMetaTitle] = useState(initialData?.metaTitle || '');
+  const [metaDesc, setMetaDesc] = useState(initialData?.metaDesc || '');
+  const [keywords, setKeywords] = useState(initialData?.keywords || '');
 
-  // TipTap Editor Setup
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Image.configure({
-        inline: true,
-        allowBase64: true,
-      }),
-    ],
-    content: initialData?.content || '',
-    editorProps: {
-      attributes: {
-        class: 'prose prose-slate dark:prose-invert max-w-none focus:outline-none min-h-[400px]',
-      },
-      handleDrop: (view, event, slice, moved) => {
-        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
-          const file = event.dataTransfer.files[0];
-          const filesize = (file.size / 1024 / 1024).toFixed(4); // MB
-          if (parseFloat(filesize) > 5) {
-            toast.error('File size cannot exceed 5MB');
-            return true;
-          }
-          if (file.type.startsWith('image/')) {
-            event.preventDefault();
-            const uploadPromise = async () => {
-              const formData = new FormData();
-              formData.append('file', file);
-              const res = await uploadBlogImage(formData);
-              if (res.success && res.url) {
-                const { schema } = view.state;
-                const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
-                const node = schema.nodes.image.create({ src: res.url });
-                const transaction = view.state.tr.insert(coordinates?.pos || 0, node);
-                view.dispatch(transaction);
-              } else {
-                throw new Error(res.error);
-              }
-            };
-            toast.promise(uploadPromise(), {
-              loading: 'Uploading image...',
-              success: 'Image uploaded!',
-              error: 'Failed to upload image',
-            });
-            return true;
-          }
-        }
-        return false;
-      },
-    },
-    onUpdate: ({ editor }) => {
-      setRawHtml(editor.getHTML());
-    },
-  });
+  // Media Library Integration
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [lastUploadedMediaUrl, setLastUploadedMediaUrl] = useState<string | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-generate slug from title
   useEffect(() => {
-    if (!initialData) {
+    if (!initialData && title) {
       const generated = title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -105,6 +58,34 @@ export default function BlogEditor({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setIsUploadingMedia(true);
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const res = await uploadBlogImage(formData);
+      if (res.success && res.url) {
+        setLastUploadedMediaUrl(res.url);
+        toast.success('Image uploaded! Copy the URL below.');
+      } else {
+        toast.error(res.error || 'Failed to upload image');
+      }
+      setIsUploadingMedia(false);
+      if (mediaInputRef.current) mediaInputRef.current.value = '';
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (lastUploadedMediaUrl) {
+      navigator.clipboard.writeText(lastUploadedMediaUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+      toast.success('URL copied to clipboard!');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -114,6 +95,10 @@ export default function BlogEditor({
     formData.append('slug', slug);
     formData.append('content', rawHtml);
     formData.append('status', status);
+    formData.append('metaTitle', metaTitle);
+    formData.append('metaDesc', metaDesc);
+    formData.append('keywords', keywords);
+    
     if (coverImage) {
       formData.append('cover_image', coverImage);
     }
@@ -131,9 +116,11 @@ export default function BlogEditor({
         if (!initialData) {
           setTitle('');
           setRawHtml('');
-          editor?.commands.setContent('');
           setCoverImage(null);
           setPreviewUrl(null);
+          setMetaTitle('');
+          setMetaDesc('');
+          setKeywords('');
         }
         if (onSuccess) onSuccess();
       } else {
@@ -144,13 +131,6 @@ export default function BlogEditor({
       toast.error('An unexpected error occurred.');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const insertImagePrompt = () => {
-    const url = window.prompt('Image URL');
-    if (url) {
-      editor?.chain().focus().setImage({ src: url }).run();
     }
   };
 
@@ -194,118 +174,68 @@ export default function BlogEditor({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column (Main Content) */}
+        {/* Left Column (Main Info & SEO) */}
         <div className="lg:col-span-2 space-y-6">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">Title</label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Next.js 15 Rendering Patterns"
-              className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-lg placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">Title</label>
+              <input
+                id="title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Next.js 15 Rendering Patterns"
+                className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-lg placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+              />
+            </div>
+            <div>
+              <label htmlFor="slug" className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">Slug</label>
+              <input
+                id="slug"
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-600 dark:text-slate-300 font-mono text-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="slug" className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">Slug</label>
-            <input
-              id="slug"
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-slate-600 dark:text-slate-300 font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-400">Content</label>
-              
-              {/* TipTap Toolbar */}
-              <div className="flex items-center gap-2">
-                <div className="flex bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 p-1">
-                  <button
-                    type="button"
-                    onClick={() => editor?.chain().focus().toggleBold().run()}
-                    disabled={!editor?.can().chain().focus().toggleBold().run() || isHtmlMode}
-                    className={`p-1.5 rounded-md transition-colors ${editor?.isActive('bold') ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'} disabled:opacity-50`}
-                  >
-                    <Bold className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => editor?.chain().focus().toggleItalic().run()}
-                    disabled={!editor?.can().chain().focus().toggleItalic().run() || isHtmlMode}
-                    className={`p-1.5 rounded-md transition-colors ${editor?.isActive('italic') ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'} disabled:opacity-50`}
-                  >
-                    <Italic className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => editor?.chain().focus().toggleBulletList().run()}
-                    disabled={!editor?.can().chain().focus().toggleBulletList().run() || isHtmlMode}
-                    className={`p-1.5 rounded-md transition-colors ${editor?.isActive('bulletList') ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'} disabled:opacity-50`}
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-                    disabled={!editor?.can().chain().focus().toggleOrderedList().run() || isHtmlMode}
-                    className={`p-1.5 rounded-md transition-colors ${editor?.isActive('orderedList') ? 'bg-white dark:bg-white/10 text-slate-900 dark:text-white shadow-sm dark:shadow-none' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'} disabled:opacity-50`}
-                  >
-                    <ListOrdered className="w-4 h-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={insertImagePrompt}
-                    disabled={isHtmlMode}
-                    className="p-1.5 rounded-md transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
-                  >
-                    <ImageIcon className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                {/* HTML Source Toggle */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isHtmlMode) {
-                      // Switch back to rich text, update editor content
-                      editor?.commands.setContent(rawHtml);
-                    } else {
-                      // Switch to HTML, make sure rawHtml is up to date
-                      setRawHtml(editor?.getHTML() || '');
-                    }
-                    setIsHtmlMode(!isHtmlMode);
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
-                    isHtmlMode ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30' : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'
-                  }`}
-                >
-                  <Code className="w-3.5 h-3.5" />
-                  Source
-                </button>
+          <div className="bg-slate-50 dark:bg-black/10 p-5 rounded-2xl border border-slate-200 dark:border-white/5 space-y-4">
+            <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              SEO Metadata
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">Meta Title</label>
+                <input
+                  type="text"
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  placeholder="Defaults to post title if empty"
+                  className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">Keywords (comma separated)</label>
+                <input
+                  type="text"
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  placeholder="e.g. nextjs, react, frontend"
+                  className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-400 mb-2">Meta Description</label>
+                <textarea
+                  value={metaDesc}
+                  onChange={(e) => setMetaDesc(e.target.value)}
+                  placeholder="Brief description for search engines..."
+                  rows={2}
+                  className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-blue-500 transition-all resize-none"
+                />
               </div>
             </div>
-
-            <div className="w-full min-h-[400px] bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 focus-within:shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)] transition-all overflow-hidden">
-              {isHtmlMode ? (
-                <textarea
-                  value={rawHtml}
-                  onChange={(e) => setRawHtml(e.target.value)}
-                  className="w-full h-full min-h-[400px] p-4 bg-transparent text-slate-700 dark:text-slate-300 font-mono text-sm focus:outline-none resize-y"
-                  placeholder="<h1>Hello World</h1>"
-                />
-              ) : (
-                <div className="p-4 w-full h-full prose-editor-wrapper">
-                  <EditorContent editor={editor} />
-                </div>
-              )}
-            </div>
-            {!isHtmlMode && <p className="text-xs text-slate-500 mt-2">You can drag and drop images directly into the editor.</p>}
           </div>
         </div>
 
@@ -339,8 +269,7 @@ export default function BlogEditor({
                   <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-white/5 flex items-center justify-center mx-auto mb-3">
                     <ImageIcon className="w-6 h-6 text-slate-400" />
                   </div>
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Click or drag image</p>
-                  <p className="text-xs text-slate-500 mt-1">SVG, PNG, JPG (max 5MB)</p>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Click to add cover</p>
                 </div>
               )}
               <input
@@ -351,6 +280,77 @@ export default function BlogEditor({
                 className="hidden"
               />
             </div>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-black/10 p-4 rounded-xl border border-slate-200 dark:border-white/5">
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-white mb-3">Media Library</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Upload an image to get a URL you can paste into your HTML.</p>
+            <button
+              type="button"
+              onClick={() => mediaInputRef.current?.click()}
+              disabled={isUploadingMedia}
+              className="w-full py-2 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-white text-sm rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              {isUploadingMedia ? 'Uploading...' : 'Upload Inline Image'}
+            </button>
+            <input
+              ref={mediaInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleMediaUpload}
+              className="hidden"
+            />
+            {lastUploadedMediaUrl && (
+              <div className="mt-4 p-3 bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg">
+                <p className="text-xs text-slate-500 mb-1">Image URL:</p>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={lastUploadedMediaUrl} 
+                    className="flex-1 bg-transparent text-xs text-slate-800 dark:text-slate-200 outline-none truncate" 
+                  />
+                  <button 
+                    type="button"
+                    onClick={copyToClipboard}
+                    className="p-1.5 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded text-slate-600 dark:text-slate-300 transition-colors"
+                  >
+                    {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Split-Screen Code & Preview */}
+      <div className="mt-8 border-t border-slate-200 dark:border-white/10 pt-8">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Content (Split-Screen Editor)</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[600px]">
+          {/* Left: Raw Code */}
+          <div className="flex flex-col h-full bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+            <div className="bg-slate-200 dark:bg-black/40 px-4 py-2 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Raw HTML & Tailwind</span>
+            </div>
+            <textarea
+              value={rawHtml}
+              onChange={(e) => setRawHtml(e.target.value)}
+              className="flex-1 w-full p-4 bg-transparent text-slate-800 dark:text-slate-300 font-mono text-sm focus:outline-none resize-none"
+              placeholder={'<div className="space-y-4">\\n  <h1 className="text-3xl font-bold">Hello World</h1>\\n  <p className="text-slate-600">Write your content here...</p>\\n</div>'}
+            />
+          </div>
+
+          {/* Right: Live Preview */}
+          <div className="flex flex-col h-full bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+            <div className="bg-slate-100 dark:bg-black/40 px-4 py-2 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Live Preview</span>
+            </div>
+            <div 
+              className="flex-1 p-6 overflow-y-auto"
+              dangerouslySetInnerHTML={{ __html: rawHtml }}
+            />
           </div>
         </div>
       </div>

@@ -10,11 +10,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { FREE_IMAGE_CREDIT_LIMIT } from '@/types';
 import ImageUploader from '@/components/ui/ImageUploader';
 import PaywallModal from '@/components/ui/PaywallModal';
+import { getUserFreeCredits, incrementUserFreeCredits } from '@/lib/actions/user.actions';
 import {
   Zap, UserCheck, ArrowRight, Loader2, CheckCircle,
   AlertTriangle, CreditCard, Info
@@ -33,7 +33,6 @@ interface ProcessResult {
 export default function UploadPage() {
   const { appUser, loading: authLoading } = useAuth();
   const router = useRouter();
-  const supabase = createClient();
 
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
@@ -51,17 +50,17 @@ export default function UploadPage() {
     }
   }, [appUser, authLoading, router]);
 
-  // Load credits from Supabase
+  // Load credits from action
   useEffect(() => {
     if (!appUser) return;
     const fetchCredits = async () => {
-      const { data } = await supabase.from('users').select('freeCreditsUsed').eq('id', appUser.id).single();
-      if (data) {
-        setCreditsUsed(data.freeCreditsUsed ?? 0);
+      const res = await getUserFreeCredits();
+      if (res.success && typeof res.creditsUsed === 'number') {
+        setCreditsUsed(res.creditsUsed);
       }
     };
     fetchCredits();
-  }, [appUser, supabase]);
+  }, [appUser]);
 
   const isFreeCreditsExhausted = creditsUsed >= FREE_IMAGE_CREDIT_LIMIT;
   const freeCreditsLeft = Math.max(0, FREE_IMAGE_CREDIT_LIMIT - creditsUsed);
@@ -103,10 +102,13 @@ export default function UploadPage() {
 
       if (!res.ok) throw new Error(data.error ?? 'Processing failed');
 
-      // Increment free credits in Supabase
-      const newCredits = creditsUsed + 1;
-      await supabase.from('users').update({ freeCreditsUsed: newCredits }).eq('id', appUser.id);
-      setCreditsUsed(newCredits);
+      // Increment free credits using server action
+      const newCreditsRes = await incrementUserFreeCredits();
+      if (newCreditsRes.success && typeof newCreditsRes.creditsUsed === 'number') {
+        setCreditsUsed(newCreditsRes.creditsUsed);
+      } else {
+        setCreditsUsed(creditsUsed + 1); // fallback
+      }
 
       setResult({
         processedUrl: data.processedUrl,
@@ -132,19 +134,19 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-950 py-16 px-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-surface-950 transition-colors duration-300 py-16 px-4">
       <div className="container mx-auto max-w-3xl space-y-8">
 
         {/* Header */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-extrabold text-white">Image Processing Studio</h1>
-          <p className="text-slate-400 max-w-xl mx-auto">
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white">Image Processing Studio</h1>
+          <p className="text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
             Upload your image, choose AI automation or human expert editing, and get studio-grade results.
           </p>
         </div>
 
         {/* Free Credits Banner */}
-        <div className={`glass rounded-2xl border p-4 flex items-center justify-between gap-4 ${isFreeCreditsExhausted ? 'border-red-500/40 bg-red-500/5' : 'border-blue-500/30 bg-blue-500/5'}`}>
+        <div className={`bg-white dark:bg-white/[0.02] shadow-sm dark:shadow-none rounded-2xl border p-4 flex items-center justify-between gap-4 ${isFreeCreditsExhausted ? 'border-red-200 dark:border-red-500/40 bg-red-50 dark:bg-red-500/5' : 'border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/5'}`}>
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isFreeCreditsExhausted ? 'bg-red-500/20' : 'bg-blue-500/20'}`}>
               {isFreeCreditsExhausted
@@ -153,10 +155,10 @@ export default function UploadPage() {
               }
             </div>
             <div>
-              <p className="text-sm font-bold text-white">
+              <p className="text-sm font-bold text-slate-900 dark:text-white">
                 {isFreeCreditsExhausted ? 'Free credits exhausted' : `${freeCreditsLeft} free credit${freeCreditsLeft !== 1 ? 's' : ''} remaining`}
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 {isFreeCreditsExhausted ? 'Upgrade to continue processing images.' : `You've used ${creditsUsed} of ${FREE_IMAGE_CREDIT_LIMIT} free trial images.`}
               </p>
             </div>
@@ -166,15 +168,15 @@ export default function UploadPage() {
             {Array.from({ length: FREE_IMAGE_CREDIT_LIMIT }).map((_, i) => (
               <div
                 key={i}
-                className={`w-3 h-3 rounded-full ${i < creditsUsed ? 'bg-blue-500' : 'bg-white/10'}`}
+                className={`w-3 h-3 rounded-full ${i < creditsUsed ? 'bg-blue-500' : 'bg-slate-300 dark:bg-white/10'}`}
               />
             ))}
           </div>
         </div>
 
         {/* Upload */}
-        <div className="glass rounded-3xl border border-white/10 p-8 space-y-6">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+        <div className="bg-white dark:bg-white/[0.02] shadow-sm dark:shadow-none rounded-3xl border border-slate-200 dark:border-white/10 p-8 space-y-6">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <span className="w-7 h-7 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
             Upload Your Image
           </h2>
@@ -186,8 +188,8 @@ export default function UploadPage() {
         </div>
 
         {/* Tier Selection */}
-        <div className="glass rounded-3xl border border-white/10 p-8 space-y-6">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+        <div className="bg-white dark:bg-white/[0.02] shadow-sm dark:shadow-none rounded-3xl border border-slate-200 dark:border-white/10 p-8 space-y-6">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <span className="w-7 h-7 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
             Choose Processing Tier
           </h2>
@@ -199,8 +201,8 @@ export default function UploadPage() {
               onClick={() => setSelectedTier('A-automated')}
               className={`text-left p-5 rounded-2xl border transition-all space-y-3 ${
                 selectedTier === 'A-automated'
-                  ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500'
-                  : 'border-white/10 bg-white/5 hover:border-blue-400/50'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 ring-1 ring-blue-500'
+                  : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:border-blue-300 dark:hover:border-blue-400/50'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -212,8 +214,8 @@ export default function UploadPage() {
                 )}
               </div>
               <div>
-                <p className="font-bold text-white">Tier A — AI Automated</p>
-                <p className="text-xs text-slate-400 mt-1">Results in &lt;60 seconds. Free during trial.</p>
+                <p className="font-bold text-slate-900 dark:text-white">Tier A — AI Automated</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Results in &lt;60 seconds. Free during trial.</p>
               </div>
               <div className="text-xs text-blue-400 font-semibold">$2 / image after trial</div>
             </button>
@@ -224,8 +226,8 @@ export default function UploadPage() {
               onClick={() => setSelectedTier('B-human')}
               className={`text-left p-5 rounded-2xl border transition-all space-y-3 ${
                 selectedTier === 'B-human'
-                  ? 'border-purple-500 bg-purple-500/10 ring-1 ring-purple-500'
-                  : 'border-white/10 bg-white/5 hover:border-purple-400/50'
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-500/10 ring-1 ring-purple-500'
+                  : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:border-purple-300 dark:hover:border-purple-400/50'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -237,8 +239,8 @@ export default function UploadPage() {
                 )}
               </div>
               <div>
-                <p className="font-bold text-white">Tier B — Human Pro</p>
-                <p className="text-xs text-slate-400 mt-1">Expert editor. Results within 24 hours.</p>
+                <p className="font-bold text-slate-900 dark:text-white">Tier B — Human Pro</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Expert editor. Results within 24 hours.</p>
               </div>
               <div className="text-xs text-purple-400 font-semibold">$15 / image</div>
             </button>
@@ -246,7 +248,7 @@ export default function UploadPage() {
 
           {/* Instructions */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2" htmlFor="instructions">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" htmlFor="instructions">
               Processing Instructions (optional)
             </label>
             <textarea
@@ -258,7 +260,7 @@ export default function UploadPage() {
                 ? 'e.g. Remove background, enhance colors…'
                 : 'e.g. Remove background, keep hair details, add transparent PNG output…'
               }
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 transition resize-none"
+              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
             />
           </div>
         </div>
@@ -283,12 +285,12 @@ export default function UploadPage() {
 
         {/* Result */}
         {result && (
-          <div className={`glass rounded-3xl border p-8 space-y-4 text-center ${result.isManual ? 'border-purple-500/30' : 'border-green-500/30'}`}>
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto ${result.isManual ? 'bg-purple-500/20' : 'bg-green-500/20'}`}>
-              {result.isManual ? <UserCheck className="w-8 h-8 text-purple-400" /> : <CheckCircle className="w-8 h-8 text-green-400" />}
+          <div className={`bg-white dark:bg-white/[0.02] shadow-sm dark:shadow-none rounded-3xl border p-8 space-y-4 text-center ${result.isManual ? 'border-purple-200 dark:border-purple-500/30' : 'border-green-200 dark:border-green-500/30'}`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto ${result.isManual ? 'bg-purple-100 dark:bg-purple-500/20' : 'bg-green-100 dark:bg-green-500/20'}`}>
+              {result.isManual ? <UserCheck className="w-8 h-8 text-purple-600 dark:text-purple-400" /> : <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />}
             </div>
-            <h3 className="text-xl font-bold text-white">{result.isManual ? 'Order Submitted!' : 'Processing Complete!'}</h3>
-            <p className="text-slate-400 text-sm">{result.message}</p>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{result.isManual ? 'Order Submitted!' : 'Processing Complete!'}</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">{result.message}</p>
             {result.processedUrl && (
               <a
                 id="download-result-btn"

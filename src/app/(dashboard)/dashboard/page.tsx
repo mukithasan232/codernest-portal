@@ -1,14 +1,7 @@
-'use client';
-
-/**
- * Client Dashboard — Main overview page
- * Shows: projects with milestone progress, image orders, credit counter
- */
-
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import type { Project, ImageOrder } from '@/types';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { prisma } from '@/lib/prisma';
+import type { Project, ImageOrder, Milestone } from '@/types';
 import { FREE_IMAGE_CREDIT_LIMIT } from '@/types';
 import MilestoneTracker from '@/components/dashboard/MilestoneTracker';
 import ImageOrderCard from '@/components/dashboard/ImageOrderCard';
@@ -17,59 +10,39 @@ import {
   FolderKanban, Image as ImageIcon, DollarSign, Zap,
   ArrowRight, MessageSquare, Plus, Users, FileText
 } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
-export default function DashboardPage() {
-  const { appUser } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [orders, setOrders] = useState<ImageOrder[]>([]);
-  const [creditsUsed, setCreditsUsed] = useState(0);
-  const supabase = createClient();
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    redirect('/auth/login');
+  }
 
-  useEffect(() => {
-    if (!appUser) return;
+  const appUser = await prisma.user.findUnique({ where: { id: session.user.id }});
+  
+  if (!appUser) {
+    redirect('/auth/login');
+  }
 
-    const fetchData = async () => {
-      // Fetch projects
-      const { data: projData } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('clientId', appUser.id)
-        .order('createdAt', { ascending: false });
-      if (projData) setProjects(projData as Project[]);
+  // Fetch projects
+  const projData = await prisma.project.findMany({
+    where: { clientId: appUser.id },
+    orderBy: { createdAt: 'desc' }
+  });
+  
+  const projects = projData as unknown as Project[];
 
-      // Fetch image orders
-      const { data: orderData } = await supabase
-        .from('imageOrders')
-        .select('*')
-        .eq('clientId', appUser.id)
-        .order('createdAt', { ascending: false });
-      if (orderData) setOrders(orderData as ImageOrder[]);
+  // Fetch image orders
+  const orderData = await prisma.imageOrder.findMany({
+    where: { clientId: appUser.id },
+    orderBy: { createdAt: 'desc' }
+  });
+  
+  const orders = orderData as unknown as ImageOrder[];
 
-      // Set credits from appUser directly since it's already fetched by AuthProvider
-      setCreditsUsed(appUser.freeCreditsUsed ?? 0);
-    };
-
-    fetchData();
-
-    // Setup channels for realtime updates
-    const channel = supabase.channel('dashboard_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects', filter: `clientId=eq.${appUser.id}` }, (payload) => {
-        if (payload.eventType === 'INSERT') setProjects(p => [payload.new as Project, ...p]);
-        if (payload.eventType === 'UPDATE') setProjects(p => p.map(x => x.id === payload.new.id ? payload.new as Project : x));
-        if (payload.eventType === 'DELETE') setProjects(p => p.filter(x => x.id !== payload.old.id));
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'imageOrders', filter: `clientId=eq.${appUser.id}` }, (payload) => {
-        if (payload.eventType === 'INSERT') setOrders(o => [payload.new as ImageOrder, ...o]);
-        if (payload.eventType === 'UPDATE') setOrders(o => o.map(x => x.id === payload.new.id ? payload.new as ImageOrder : x));
-        if (payload.eventType === 'DELETE') setOrders(o => o.filter(x => x.id !== payload.old.id));
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [appUser, supabase]);
-
+  const creditsUsed = appUser.freeCredits ?? 0;
+  
   const activeProjects = projects.filter(p => p.status === 'in-progress');
   const completedProjects = projects.filter(p => p.status === 'completed');
   const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing');
@@ -88,7 +61,7 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">
-            Welcome back, {appUser?.displayName?.split(' ')[0] ?? 'there'}! 👋
+            Welcome back, {appUser.name?.split(' ')[0] ?? 'there'}! 👋
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-1">Here&apos;s what&apos;s happening with your work.</p>
         </div>
@@ -101,35 +74,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Admin App Hub (Visible only to admins) */}
-      {(appUser?.role === 'admin' || appUser?.role === 'super_admin') && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">App Workspace</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            <Link 
-              href="/crm"
-              className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-md shadow-sm dark:shadow-lg cursor-pointer hover:-translate-y-2 hover:border-blue-500/50 dark:hover:border-[#00F2FE]/50 transition-all duration-300 group"
-            >
-              <div className="p-4 rounded-full bg-slate-100 text-blue-600 dark:bg-white/10 dark:text-[#00F2FE] group-hover:scale-110 transition-transform mb-4">
-                <Users className="w-8 h-8" />
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white">CRM / Leads</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage client pipeline</p>
-            </Link>
-            
-            <Link 
-              href="/cms"
-              className="flex flex-col items-center justify-center p-6 rounded-2xl bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-md shadow-sm dark:shadow-lg cursor-pointer hover:-translate-y-2 hover:border-purple-500/50 dark:hover:border-[#A855F7]/50 transition-all duration-300 group"
-            >
-              <div className="p-4 rounded-full bg-slate-100 text-purple-600 dark:bg-white/10 dark:text-[#A855F7] group-hover:scale-110 transition-transform mb-4">
-                <FileText className="w-8 h-8" />
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white">CMS / Blog</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage public content</p>
-            </Link>
-          </div>
-        </div>
-      )}
+
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -182,7 +127,7 @@ export default function DashboardPage() {
                       Details
                     </Link>
                   </div>
-                  <MilestoneTracker milestones={project.milestones ?? []} projectTitle="" />
+                  <MilestoneTracker milestones={(project.milestones as Milestone[]) ?? []} projectTitle="" />
                 </div>
               ))}
             </div>

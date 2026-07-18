@@ -1,69 +1,71 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 import sharp from 'sharp';
+import { writeFile, mkdir, unlink } from 'fs/promises';
+import path from 'path';
 
 export async function getPortfolioImages() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data, error } = await supabase
-    .from('portfolio_images')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
+  try {
+    const data = await prisma.portfolioImage.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return { success: true, data };
+  } catch (error: any) {
     console.error('Fetch Portfolio Error:', error);
     return { success: false, error: error.message };
   }
-
-  return { success: true, data };
 }
 
 export async function deletePortfolioImage(id: string, originalUrl: string, processedUrl: string | null) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return { success: false, error: 'Unauthorized.' };
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { success: false, error: 'Unauthorized.' };
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    return { success: false, error: 'Forbidden.' };
   }
 
   // Extract filenames from URLs
   const originalPath = originalUrl.split('/').pop();
   const processedPath = processedUrl ? processedUrl.split('/').pop() : null;
 
-  const filesToRemove = [];
-  if (originalPath) filesToRemove.push(originalPath);
-  if (processedPath) filesToRemove.push(processedPath);
-
-  if (filesToRemove.length > 0) {
-    await supabase.storage.from('portfolio-assets').remove(filesToRemove);
+  const uploadDir = path.join(process.cwd(), 'public/uploads/portfolio');
+  
+  if (originalPath) {
+    try {
+      await unlink(path.join(uploadDir, originalPath));
+    } catch (e) {
+      console.warn('Failed to delete original image file', e);
+    }
+  }
+  if (processedPath) {
+    try {
+      await unlink(path.join(uploadDir, processedPath));
+    } catch (e) {
+      console.warn('Failed to delete processed image file', e);
+    }
   }
 
-  const { error } = await supabase
-    .from('portfolio_images')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
+  try {
+    await prisma.portfolioImage.delete({
+      where: { id }
+    });
+    
+    revalidatePath('/admin/portfolio');
+    revalidatePath('/portfolio');
+    return { success: true };
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
-
-  revalidatePath('/admin/portfolio');
-  revalidatePath('/portfolio');
-  return { success: true };
 }
 
 export async function uploadAndProcessImage(formData: FormData) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return { success: false, error: 'Unauthorized.' };
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { success: false, error: 'Unauthorized.' };
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    return { success: false, error: 'Forbidden.' };
   }
 
   const title = formData.get('title') as string;
@@ -80,6 +82,9 @@ export async function uploadAndProcessImage(formData: FormData) {
     const timestamp = Date.now();
     const originalFileName = `raw-${timestamp}.webp`;
     const processedFileName = `pro-${timestamp}.webp`;
+    const uploadDir = path.join(process.cwd(), 'public/uploads/portfolio');
+    
+    await mkdir(uploadDir, { recursive: true });
 
     // 1. Convert original to WebP (optimized)
     const originalBuffer = await sharp(buffer)
@@ -98,41 +103,21 @@ export async function uploadAndProcessImage(formData: FormData) {
       .webp({ quality: 90 })
       .toBuffer();
 
-    // 3. Upload Original to Supabase
-    const { error: uploadOrigError } = await supabase.storage
-      .from('portfolio-assets')
-      .upload(originalFileName, originalBuffer, {
-        contentType: 'image/webp',
-        cacheControl: '3600',
-      });
+    // 3. Write Original to Disk
+    await writeFile(path.join(uploadDir, originalFileName), originalBuffer);
 
-    if (uploadOrigError) throw new Error(`Upload original failed: ${uploadOrigError.message}`);
+    // 4. Write Processed to Disk
+    await writeFile(path.join(uploadDir, processedFileName), processedBuffer);
 
-    // 4. Upload Processed to Supabase
-    const { error: uploadProcError } = await supabase.storage
-      .from('portfolio-assets')
-      .upload(processedFileName, processedBuffer, {
-        contentType: 'image/webp',
-        cacheControl: '3600',
-      });
-
-    if (uploadProcError) throw new Error(`Upload processed failed: ${uploadProcError.message}`);
-
-    // 5. Get Public URLs
-    const { data: origUrlData } = supabase.storage.from('portfolio-assets').getPublicUrl(originalFileName);
-    const { data: procUrlData } = supabase.storage.from('portfolio-assets').getPublicUrl(processedFileName);
-
-    // 6. Save to Database
-    const { error: dbError } = await supabase
-      .from('portfolio_images')
-      .insert([{
+    // 5. Save to Database
+    await prisma.portfolioImage.create({
+      data: {
         title,
-        original_image_url: origUrlData.publicUrl,
-        processed_image_url: procUrlData.publicUrl,
+        original_image_url: `/uploads/portfolio/${originalFileName}`,
+        processed_image_url: `/uploads/portfolio/${processedFileName}`,
         status: 'completed'
-      }]);
-
-    if (dbError) throw new Error(`Database insert failed: ${dbError.message}`);
+      }
+    });
 
     revalidatePath('/admin/portfolio');
     revalidatePath('/portfolio');

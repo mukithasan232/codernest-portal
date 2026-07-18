@@ -1,15 +1,14 @@
 'use client';
 
 /**
- * KanbanBoard — Real-time Firestore Leads Pipeline
+ * KanbanBoard — Leads Pipeline
  * Drag-and-drop columns: New → Contacted → Proposal → Converted → Closed
- * Uses Firestore real-time listeners for live updates.
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import type { Lead, LeadStatus } from '@/types';
 import { Mail, Calendar, GripVertical, MoreVertical } from 'lucide-react';
+import { getLeads, updateLeadStatus } from '@/lib/actions/crm.actions';
 
 const COLUMNS: { id: LeadStatus; label: string; color: string; dot: string }[] = [
   { id: 'new',       label: 'New',       color: 'border-blue-500/40',   dot: 'bg-blue-400' },
@@ -24,34 +23,18 @@ export default function KanbanBoard() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<LeadStatus | null>(null);
   const dragLeadId = useRef<string | null>(null);
-  const supabase = createClient();
 
-  // Real-time Supabase listener
   useEffect(() => {
     const fetchLeads = async () => {
-      const { data } = await supabase.from('leads').select('*').order('createdAt', { ascending: false });
-      if (data) setLeads(data as Lead[]);
+      const res = await getLeads();
+      if (res.success && res.data) {
+        // Date objects need to be handled if returned from server actions, but Next 14 handles Date in Server Actions
+        setLeads(res.data as unknown as Lead[]);
+      }
     };
 
     fetchLeads();
-
-    const channel = supabase
-      .channel('leads_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setLeads(prev => [payload.new as Lead, ...prev]);
-        } else if (payload.eventType === 'UPDATE') {
-          setLeads(prev => prev.map(l => l.id === payload.new.id ? (payload.new as Lead) : l));
-        } else if (payload.eventType === 'DELETE') {
-          setLeads(prev => prev.filter(l => l.id !== payload.old.id));
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase]);
+  }, []);
 
   const getColumnLeads = (status: LeadStatus) =>
     leads.filter(l => l.status === status);
@@ -76,8 +59,8 @@ export default function KanbanBoard() {
     if (lead && lead.status !== status) {
       // Optimistic update
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
-      // Persist to Supabase
-      await supabase.from('leads').update({ status }).eq('id', leadId);
+      // Persist to DB
+      await updateLeadStatus(leadId, status);
     }
     setDragging(null);
     setDragOver(null);
@@ -193,7 +176,7 @@ function LeadCard({
 
       <div className="flex items-center gap-1 text-[10px] text-slate-600 pt-1 border-t border-white/5">
         <Calendar className="w-3 h-3" />
-        {new Date(lead.createdAt || lead.created_at || new Date().toISOString()).toLocaleDateString()}
+        {new Date(lead.createdAt || new Date().toISOString()).toLocaleDateString()}
       </div>
     </div>
   );

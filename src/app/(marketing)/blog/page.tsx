@@ -1,5 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import { ArrowRight, Search } from "lucide-react";
 import Link from "next/link";
@@ -10,15 +9,10 @@ export const metadata = {
 };
 
 export default async function BlogPage() {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    
-    // Fetch only published blogs
-    const { data: posts } = await supabase
-        .from('blogs')
-        .select('*')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false });
+    const posts = await prisma.blog.findMany({
+        where: { status: 'published' },
+        orderBy: { createdAt: 'desc' }
+    });
 
     return (
         <div className="pt-32 pb-24">
@@ -59,14 +53,14 @@ export default async function BlogPage() {
                                 </div>
                                 <div className="space-y-4 px-2">
                                     <div className="flex items-center gap-4 text-xs text-slate-500 font-medium uppercase tracking-tighter">
-                                        <span>{formatDate(post.created_at)}</span>
+                                        <span>{formatDate(post.createdAt)}</span>
                                         <span className="w-1 h-1 rounded-full bg-slate-700" />
                                         <span>5 min read</span>
                                     </div>
-                                    <h2 className="text-3xl font-bold text-white group-hover:text-blue-500 transition-colors leading-tight">
+                                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-500 transition-colors leading-tight">
                                         {post.title}
                                     </h2>
-                                    <p className="text-slate-400 leading-relaxed line-clamp-2">
+                                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
                                         {/* Since content is HTML, we might need a utility to strip tags, but line-clamp will handle text overflow visually */}
                                         <span dangerouslySetInnerHTML={{ __html: post.content.substring(0, 200) }} />...
                                     </p>

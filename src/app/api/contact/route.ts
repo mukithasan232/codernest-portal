@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/resend";
 import { NextResponse } from "next/server";
 
@@ -10,14 +10,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
         }
 
-        const supabase = await createClient();
-
         // 1. Save to database
-        const { error: dbError } = await supabase.from("leads").insert([
-            { name, email, message, status: "new" },
-        ]);
-
-        if (dbError) throw dbError;
+        await prisma.lead.create({
+            data: { name, email, message, status: "new" }
+        });
 
         // 2. Send auto-email to client
         await sendEmail({

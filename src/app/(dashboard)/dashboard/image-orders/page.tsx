@@ -1,58 +1,38 @@
-'use client';
-
-/**
- * Client Dashboard — Image Orders history
- */
-
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { prisma } from '@/lib/prisma';
 import type { ImageOrder } from '@/types';
 import ImageOrderCard from '@/components/dashboard/ImageOrderCard';
 import Link from 'next/link';
 import { Image as ImageIcon, Plus } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
-export default function DashboardImageOrdersPage() {
-  const { appUser } = useAuth();
-  const [orders, setOrders] = useState<ImageOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+export default async function DashboardImageOrdersPage() {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    redirect('/auth/login');
+  }
 
-  useEffect(() => {
-    if (!appUser) return;
+  const appUser = await prisma.user.findUnique({ where: { id: session.user.id }});
+  
+  if (!appUser) {
+    redirect('/auth/login');
+  }
 
-    const fetchOrders = async () => {
-      const { data } = await supabase
-        .from('imageOrders')
-        .select('*')
-        .eq('clientId', appUser.id)
-        .order('createdAt', { ascending: false });
-      
-      if (data) setOrders(data as ImageOrder[]);
-      setLoading(false);
-    };
-
-    fetchOrders();
-
-    const channel = supabase.channel('dashboard_image_orders_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'imageOrders', filter: `clientId=eq.${appUser.id}` }, (payload) => {
-        if (payload.eventType === 'INSERT') setOrders(o => [payload.new as ImageOrder, ...o]);
-        if (payload.eventType === 'UPDATE') setOrders(o => o.map(x => x.id === payload.new.id ? payload.new as ImageOrder : x));
-        if (payload.eventType === 'DELETE') setOrders(o => o.filter(x => x.id !== payload.old.id));
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [appUser, supabase]);
+  const orderData = await prisma.imageOrder.findMany({
+    where: { clientId: appUser.id },
+    orderBy: { createdAt: 'desc' }
+  });
+  
+  const orders = orderData as unknown as ImageOrder[];
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">Image Orders</h1>
-          <p className="text-slate-400 mt-1">Track and download your processed images.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">Image Orders</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Track and download your processed images.</p>
         </div>
         <Link
           href="/image-studio/upload"
@@ -63,17 +43,11 @@ export default function DashboardImageOrdersPage() {
         </Link>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="glass rounded-2xl border border-white/10 p-5 animate-pulse h-36" />
-          ))}
-        </div>
-      ) : orders.length === 0 ? (
-        <div className="glass rounded-3xl border border-white/10 p-16 text-center space-y-4">
-          <ImageIcon className="w-12 h-12 text-slate-600 mx-auto" />
-          <h2 className="text-xl font-bold text-white">No orders yet</h2>
-          <p className="text-slate-400">Upload your first image and get studio-grade results.</p>
+      {orders.length === 0 ? (
+        <div className="bg-white dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/10 p-16 text-center space-y-4 shadow-sm">
+          <ImageIcon className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">No orders yet</h2>
+          <p className="text-slate-500 dark:text-slate-400">Upload your first image and get studio-grade results.</p>
           <Link href="/image-studio/upload" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 transition-all">
             Try Image Studio — 5 Free Credits
           </Link>

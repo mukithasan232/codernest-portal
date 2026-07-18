@@ -4,13 +4,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2, Save, Send } from "lucide-react";
 import toast from "react-hot-toast";
-import { createClient } from "@/lib/supabase/client";
+import { saveBlogPost } from "@/lib/actions/admin.actions";
 
 export default function AdminBlogPage() {
     const [loading, setLoading] = useState(false);
     const [topic, setTopic] = useState("");
     const [post, setPost] = useState<any>(null);
-    const supabase = createClient();
 
     const handleGenerate = async () => {
         if (!topic.trim()) return;
@@ -34,15 +33,14 @@ export default function AdminBlogPage() {
         if (!post) return;
         setLoading(true);
         try {
-            const { error } = await supabase.from("blog_posts").insert([
-                {
-                    title: post.title,
-                    slug: post.slug,
-                    content: post.content,
-                },
-            ]);
+            const res = await saveBlogPost({
+                title: post.title,
+                slug: post.slug,
+                content: post.content,
+            });
 
-            if (error) throw error;
+            if (!res.success) throw new Error(res.error);
+            
             toast.success("Blog post saved!");
             setPost(null);
             setTopic("");

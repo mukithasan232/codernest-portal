@@ -19,11 +19,11 @@ const STATUS_CONFIG = {
 };
 
 export default function ImageOrderCard({ order }: ImageOrderCardProps) {
-  const sc = STATUS_CONFIG[order.status];
+  const sc = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
   const StatusIcon = sc.icon;
 
   return (
-    <div className="glass rounded-2xl border border-white/10 p-5 hover:border-white/20 transition-all space-y-4">
+    <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">

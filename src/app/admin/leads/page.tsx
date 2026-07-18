@@ -6,10 +6,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import type { Lead, LeadStatus } from '@/types';
 import { Mail, Plus, X, Loader2, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getLeads, updateLeadStatus, createLead } from '@/lib/actions/crm.actions';
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string; color: string }[] = [
   { value: 'new',       label: 'New',       color: 'text-blue-400' },
@@ -19,53 +19,56 @@ const STATUS_OPTIONS: { value: LeadStatus; label: string; color: string }[] = [
   { value: 'closed',    label: 'Closed',    color: 'text-slate-400' },
 ];
 
+const getSourceBadge = (source?: string) => {
+  if (!source) return null;
+  let colorClass = 'bg-slate-500/10 text-slate-400'; // fallback gray
+  if (source.includes('Main B2B Agency')) {
+    colorClass = 'bg-indigo-500/10 text-indigo-400';
+  } else if (source.includes('ClippingBD')) {
+    colorClass = 'bg-orange-500/10 text-orange-500';
+  } else if (source.includes('Personal Portfolio')) {
+    colorClass = 'bg-sky-500/10 text-sky-400';
+  }
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colorClass}`}>{source}</span>;
+}
+
 export default function AdminLeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<LeadStatus | 'all'>('all');
+  const [sourceFilter, setSourceFilter] = useState<string | 'all'>('all');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', company: '', message: '', budget: '' });
   const [saving, setSaving] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     const fetchLeads = async () => {
-      const { data } = await supabase.from('leads').select('*').order('createdAt', { ascending: false });
-      if (data) setLeads(data as Lead[]);
+      const res = await getLeads();
+      if (res.success && res.data) {
+        setLeads(res.data as unknown as Lead[]);
+      }
     };
 
     fetchLeads();
+  }, []);
 
-    const channel = supabase
-      .channel('admin_leads_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setLeads(prev => [payload.new as Lead, ...prev]);
-        } else if (payload.eventType === 'UPDATE') {
-          setLeads(prev => prev.map(l => l.id === payload.new.id ? (payload.new as Lead) : l));
-        } else if (payload.eventType === 'DELETE') {
-          setLeads(prev => prev.filter(l => l.id !== payload.old.id));
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase]);
+  const uniqueSources = Array.from(new Set(leads.map(l => l.source).filter(Boolean)));
 
   const filtered = leads.filter(l => {
     const matchesFilter = filter === 'all' || l.status === filter;
+    const matchesSource = sourceFilter === 'all' || l.source === sourceFilter;
     const matchesSearch = !search ||
       l.name.toLowerCase().includes(search.toLowerCase()) ||
       l.email.toLowerCase().includes(search.toLowerCase()) ||
       (l.company ?? '').toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return matchesFilter && matchesSearch && matchesSource;
   });
 
   async function updateStatus(id: string, status: LeadStatus) {
-    const { error } = await supabase.from('leads').update({ status }).eq('id', id);
-    if (!error) {
+    // Optimistic update
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
+    const res = await updateLeadStatus(id, status);
+    if (res.success) {
       toast.success('Lead status updated!');
     } else {
       toast.error('Failed to update status.');
@@ -76,20 +79,27 @@ export default function AdminLeadsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const { error } = await supabase.from('leads').insert({
-        ...form,
-        status: 'new',
-        source: 'admin',
-        createdAt: new Date().toISOString(),
-      });
-      if (error) throw error;
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('email', form.email);
+      formData.append('company', form.company);
+      formData.append('message', form.message);
+
+      const res = await createLead(formData);
+      if (!res.success) throw new Error(res.error);
       
       toast.success('Lead added!');
       setShowCreate(false);
       setForm({ name: '', email: '', company: '', message: '', budget: '' });
-    } catch (err) {
+      
+      // Refresh leads
+      const refreshRes = await getLeads();
+      if (refreshRes.success && refreshRes.data) {
+        setLeads(refreshRes.data as unknown as Lead[]);
+      }
+    } catch (err: any) {
       console.error(err);
-      toast.error('Failed to create lead.');
+      toast.error(err.message || 'Failed to create lead.');
     } finally {
       setSaving(false);
     }
@@ -124,6 +134,23 @@ export default function AdminLeadsPage() {
             placeholder="Search by name, email, company…"
             className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
           />
+        </div>
+
+        {/* Source filter */}
+        <div className="flex gap-1 p-1 bg-white/5 rounded-xl border border-white/10 overflow-x-auto">
+          {['all', 'Main B2B Agency', 'ClippingBD', 'Personal Portfolio'].map(s => (
+            <button
+              key={s}
+              onClick={() => setSourceFilter(s)}
+              className={`whitespace-nowrap px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                sourceFilter === s 
+                  ? 'bg-indigo-600 text-white shadow-lg' 
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {s === 'all' ? 'All Sources' : s}
+            </button>
+          ))}
         </div>
 
         {/* Status filter */}
@@ -215,13 +242,17 @@ export default function AdminLeadsPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-bold text-white">{lead.name}</h3>
                     {lead.company && <span className="text-xs text-slate-500">· {lead.company}</span>}
+                    {getSourceBadge(lead.source)}
                     {lead.budget && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-400/10 text-green-400">
                         {lead.budget}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500">{lead.email} · {new Date(lead.createdAt || lead.created_at || new Date().toISOString()).toLocaleDateString()}</p>
+                  <p className="text-xs text-slate-500">{lead.email} · {new Date(lead.createdAt || lead.createdAt || new Date().toISOString()).toLocaleDateString()}</p>
+                  {lead.serviceRequested && (
+                      <p className="text-xs text-blue-400 mt-1 truncate"><span className="font-bold">Service:</span> {lead.serviceRequested}</p>
+                    )}
                   {lead.message && (
                     <p className="text-xs text-slate-400 mt-1 truncate">{lead.message}</p>
                   )}

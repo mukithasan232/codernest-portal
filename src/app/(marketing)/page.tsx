@@ -1,24 +1,47 @@
-import { createClient } from '@/utils/supabase/server'
-import { cookies } from 'next/headers'
+import { Metadata } from 'next';
+import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Code, Camera, Shield, ArrowRight, LayoutTemplate, Database, Box, Server, Wind, FileCode } from 'lucide-react'
 import { MotionDiv, MotionH1, MotionP, MotionSection } from '@/components/ui/motion'
 import LeadForm from '@/components/forms/LeadForm'
 import TestimonialSlider from '@/components/marketing/TestimonialSlider'
+import ClientLogos from '@/components/marketing/ClientLogos'
+import CaseStudiesHighlight from '@/components/marketing/CaseStudiesHighlight'
+
+
+export const metadata: Metadata = {
+  title: 'CoderNest | Elite B2B Software Agency',
+  description: 'CoderNest is an elite B2B software agency focused on delivering high-performance, scalable web applications and CRM systems.',
+  openGraph: {
+    title: 'CoderNest | Elite B2B Software Agency',
+    description: 'CoderNest is an elite B2B software agency focused on delivering high-performance, scalable web applications and CRM systems.',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CoderNest | Elite B2B Software Agency',
+    description: 'CoderNest is an elite B2B software agency focused on delivering high-performance, scalable web applications and CRM systems.',
+  }
+};
 
 export default async function Page() {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
-
   // Fetch published testimonials
-  const { data: testimonials } = await supabase
-    .from('testimonials')
-    .select('*')
-    .eq('is_published', true)
-    .order('created_at', { ascending: false })
+  const data = await prisma.testimonial.findMany({
+    where: { is_published: true },
+    orderBy: { createdAt: 'desc' }
+  })
+  const testimonials = data as any[];
+
+  // Fetch featured case studies
+  const caseStudiesData = await prisma.caseStudy.findMany({
+    where: { featured: true },
+    take: 3,
+    orderBy: { createdAt: 'desc' }
+  })
+  const caseStudies = caseStudiesData as any[];
 
   return (
-    <main className="relative min-h-screen bg-slate-50 dark:bg-[#030712] text-slate-900 dark:text-slate-50 overflow-hidden transition-colors duration-300">
+    <main className="relative min-h-screen overflow-hidden transition-colors duration-300">
       {/* Background Radial Gradient Blob */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-br from-[#00F2FE]/10 to-[#3B82F6]/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
@@ -65,8 +88,18 @@ export default async function Page() {
         </MotionDiv>
       </section>
 
+      {/* Trust Signals: Client Logos */}
+      <MotionSection
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+      >
+        <ClientLogos />
+      </MotionSection>
+
       {/* Tech Stack Marquee (Static Grid Layout for sleekness) */}
-      <section className="py-12 border-y border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-white/[0.02] transition-colors duration-300">
+      <section className="py-12 border-b border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-white/[0.02] transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4">
           <p className="text-center text-sm font-medium text-slate-500 dark:text-slate-500 uppercase tracking-widest mb-8">
             Powered by cutting-edge technology
@@ -148,8 +181,25 @@ export default async function Page() {
         </div>
       </section>
 
+      {/* Featured Case Studies (Social Proof) */}
+      <section className="py-24 px-4 max-w-7xl mx-auto border-t border-slate-200 dark:border-white/5">
+        <MotionDiv 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-900 dark:text-white">Proven Results</h2>
+          <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto">
+            See how we transform complex challenges into scalable, high-ROI solutions.
+          </p>
+        </MotionDiv>
+        
+        <CaseStudiesHighlight studies={caseStudies} />
+      </section>
+
       {/* Testimonials */}
-      <section className="py-24 px-4 max-w-7xl mx-auto bg-slate-50 dark:bg-[#030712]">
+      <section className="py-24 px-4 max-w-7xl mx-auto border-t border-slate-200 dark:border-white/5">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-5xl font-bold mb-4 text-slate-900 dark:text-white">Client Success Stories</h2>
           <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl mx-auto">

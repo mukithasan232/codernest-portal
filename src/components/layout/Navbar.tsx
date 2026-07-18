@@ -8,7 +8,6 @@ import { Menu, X, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { createClient } from "@/utils/supabase/client";
 import toast from "react-hot-toast";
 
 const navLinks = [
@@ -24,7 +23,7 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
-    const { appUser, loading } = useAuth();
+    const { appUser, loading, logOut } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -35,20 +34,15 @@ export default function Navbar() {
     }, []);
 
     const handleSignOut = async () => {
-        const supabase = createClient();
-        await supabase.auth.signOut();
-        router.refresh();
-        router.push('/');
+        await logOut();
         toast.success('Successfully logged out');
     };
 
     return (
         <nav
             className={cn(
-                "fixed top-0 w-full z-50 transition-all duration-300 border-b",
-                scrolled
-                    ? "glass py-3 border-white/10"
-                    : "bg-transparent py-5 border-transparent"
+                "sticky top-0 z-[100] w-full bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-all duration-300",
+                scrolled ? "py-3 shadow-sm" : "py-5"
             )}
         >
             <div className="container mx-auto px-4 md:px-6">
@@ -83,7 +77,7 @@ export default function Navbar() {
                                 appUser ? (
                                     <div className="flex items-center gap-3">
                                         <Link
-                                            href={appUser.role === 'admin' ? '/crm' : '/dashboard'}
+                                            href={(appUser.role === 'SUPER_ADMIN' || appUser.role === 'EDITOR') ? '/admin' : '/dashboard'}
                                             className="px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
                                         >
                                             Dashboard
@@ -141,7 +135,7 @@ export default function Navbar() {
                         appUser ? (
                             <div className="space-y-3 pt-2">
                                 <Link
-                                    href={appUser.role === 'admin' ? '/crm' : '/dashboard'}
+                                    href={(appUser.role === 'SUPER_ADMIN' || appUser.role === 'EDITOR') ? '/admin' : '/dashboard'}
                                     className="block w-full py-3 rounded-xl bg-blue-600 text-white text-center font-bold"
                                     onClick={() => setIsOpen(false)}
                                 >

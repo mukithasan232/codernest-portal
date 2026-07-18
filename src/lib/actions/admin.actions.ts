@@ -1,202 +1,75 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import { writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 
-export async function getGlobalSettings() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
 
-  const { data, error } = await supabase
-    .from('global_settings')
-    .select('*')
-    .eq('id', 1)
-    .single();
-
-  if (error) {
-    console.error('Fetch Settings Error:', error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true, data };
-}
-
-export async function updateAppearance(formData: FormData) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return { success: false, error: 'Unauthorized.' };
-  }
-
-  const primaryColor = formData.get('primary_color') as string;
-  const siteName = formData.get('site_name') as string;
-  const logoFile = formData.get('logo_file') as File | null;
-  const faviconFile = formData.get('favicon_file') as File | null;
-  let logoUrl = formData.get('current_logo_url') as string;
-  let faviconUrl = formData.get('current_favicon_url') as string;
-
-  if (logoFile && logoFile.size > 0) {
-    const fileExt = logoFile.name.split('.').pop();
-    const fileName = `logo-${Date.now()}.${fileExt}`;
-    const filePath = fileName;
-
-    const { error: uploadError } = await supabase.storage
-      .from('brand-assets')
-      .upload(filePath, logoFile, {
-        cacheControl: '3600',
-        upsert: true,
-      });
-
-    if (uploadError) {
-      console.error('Upload Error:', uploadError);
-      return { success: false, error: 'Failed to upload logo.' };
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from('brand-assets')
-      .getPublicUrl(filePath);
-
-    logoUrl = publicUrlData.publicUrl;
-  }
-
-  if (faviconFile && faviconFile.size > 0) {
-    const fileExt = faviconFile.name.split('.').pop();
-    const fileName = `favicon-${Date.now()}.${fileExt}`;
-    const filePath = fileName;
-
-    const { error: uploadError } = await supabase.storage
-      .from('brand-assets')
-      .upload(filePath, faviconFile, {
-        cacheControl: '3600',
-        upsert: true,
-      });
-
-    if (uploadError) {
-      console.error('Favicon Upload Error:', uploadError);
-      return { success: false, error: 'Failed to upload favicon.' };
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from('brand-assets')
-      .getPublicUrl(filePath);
-
-    faviconUrl = publicUrlData.publicUrl;
-  }
-
-  const { error } = await supabase
-    .from('global_settings')
-    .update({
-      primary_color: primaryColor || '#3B82F6',
-      site_name: siteName || 'CoderNest',
-      logo_url: logoUrl || null,
-      favicon_url: faviconUrl || null,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', 1);
-
-  if (error) {
-    console.error('Update Error:', error);
-    return { success: false, error: error.message };
-  }
-
-  revalidatePath('/', 'layout');
-  return { success: true };
-}
-
-export async function updateSmtpConfig(smtpConfig: any) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return { success: false, error: 'Unauthorized.' };
-  }
-
-  const { error } = await supabase
-    .from('global_settings')
-    .update({
-      smtp_config: smtpConfig,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', 1);
-
-  if (error) {
-    return { success: false, error: error.message };
-  }
-
-  revalidatePath('/admin/settings');
-  return { success: true };
-}
 
 export async function getEmailTemplates() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data, error } = await supabase
-    .from('email_templates')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
+  try {
+    const data = await prisma.emailTemplate.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return { success: true, data };
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
-
-  return { success: true, data };
 }
 
 export async function saveEmailTemplate(id: string | null, name: string, subject: string, htmlBody: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return { success: false, error: 'Unauthorized.' };
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { success: false, error: 'Unauthorized.' };
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    return { success: false, error: 'Forbidden.' };
   }
 
-  if (id) {
-    // Update
-    const { error } = await supabase
-      .from('email_templates')
-      .update({ name, subject, html_body: htmlBody })
-      .eq('id', id);
-    if (error) return { success: false, error: error.message };
-  } else {
-    // Insert
-    const { error } = await supabase
-      .from('email_templates')
-      .insert([{ name, subject, html_body: htmlBody }]);
-    if (error) return { success: false, error: error.message };
-  }
+  try {
+    if (id) {
+      await prisma.emailTemplate.update({
+        where: { id },
+        data: { name, subject, html_body: htmlBody }
+      });
+    } else {
+      await prisma.emailTemplate.create({
+        data: { name, subject, html_body: htmlBody }
+      });
+    }
 
-  revalidatePath('/admin/settings');
-  return { success: true };
+    revalidatePath('/admin/settings');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 export async function deleteEmailTemplate(id: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { success: false, error: 'Unauthorized.' };
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    return { success: false, error: 'Forbidden.' };
+  }
 
-  const { error } = await supabase
-    .from('email_templates')
-    .delete()
-    .eq('id', id);
-
-  if (error) return { success: false, error: error.message };
-  
-  revalidatePath('/admin/settings');
-  return { success: true };
+  try {
+    await prisma.emailTemplate.delete({
+      where: { id }
+    });
+    
+    revalidatePath('/admin/settings');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 export async function testSmtpConnection(smtpConfig: any) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return { success: false, error: 'Unauthorized.' };
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { success: false, error: 'Unauthorized.' };
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    return { success: false, error: 'Forbidden.' };
   }
 
   try {
@@ -217,7 +90,7 @@ export async function testSmtpConnection(smtpConfig: any) {
     // Optionally, send a test email to the logged in user
     await transporter.sendMail({
       from: smtpConfig.user,
-      to: user.email,
+      to: session.user.email as string,
       subject: 'CoderNest SMTP Test Successful',
       text: 'If you are receiving this, your SMTP configuration is working perfectly!',
       html: '<p>If you are receiving this, your <strong>SMTP configuration</strong> is working perfectly!</p>',
@@ -227,6 +100,143 @@ export async function testSmtpConnection(smtpConfig: any) {
   } catch (err: any) {
     console.error('SMTP Error:', err);
     return { success: false, error: err.message || 'SMTP Verification failed' };
+  }
+}
+
+export async function uploadProcessedImage(orderId: string, clientId: string, formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { success: false, error: 'Unauthorized.' };
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    return { success: false, error: 'Forbidden.' };
+  }
+
+  const file = formData.get('file') as File;
+  if (!file || file.size === 0) return { success: false, error: 'No file provided' };
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${orderId}_${Date.now()}.${fileExt}`;
+    const uploadDir = path.join(process.cwd(), 'public/uploads/processed', clientId);
+    
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(path.join(uploadDir, fileName), buffer);
+    
+    const processedUrl = `/uploads/processed/${clientId}/${fileName}`;
+
+    await prisma.imageOrder.update({
+      where: { id: orderId },
+      data: {
+        status: 'completed',
+        processedUrl,
+        completedAt: new Date(),
+      }
+    });
+
+    revalidatePath('/admin/image-orders');
+    return { success: true, processedUrl };
+  } catch (err: any) {
+    console.error('Upload Error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function createInvoice(data: any) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+
+  try {
+    const inv = await prisma.invoice.create({
+      data: {
+        clientId: data.clientId || data.clientEmail,
+        clientEmail: data.clientEmail,
+        amount: parseFloat(data.amount),
+        currency: data.currency,
+        status: 'pending',
+        paymentMethod: data.paymentMethod,
+        stripePaymentLink: data.stripePaymentLink || null,
+        paypalLink: data.paypalLink || null,
+      }
+    });
+
+    revalidatePath('/admin/invoices');
+    return { success: true, invoice: inv };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function markInvoicePaid(id: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+
+  try {
+    await prisma.invoice.update({
+      where: { id },
+      data: { status: 'paid', paidAt: new Date() }
+    });
+
+    revalidatePath('/admin/invoices');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function saveBlogPost(data: any) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+
+  try {
+    await prisma.blog.create({
+      data: {
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        authorId: session.user.id,
+        status: 'draft',
+      }
+    });
+
+    revalidatePath('/admin/blogs');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+
+export async function updateProjectStatus(id: string, status: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+
+  try {
+    await prisma.project.update({
+      where: { id },
+      data: { status }
+    });
+
+    revalidatePath('/admin/projects');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateProjectMilestones(id: string, milestones: any) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+
+  try {
+    await prisma.project.update({
+      where: { id },
+      data: { milestones }
+    });
+
+    revalidatePath('/admin/projects');
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message };
   }
 }
 

@@ -159,7 +159,7 @@ export default function CrmClient({ initialLeads }: { initialLeads: Lead[] }) {
                       )}
                       <div className="text-xs text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
                         <Clock className="w-3 h-3" /> 
-                        {new Date(lead.created_at).toLocaleDateString()}
+                        {new Date(lead.createdAt || Date.now()).toLocaleDateString()}
                       </div>
                     </td>
                     
@@ -191,7 +191,7 @@ export default function CrmClient({ initialLeads }: { initialLeads: Lead[] }) {
                           disabled={updatingId === lead.id}
                           value={lead.status}
                           onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)}
-                          className={`appearance-none w-full border text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00F2FE]/50 transition-all ${statusColors[lead.status] || ''} disabled:opacity-50`}
+                          className={`appearance-none w-full border text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00F2FE]/50 transition-all ${statusColors[lead.status as LeadStatus] || ''} disabled:opacity-50`}
                         >
                           <option value="new" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">New</option>
                           <option value="contacted" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Contacted</option>

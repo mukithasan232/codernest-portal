@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 import { DashboardShell } from '@/components/layout/DashboardShell';
-import { cookies } from 'next/headers';
 
 export const metadata = {
-  title: 'CoderNest | Admin Dashboard',
-  description: 'Enterprise B2B SaaS Dashboard',
+  title: 'CoderNest | Dashboard',
+  description: 'Client & Admin Dashboard',
 };
 
 export default async function DashboardLayout({
@@ -13,28 +13,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const session = await getServerSession(authOptions);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!session?.user) {
     redirect('/auth/login');
   }
 
-  // Admin Check via public.users table
-  const { data: dbUser } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (!dbUser || (dbUser.role !== 'admin' && dbUser.role !== 'super_admin')) {
-    // If not an admin, boot them back to the marketing site
-    redirect('/');
-  }
-
+  // Dashboard layout for authenticated users
   return <DashboardShell>{children}</DashboardShell>;
 }

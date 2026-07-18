@@ -1,53 +1,36 @@
-'use client';
-
-/**
- * Client Dashboard — Invoices
- */
-
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { prisma } from '@/lib/prisma';
 import type { Invoice } from '@/types';
 import { DollarSign, ExternalLink, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
-const STATUS_ICONS = {
+const STATUS_ICONS: Record<string, any> = {
   draft:    { icon: Clock,        color: 'text-slate-400', bg: 'bg-slate-400/10' },
   pending:  { icon: Clock,        color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
   paid:     { icon: CheckCircle,  color: 'text-green-400',  bg: 'bg-green-400/10' },
   overdue:  { icon: AlertCircle,  color: 'text-red-400',    bg: 'bg-red-400/10' },
 };
 
-export default function DashboardInvoicesPage() {
-  const { appUser } = useAuth();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const supabase = createClient();
+export default async function DashboardInvoicesPage() {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user) {
+    redirect('/auth/login');
+  }
 
-  useEffect(() => {
-    if (!appUser) return;
+  const appUser = await prisma.user.findUnique({ where: { id: session.user.id }});
+  
+  if (!appUser) {
+    redirect('/auth/login');
+  }
 
-    const fetchInvoices = async () => {
-      const { data } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('clientId', appUser.id)
-        .order('createdAt', { ascending: false });
-      if (data) setInvoices(data as Invoice[]);
-    };
+  const data = await prisma.invoice.findMany({
+    where: { clientId: appUser.id },
+    orderBy: { createdAt: 'desc' }
+  });
 
-    fetchInvoices();
-
-    const channel = supabase.channel('dashboard_invoices_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices', filter: `clientId=eq.${appUser.id}` }, (payload) => {
-        if (payload.eventType === 'INSERT') setInvoices(i => [payload.new as Invoice, ...i]);
-        if (payload.eventType === 'UPDATE') setInvoices(i => i.map(x => x.id === payload.new.id ? payload.new as Invoice : x));
-        if (payload.eventType === 'DELETE') setInvoices(i => i.filter(x => x.id !== payload.old.id));
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [appUser, supabase]);
+  const invoices = data as unknown as Invoice[];
 
   const total = invoices.reduce((sum, inv) => sum + (inv.amount ?? 0), 0);
   const paid = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
@@ -56,19 +39,19 @@ export default function DashboardInvoicesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-extrabold text-white">Invoices</h1>
-        <p className="text-slate-400 mt-1">View and pay your outstanding invoices.</p>
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">Invoices</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">View and pay your outstanding invoices.</p>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total Billed',   value: total,       color: 'text-white' },
-          { label: 'Paid',           value: paid,        color: 'text-green-400' },
-          { label: 'Outstanding',    value: outstanding, color: 'text-yellow-400' },
+          { label: 'Total Billed',   value: total,       color: 'text-slate-900 dark:text-white' },
+          { label: 'Paid',           value: paid,        color: 'text-green-500 dark:text-green-400' },
+          { label: 'Outstanding',    value: outstanding, color: 'text-yellow-500 dark:text-yellow-400' },
         ].map(s => (
-          <div key={s.label} className="glass rounded-2xl border border-white/10 p-5">
-            <p className="text-xs text-slate-400">{s.label}</p>
+          <div key={s.label} className="bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 p-5 shadow-sm">
+            <p className="text-xs text-slate-500 dark:text-slate-400">{s.label}</p>
             <p className={`text-2xl font-extrabold mt-1 ${s.color}`}>
               ${s.value.toLocaleString()}
             </p>
@@ -77,27 +60,27 @@ export default function DashboardInvoicesPage() {
       </div>
 
       {/* Invoice list */}
-      <div className="glass rounded-3xl border border-white/10 overflow-hidden">
-        <div className="divide-y divide-white/5">
+      <div className="bg-white dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
+        <div className="divide-y divide-slate-200 dark:divide-white/5">
           {invoices.length === 0 ? (
             <div className="p-12 text-center space-y-3">
-              <DollarSign className="w-10 h-10 text-slate-600 mx-auto" />
-              <p className="text-slate-400">No invoices yet.</p>
+              <DollarSign className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto" />
+              <p className="text-slate-500 dark:text-slate-400">No invoices yet.</p>
             </div>
           ) : (
             invoices.map(inv => {
-              const sc = STATUS_ICONS[inv.status];
+              const sc = STATUS_ICONS[inv.status as string] || STATUS_ICONS.draft;
               const StatusIcon = sc.icon;
               const paymentLink = inv.stripePaymentLink ?? inv.paypalLink ?? inv.escrowLink;
 
               return (
-                <div key={inv.id} className="p-5 flex items-center justify-between hover:bg-white/5 transition">
+                <div key={inv.id} className="p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition">
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-xl ${sc.bg} flex items-center justify-center`}>
                       <StatusIcon className={`w-5 h-5 ${sc.color}`} />
                     </div>
                     <div>
-                      <p className="font-bold text-white">
+                      <p className="font-bold text-slate-900 dark:text-white">
                         #{inv.id.slice(0, 8).toUpperCase()} · ${inv.amount.toLocaleString()} {inv.currency}
                       </p>
                       <p className="text-xs text-slate-500 mt-0.5">

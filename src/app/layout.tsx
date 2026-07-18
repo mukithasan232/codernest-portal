@@ -1,27 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data } = await supabase.from('global_settings').select('site_name, favicon_url').eq('id', 1).single();
+  const data = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' }, select: { siteName: true, siteTitle: true, faviconUrl: true } });
 
-  const siteName = data?.site_name || "CoderNest";
-  const title = `${siteName} | B2B Tech Agency & Image Processing SaaS`;
+  const siteName = data?.siteName || "CoderNest";
+  const title = data?.siteTitle ? `${siteName} | ${data.siteTitle}` : `${siteName} | B2B Tech Agency & Image Processing SaaS`;
 
   return {
     title,
     description: "Elite B2B software agency and AI-powered image processing SaaS. Web development, SaaS builds, creative image studio, and client portal.",
     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://codernest.agency"),
-    icons: data?.favicon_url ? { icon: data.favicon_url } : undefined,
+    icons: data?.faviconUrl ? { icon: data.faviconUrl } : undefined,
     openGraph: {
       title,
       description: "Elite software agency + AI image studio. Build faster, look better.",
@@ -33,30 +31,74 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data } = await supabase.from('global_settings').select('primary_color').eq('id', 1).single();
-  const primaryColor = data?.primary_color || '#3B82F6';
+  const data = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' } });
+  const primaryColor = data?.brandColor || '#3B82F6';
+  const secondaryColor = data?.secondaryColor || '#00F2FE';
 
   return (
-    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning style={{ '--primary': primaryColor, '--secondary': secondaryColor } as React.CSSProperties}>
       <head>
-        <style dangerouslySetInnerHTML={{ __html: `
-          :root {
-            --primary: ${primaryColor};
-          }
-          /* Override Tailwind primary color utilities by injecting a CSS variable into the root */
-          .bg-blue-500 { background-color: var(--primary) !important; }
-          .bg-blue-600 { background-color: var(--primary) !important; filter: brightness(0.9); }
-          .text-blue-500 { color: var(--primary) !important; }
-          .text-blue-400 { color: var(--primary) !important; filter: brightness(1.1); }
-          .border-blue-500 { border-color: var(--primary) !important; }
-          .ring-blue-500 { --tw-ring-color: var(--primary) !important; }
-          .from-\\[\\#3B82F6\\] { --tw-gradient-from: var(--primary) !important; }
-          .to-\\[\\#3B82F6\\] { --tw-gradient-to: var(--primary) !important; }
-        `}} />
+        {data?.customHeaderScripts && (
+          <script dangerouslySetInnerHTML={{ __html: data.customHeaderScripts }} />
+        )}
+        {data?.googleAnalyticsId && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${data.googleAnalyticsId}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${data.googleAnalyticsId}', {
+                    page_path: window.location.pathname,
+                  });
+                `,
+              }}
+            />
+          </>
+        )}
+
+        {data?.facebookPixelId && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                !function(f,b,e,v,n,t,s)
+                {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                t.src=v;s=b.getElementsByTagName(e)[0];
+                s.parentNode.insertBefore(t,s)}(window, document,'script',
+                'https://connect.facebook.net/en_US/fbevents.js');
+                fbq('init', '${data.facebookPixelId}');
+                fbq('track', 'PageView');
+              `,
+            }}
+          />
+        )}
+      
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: data?.siteName || "CoderNest",
+              url: process.env.NEXT_PUBLIC_APP_URL || "https://codernest.agency",
+              logo: data?.logoUrl || undefined,
+              contactPoint: data?.primaryEmail ? {
+                "@type": "ContactPoint",
+                email: data.primaryEmail,
+                contactType: "customer service"
+              } : undefined
+            })
+          }}
+        />
       </head>
-      <body className={`${inter.className} min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-[#030712] dark:text-white antialiased transition-colors duration-300`}>
+      <body>
+        {/* Mukit AI Global Chatbot Placeholder */}
+        <div id="mukit-ai-placeholder"></div>
+
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {/* AuthProvider wraps everything — provides auth state to all client components */}
           <AuthProvider>
@@ -73,6 +115,9 @@ export default async function RootLayout({
             />
           </AuthProvider>
         </ThemeProvider>
+        {data?.customFooterScripts && (
+          <script dangerouslySetInnerHTML={{ __html: data.customFooterScripts }} />
+        )}
       </body>
     </html>
   );
