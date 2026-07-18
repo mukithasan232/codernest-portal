@@ -31,7 +31,7 @@ export function DashboardShell({
   const router = useRouter();
   const { logOut, appUser } = useAuth();
   
-  const isAdmin = appUser?.role === 'SUPER_ADMIN' || session.user.role === 'EDITOR';
+  const isAdmin = appUser?.role === 'SUPER_ADMIN' || appUser?.role === 'EDITOR';
 
   const sidebarLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
