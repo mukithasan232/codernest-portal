@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { prisma } from '@/lib/prisma';
+import { Analytics } from "@vercel/analytics/next";
 
 // Force all pages to render dynamically — the root layout fetches from MongoDB
 // at request time, so SSG/ISR would fail when the DB is unreachable at build time.
@@ -133,6 +134,7 @@ export default async function RootLayout({
         {data?.customFooterScripts && (
           <script dangerouslySetInnerHTML={{ __html: data.customFooterScripts }} />
         )}
+        <Analytics />
       </body>
     </html>
   );
