@@ -6,11 +6,21 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { prisma } from '@/lib/prisma';
 
+// Force all pages to render dynamically — the root layout fetches from MongoDB
+// at request time, so SSG/ISR would fail when the DB is unreachable at build time.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const data = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' }, select: { siteName: true, siteTitle: true, faviconUrl: true } });
+  let data = null;
+  try {
+    data = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' }, select: { siteName: true, siteTitle: true, faviconUrl: true } });
+  } catch {
+    // DB unreachable — use defaults
+  }
 
   const siteName = data?.siteName || "CoderNest";
   const title = data?.siteTitle ? `${siteName} | ${data.siteTitle}` : `${siteName} | B2B Tech Agency & Image Processing SaaS`;
@@ -31,7 +41,12 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const data = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' } });
+  let data = null;
+  try {
+    data = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' } });
+  } catch {
+    // DB unreachable — use defaults
+  }
   const primaryColor = data?.brandColor || '#3B82F6';
   const secondaryColor = data?.secondaryColor || '#00F2FE';
 
