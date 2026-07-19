@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { updateGlobalSettings } from '@/lib/actions/settings.actions';
-import { Save, Image as ImageIcon, PaintBucket, Building, Mail, Link as LinkIcon, Code } from 'lucide-react';
+import { Save, Image as ImageIcon, PaintBucket, Building, Mail, Link as LinkIcon, Code, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SettingsForm({ initialSettings }: { initialSettings: any }) {
   const [loading, setLoading] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
   const [activeTab, setActiveTab] = useState('branding');
   const [formData, setFormData] = useState({
     siteName: initialSettings?.siteName || 'CoderNest',
@@ -45,11 +46,49 @@ export default function SettingsForm({ initialSettings }: { initialSettings: any
     
     const res = await updateGlobalSettings(payload);
     if (res.success) {
-      toast.success('Global settings saved successfully!');
+      toast.success('Settings updated successfully!');
     } else {
-      toast.error('Failed to save: ' + res.error);
+      toast.error('Failed to update settings');
     }
     setLoading(false);
+  };
+
+  const handleTestEmail = async () => {
+    const testEmailTo = window.prompt('Enter email address to send the test email:');
+    if (!testEmailTo) return;
+
+    if (!formData.smtpHost || !formData.smtpPort || !formData.smtpUser || !formData.smtpPassword) {
+      toast.error('Please fill all SMTP fields before testing.');
+      return;
+    }
+
+    setTestingEmail(true);
+    try {
+      const response = await fetch('/api/settings/test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          host: formData.smtpHost,
+          port: formData.smtpPort,
+          user: formData.smtpUser,
+          pass: formData.smtpPassword,
+          testEmailTo
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message || 'Test email sent successfully!');
+      } else {
+        toast.error(data.error || 'Failed to send test email');
+      }
+    } catch (error) {
+      toast.error('An error occurred while sending the test email');
+    } finally {
+      setTestingEmail(false);
+    }
   };
 
   const tabs = [
@@ -354,10 +393,19 @@ export default function SettingsForm({ initialSettings }: { initialSettings: any
         )}
       </div>
 
-      <div className="flex justify-end pt-4">
+      <div className="flex justify-end pt-4 gap-4">
+        {activeTab === 'smtp' && (
+          <button 
+            onClick={handleTestEmail} 
+            disabled={testingEmail}
+            className="flex items-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition disabled:opacity-50"
+          >
+            <Send className="w-5 h-5" /> {testingEmail ? 'Sending...' : 'Send Test Email'}
+          </button>
+        )}
         <button 
           onClick={handleSave} 
-          disabled={loading}
+          disabled={loading || testingEmail}
           className="flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition shadow-[0_0_15px_-3px_rgba(37,99,235,0.4)] disabled:opacity-50"
         >
           <Save className="w-5 h-5" /> {loading ? 'Saving...' : 'Save All Settings'}
