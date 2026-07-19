@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getAnalyticsData } from '@/lib/actions/analytics.actions';
 import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import KanbanBoard from '@/components/admin/KanbanBoard';
+import RevenueCard from '@/components/admin/RevenueCard';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
@@ -38,7 +39,6 @@ export default async function AdminDashboard() {
 
   const statCards = [
     { label: 'Total Leads',    value: totalLeads,    icon: Mail,       color: 'text-blue-600 dark:text-blue-400',   bg: 'bg-blue-50 dark:bg-blue-400/10' },
-    { label: 'Total Revenue',  value: '$45,230',     icon: DollarSign, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-400/10' },
     { label: 'Total Users',    value: totalUsers,    icon: Users,      color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-400/10' },
     { label: 'Open Projects',  value: openProjects,  icon: Briefcase,  color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-400/10' },
   ];
@@ -62,7 +62,29 @@ export default async function AdminDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(s => {
+        {/* Static Leads Card */}
+        {(() => {
+          const Icon = statCards[0].icon;
+          return (
+            <div className="bg-white dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${statCards[0].bg}`}>
+                  <Icon className={`w-5 h-5 ${statCards[0].color}`} />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{statCards[0].label}</p>
+                  <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{statCards[0].value}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+        
+        {/* Dynamic Revenue Card */}
+        <RevenueCard />
+
+        {/* Static Users and Projects Cards */}
+        {statCards.slice(1).map(s => {
           const Icon = s.icon;
           return (
             <div key={s.label} className="bg-white dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
