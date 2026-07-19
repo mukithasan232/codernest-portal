@@ -25,20 +25,31 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  // Fetch published testimonials
-  const data = await prisma.testimonial.findMany({
-    where: { is_published: true },
-    orderBy: { createdAt: 'desc' }
-  })
-  const testimonials = data as any[];
+  // Fetch published testimonials — graceful fallback if DB is unreachable
+  let testimonials: any[] = [];
+  let caseStudies: any[] = [];
 
-  // Fetch featured case studies
-  const caseStudiesData = await prisma.caseStudy.findMany({
-    where: { featured: true },
-    take: 3,
-    orderBy: { createdAt: 'desc' }
-  })
-  const caseStudies = caseStudiesData as any[];
+  try {
+    const data = await prisma.testimonial.findMany({
+      where: { is_published: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    testimonials = data as any[];
+  } catch {
+    // DB temporarily unreachable — show empty state
+  }
+
+  try {
+    const caseStudiesData = await prisma.caseStudy.findMany({
+      where: { featured: true },
+      take: 3,
+      orderBy: { createdAt: 'desc' }
+    });
+    caseStudies = caseStudiesData as any[];
+  } catch {
+    // DB temporarily unreachable — show empty state
+  }
+
 
   return (
     <main className="relative min-h-screen overflow-hidden transition-colors duration-300">

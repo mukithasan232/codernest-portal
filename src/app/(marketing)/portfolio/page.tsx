@@ -8,9 +8,15 @@ import { prisma } from '@/lib/prisma'
 export default async function PortfolioPage() {
   const { data: images, success } = await getPortfolioImages();
   const portfolioImages = success && images ? images : [];
-  const caseStudies = await prisma.caseStudy.findMany({
-    orderBy: { createdAt: 'desc' }
-  });
+
+  let caseStudies: any[] = [];
+  try {
+    caseStudies = await prisma.caseStudy.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+  } catch {
+    // DB temporarily unreachable — render empty state
+  }
 
   return (
     <main className="relative min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-50 overflow-hidden pt-28 pb-24 transition-colors duration-300">

@@ -20,9 +20,14 @@ export const metadata: Metadata = {
 };
 
 export default async function PricingPage() {
-  const pricingData = await prisma.servicePricing.findMany({
-    orderBy: { price: 'asc' }
-  });
+  let pricingData: any[] = [];
+  try {
+    pricingData = await prisma.servicePricing.findMany({
+      orderBy: { price: 'asc' }
+    });
+  } catch {
+    // DB temporarily unreachable — render empty state
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden pt-28 pb-24">

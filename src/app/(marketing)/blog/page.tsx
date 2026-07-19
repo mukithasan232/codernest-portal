@@ -9,10 +9,16 @@ export const metadata = {
 };
 
 export default async function BlogPage() {
-    const posts = await prisma.blog.findMany({
-        where: { status: 'published' },
-        orderBy: { createdAt: 'desc' }
-    });
+    let posts: any[] = [];
+    try {
+        const result = await prisma.blog.findMany({
+            where: { status: 'published' },
+            orderBy: { createdAt: 'desc' }
+        });
+        posts = result;
+    } catch {
+        // DB temporarily unreachable — render empty state
+    }
 
     return (
         <div className="pt-32 pb-24">
