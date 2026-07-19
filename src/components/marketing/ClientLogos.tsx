@@ -1,23 +1,18 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Figma, Github, Framer, Code2, Cpu, Globe, Infinity as InfinityIcon, Hexagon, Layers } from 'lucide-react';
+import { Stethoscope, Globe, Film, Tag } from 'lucide-react';
 
 const LOGOS = [
-  { name: 'Acme Corp', icon: Globe },
-  { name: 'Quantum', icon: Cpu },
-  { name: 'EchoFlow', icon: InfinityIcon },
-  { name: 'Hexagon', icon: Hexagon },
-  { name: 'LayerTech', icon: Layers },
-  { name: 'GlobalNet', icon: Globe },
-  { name: 'DevX', icon: Code2 },
-  { name: 'DesignHub', icon: Figma },
+  { name: 'MedOS', icon: Stethoscope },
+  { name: 'SMM Elite', icon: Globe },
+  { name: 'CoderNest Cinema', icon: Film },
+  { name: 'DevVibe', icon: Tag },
   // Duplicate for seamless loop
-  { name: 'Acme Corp', icon: Globe },
-  { name: 'Quantum', icon: Cpu },
-  { name: 'EchoFlow', icon: InfinityIcon },
-  { name: 'Hexagon', icon: Hexagon },
-  { name: 'LayerTech', icon: Layers },
+  { name: 'MedOS', icon: Stethoscope },
+  { name: 'SMM Elite', icon: Globe },
+  { name: 'CoderNest Cinema', icon: Film },
+  { name: 'DevVibe', icon: Tag },
 ];
 
 export default function ClientLogos() {
@@ -25,7 +20,7 @@ export default function ClientLogos() {
     <section className="py-10 border-y border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black overflow-hidden relative">
       <div className="max-w-7xl mx-auto px-4 mb-6">
         <p className="text-center text-sm font-medium text-slate-500 uppercase tracking-widest">
-          Trusted by High-Growth Teams
+          OUR FLAGSHIP PROJECTS & BRANDS
         </p>
       </div>
       
