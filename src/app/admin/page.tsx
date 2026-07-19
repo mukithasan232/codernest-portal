@@ -1,6 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
+import { getAnalyticsData } from '@/lib/actions/analytics.actions';
+import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import KanbanBoard from '@/components/admin/KanbanBoard';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -26,11 +28,12 @@ export default async function AdminDashboard() {
     redirect('/');
   }
 
-  const [totalLeads, totalUsers, pendingOrders, openProjects] = await Promise.all([
+  const [totalLeads, totalUsers, pendingOrders, openProjects, analyticsResult] = await Promise.all([
     prisma.lead.count(),
     prisma.user.count(),
     prisma.imageOrder.count(),
     prisma.project.count(),
+    getAnalyticsData(),
   ]);
 
   const statCards = [
@@ -98,6 +101,9 @@ export default async function AdminDashboard() {
           })}
         </div>
       </div>
+
+      {/* Analytics Chart */}
+      <AnalyticsChart result={analyticsResult} />
 
       {/* Kanban Board */}
       <div>

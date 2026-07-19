@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -58,19 +59,18 @@ export default async function RootLayout({
         )}
         {data?.googleAnalyticsId && (
           <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${data.googleAnalyticsId}`} />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${data.googleAnalyticsId}', {
-                    page_path: window.location.pathname,
-                  });
-                `,
-              }}
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${data.googleAnalyticsId}`}
+              strategy="afterInteractive"
             />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${data.googleAnalyticsId}', { page_path: window.location.pathname });
+              `}
+            </Script>
           </>
         )}
 
