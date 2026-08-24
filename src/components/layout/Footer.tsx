@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Rocket, Github, Twitter, Linkedin, Mail } from "lucide-react";
+import { prisma } from '@/lib/prisma';
 
 const footerLinks = {
     company: [
@@ -21,19 +22,36 @@ const footerLinks = {
     ],
 };
 
-export default function Footer() {
+export default async function Footer() {
+    let settings = null;
+    try {
+        settings = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' } });
+    } catch {
+        // ignore
+    }
+
+    const siteName = settings?.siteName || "CoderNest";
+    const primaryEmail = settings?.primaryEmail || "hello@codernest.agency";
+
     return (
         <footer className="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-white/5 pt-20 pb-10 transition-colors duration-300">
             <div className="container mx-auto px-4 md:px-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
                     <div className="space-y-6">
                         <Link href="/" className="flex items-center gap-2 group">
-                            <div className="p-2 bg-blue-600 rounded-lg">
-                                <Rocket className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-xl font-bold tracking-tighter text-slate-900 dark:text-white">
-                                Coder<span className="text-blue-500">Nest</span>
-                            </span>
+                            {settings?.logoUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={settings.logoUrl} alt={siteName} className="h-8 w-auto object-contain" />
+                            ) : (
+                                <>
+                                    <div className="p-2 bg-blue-600 rounded-lg">
+                                        <Rocket className="w-5 h-5 text-white" />
+                                    </div>
+                                    <span className="text-xl font-bold tracking-tighter text-slate-900 dark:text-white">
+                                        {siteName}
+                                    </span>
+                                </>
+                            )}
                         </Link>
                         <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed max-w-xs">
                             We build modern, scalable digital products for forward-thinking companies. Transforming ideas into powerful realities.
@@ -95,7 +113,8 @@ export default function Footer() {
 
                 <div className="pt-8 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-slate-500 text-xs text-center md:text-left">
-                        © {new Date().getFullYear()} CoderNest Agency. All rights reserved.
+                        © {new Date().getFullYear()} {siteName}. All rights reserved. <br/>
+                        <span className="mt-1 inline-block">Contact: <a href={`mailto:${primaryEmail}`} className="hover:text-blue-500 transition-colors">{primaryEmail}</a></span>
                     </p>
                     <div className="flex gap-6">
                         {footerLinks.legal.map((link) => (

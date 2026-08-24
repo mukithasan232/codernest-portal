@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { ExternalLink, Code2, Users, Rocket, Target } from 'lucide-react';
-import Link from 'next/link';
+import { prisma } from '@/lib/prisma';
+import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'About Us & The Founder | CoderNest',
@@ -17,7 +18,35 @@ export const metadata: Metadata = {
   }
 };
 
-export default function AboutPage() {
+export const revalidate = 60; // Revalidate every minute
+
+export default async function AboutPage() {
+  // Safe fetching from DB
+  let stats = { foundedYear: '2023', totalClients: 50, totalProjects: 120 };
+  let teamMembers: any[] = [];
+
+  try {
+    const [settingsRes, teamRes] = await Promise.all([
+      prisma.systemSettings.findUnique({ where: { id: 'global_settings' } }),
+      prisma.teamMember.findMany({
+        where: { isActive: true },
+        orderBy: { order: 'asc' }
+      })
+    ]);
+
+    if (settingsRes) {
+      stats.foundedYear = settingsRes.foundedYear || stats.foundedYear;
+      stats.totalClients = settingsRes.totalClients ?? stats.totalClients;
+      stats.totalProjects = settingsRes.totalProjects ?? stats.totalProjects;
+    }
+    
+    if (teamRes) {
+      teamMembers = teamRes;
+    }
+  } catch (error) {
+    console.error("Database connection failed on About Page, falling back to defaults.", error);
+  }
+
   return (
     <main className="relative min-h-screen bg-slate-50 dark:bg-[#030712] text-slate-900 dark:text-slate-50 overflow-hidden pt-32 pb-24 transition-colors duration-300">
       {/* Background ambient glows */}
@@ -36,9 +65,9 @@ export default function AboutPage() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { label: 'Founded', value: '2023', icon: Rocket },
-              { label: 'Clients', value: '50+', icon: Users },
-              { label: 'Projects', value: '120+', icon: Target },
+              { label: 'Founded', value: stats.foundedYear, icon: Rocket },
+              { label: 'Clients', value: `${stats.totalClients}+`, icon: Users },
+              { label: 'Projects', value: `${stats.totalProjects}+`, icon: Target },
               { label: 'Tech Stack', value: 'Modern', icon: Code2 },
             ].map((stat, idx) => {
               const Icon = stat.icon;
@@ -53,61 +82,71 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Meet the Founder Section */}
+        {/* Dynamic Leadership & Team Section */}
         <section className="relative glass dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 md:p-12 overflow-hidden shadow-xl">
           {/* Decorative Background inside card */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] -z-10" />
           
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-bold tracking-wide uppercase">
-                Meet the Founder
-              </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-                Mukit Hasan
-              </h2>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                As a Full-Stack Engineer and the driving force behind CoderNest, my goal has always been to bridge the gap between complex business requirements and elegant, scalable technical solutions.
-              </p>
-              
-              <div className="pt-4 border-t border-slate-200 dark:border-white/10">
-                <h3 className="font-bold text-slate-900 dark:text-white mb-4">Core Tech Stack</h3>
-                <div className="flex flex-wrap gap-2">
-                  {['Next.js', 'React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Prisma', 'TailwindCSS', 'AWS', 'Docker'].map((tech) => (
-                    <span key={tech} className="px-3 py-1 text-sm font-medium bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full text-slate-700 dark:text-slate-300">
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-6">
-                <a 
-                  href="https://codernest.cloud" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl hover:bg-slate-800 dark:hover:bg-slate-200 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  View Personal Portfolio <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
+          <div className="text-center max-w-2xl mx-auto mb-16 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-sm font-bold tracking-wide uppercase mb-4">
+              Our Leadership & Team
             </div>
-            
-            <div className="relative">
-              <div className="aspect-[4/5] rounded-[2rem] overflow-hidden border border-slate-200 dark:border-white/10 shadow-2xl relative z-10">
-                {/* Fallback image if actual founder image is not available yet */}
-                <img 
-                  src="https://images.unsplash.com/photo-1556157382-97eda2d62296?auto=format&fit=crop&q=80" 
-                  alt="Founder" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-[url('/grid.svg')] bg-repeat opacity-20 -z-10" />
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 dark:opacity-40 -z-10 animate-blob" />
-            </div>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4">
+              The Minds Behind CoderNest
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">
+              We are a team of passionate engineers, designers, and strategists dedicated to crafting exceptional digital experiences.
+            </p>
           </div>
+
+          {teamMembers.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <p>Team members are being updated. Check back soon!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
+              {teamMembers.map((member: any) => (
+                <div key={member.id} className="group relative glass dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:border-blue-500/50 transition-all duration-300">
+                  <div className="aspect-[4/5] relative w-full overflow-hidden bg-slate-200 dark:bg-slate-800">
+                    {member.imageUrl ? (
+                      <Image 
+                        src={member.imageUrl} 
+                        alt={member.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-slate-400">
+                        {member.name.charAt(0)}
+                      </div>
+                    )}
+                    
+                    {/* Hover Bio Reveal */}
+                    {member.bio && (
+                      <div className="absolute inset-0 bg-slate-900/90 flex items-center p-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <p className="text-slate-200 text-sm leading-relaxed text-center w-full">
+                          {member.bio}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-6 text-center relative z-20 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-white/5">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">{member.name}</h3>
+                    <p className="text-blue-600 dark:text-blue-400 font-medium mb-3">{member.designation}</p>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      {member.department}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Decorative elements */}
+          <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-[url('/grid.svg')] bg-repeat opacity-20 -z-10" />
+          <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 dark:opacity-40 -z-10 animate-blob" />
         </section>
 
       </div>

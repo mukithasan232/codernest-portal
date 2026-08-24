@@ -170,3 +170,16 @@ export interface Testimonial {
   is_published: boolean;
   createdAt: string | Date;
 }
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  designation: string;
+  department: string;
+  bio?: string | null;
+  imageUrl: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}

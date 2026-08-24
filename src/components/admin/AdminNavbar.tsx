@@ -8,10 +8,10 @@ import { Menu, X, Bell, Search, Globe, LogOut, User, Settings as SettingsIcon } 
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
 
-export default function AdminNavbar() {
+export default function AdminNavbar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen?: boolean, setMobileMenuOpen?: (v: boolean) => void }) {
   const pathname = usePathname();
   const { appUser } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Lifted to layout
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -48,7 +48,7 @@ export default function AdminNavbar() {
       <div className="flex items-center gap-4">
         <button 
           className="md:hidden p-2 -ml-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={() => setMobileMenuOpen && setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>

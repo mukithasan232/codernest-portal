@@ -14,7 +14,9 @@ import {
   X,
   Zap,
   MessageSquareQuote,
-  DollarSign
+  DollarSign,
+  Activity,
+  Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
@@ -39,7 +41,9 @@ export function DashboardShell({
     { name: 'Invoices', href: '/dashboard/invoices', icon: DollarSign },
     ...(isAdmin ? [
       { name: 'Admin Panel', href: '/admin', icon: Briefcase },
+      { name: 'Live Traffic', href: '/admin/live-traffic', icon: Activity },
       { name: 'CRM / Leads', href: '/admin/leads', icon: Users },
+      { name: 'Email Campaigns', href: '/admin/email-marketing', icon: Mail },
       { name: 'CMS / Blog', href: '/admin/cms/blog', icon: FileText },
     ] : []),
   ];

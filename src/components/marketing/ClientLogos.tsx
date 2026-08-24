@@ -3,19 +3,30 @@
 import { motion } from 'framer-motion';
 import { Stethoscope, Globe, Film, Tag } from 'lucide-react';
 
-const LOGOS = [
-  { name: 'MedOS', icon: Stethoscope },
-  { name: 'SMM Elite', icon: Globe },
-  { name: 'CoderNest Cinema', icon: Film },
-  { name: 'DevVibe', icon: Tag },
-  // Duplicate for seamless loop
+const DEFAULT_LOGOS = [
   { name: 'MedOS', icon: Stethoscope },
   { name: 'SMM Elite', icon: Globe },
   { name: 'CoderNest Cinema', icon: Film },
   { name: 'DevVibe', icon: Tag },
 ];
 
-export default function ClientLogos() {
+// Helper to pick a random icon based on name length just to add variety
+const getIconForName = (name: string) => {
+  const icons = [Globe, Film, Tag, Stethoscope];
+  return icons[name.length % icons.length];
+};
+
+export default function ClientLogos({ brands }: { brands?: { name: string }[] }) {
+  // Use dynamic brands if provided, otherwise default to the flagship list
+  let displayLogos = (brands && brands.length > 0) 
+    ? brands.map(b => ({ name: b.name, icon: getIconForName(b.name) }))
+    : DEFAULT_LOGOS;
+
+  // Duplicate for seamless loop if there are not enough items
+  if (displayLogos.length < 8) {
+    displayLogos = [...displayLogos, ...displayLogos, ...displayLogos].slice(0, 8);
+  }
+
   return (
     <section className="py-10 border-y border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black overflow-hidden relative">
       <div className="max-w-7xl mx-auto px-4 mb-6">
@@ -31,7 +42,7 @@ export default function ClientLogos() {
           transition={{ ease: "linear", duration: 25, repeat: Infinity }}
           className="flex gap-12 md:gap-24 items-center justify-start opacity-70 px-4"
         >
-          {LOGOS.map((logo, i) => {
+          {displayLogos.map((logo, i) => {
             const Icon = logo.icon;
             return (
               <div key={i} className="flex items-center gap-3 text-slate-800 dark:text-slate-300 min-w-max">

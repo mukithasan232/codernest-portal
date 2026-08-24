@@ -204,7 +204,25 @@ model SystemSettings {
   // Automation
   n8nWebhookUrl       String?
   
+  // Company Stats
+  foundedYear         String   @default("2023")
+  totalClients        Int      @default(50)
+  totalProjects       Int      @default(120)
+
   updatedAt           DateTime @updatedAt
+}
+
+model TeamMember {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  designation String
+  department  String
+  bio         String?
+  imageUrl    String
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model EmailTemplate {
@@ -286,4 +304,24 @@ model DynamicPage {
   keywords    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Visitor {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId String     @unique
+  ipAddress String?
+  location  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  pageViews PageView[]
+}
+
+model PageView {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  visitorId String   @db.ObjectId
+  url       String
+  timeSpent Int      @default(0) // Time in seconds
+  createdAt DateTime @default(now())
+  
+  visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
 }

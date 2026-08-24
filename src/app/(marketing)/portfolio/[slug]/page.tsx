@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: study.metaTitle || `${study.title} | CoderNest Case Study`,
-    description: study.metaDesc || study.challenge.substring(0, 150) || 'Explore CoderNest case studies.',
+    description: study.metaDesc || (study.challenge ? study.challenge.replace(/<[^>]*>/g, '').substring(0, 150) : 'Explore CoderNest case studies.'),
     keywords: study.keywords ? study.keywords.split(',').map(k => k.trim()) : undefined,
   };
 }
@@ -45,8 +45,9 @@ export default async function CaseStudyPage({ params }: Props) {
   const study = await getCaseStudy(slug);
   if (!study) notFound();
 
+  const safeStack = Array.isArray(study.techStack) ? study.techStack : [];
   const DEMO_SNIPPET = `// ${study.title} — Key Implementation
-// Tech: ${study.techStack.slice(0, 3).join(', ')}
+// Tech: ${safeStack.slice(0, 3).join(', ') || 'Modern Web Stack'}
 
 export async function processRequest(input: RequestPayload) {
   const result = await pipeline
@@ -146,14 +147,14 @@ export async function processRequest(input: RequestPayload) {
         </div>
 
         {/* Tech Stack */}
-        {study.techStack?.length > 0 && (
+        {safeStack.length > 0 && (
           <div className="bg-white dark:bg-white/[0.02] rounded-3xl border border-slate-200 dark:border-white/10 p-8 space-y-4 shadow-sm dark:shadow-none">
             <div className="flex items-center gap-3">
               <Code2 className="w-6 h-6 text-blue-500 dark:text-blue-400" />
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Tech Stack</h2>
             </div>
             <div className="flex flex-wrap gap-3">
-              {study.techStack.map(tech => (
+              {safeStack.map(tech => (
                 <span key={tech} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-700 dark:text-white">
                   {tech}
                 </span>

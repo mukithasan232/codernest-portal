@@ -1,21 +1,34 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Code2, Camera, ArrowRight, ExternalLink, Sparkles, SlidersHorizontal, ImageIcon } from 'lucide-react'
-import { MotionDiv, MotionH1, MotionP, MotionSection } from '@/components/ui/motion'
+import { Code2, Camera, ExternalLink, ImageIcon } from 'lucide-react'
+import { MotionDiv, MotionH1, MotionP } from '@/components/ui/motion'
 import ImageSlider from '@/components/ui/ImageSlider'
 import { getPortfolioImages } from '@/lib/actions/portfolio.actions'
 import { prisma } from '@/lib/prisma'
 
-export default async function PortfolioPage() {
-  const { data: images, success } = await getPortfolioImages();
-  const portfolioImages = success && images ? images : [];
+export const metadata: Metadata = {
+  title: 'Portfolio | CoderNest — Enterprise Web & Image Studio',
+  description: 'Explore our finest engineering solutions and visual productions. From FinTech dashboards to AI SaaS platforms.',
+}
 
+export default async function PortfolioPage() {
+  let portfolioImages: Awaited<ReturnType<typeof getPortfolioImages>>['data'] = [];
   let caseStudies: any[] = [];
+
   try {
-    caseStudies = await prisma.caseStudy.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
+    const [imagesResult, studies] = await Promise.allSettled([
+      getPortfolioImages(),
+      prisma.caseStudy.findMany({ orderBy: { createdAt: 'desc' } }),
+    ]);
+
+    if (imagesResult.status === 'fulfilled' && imagesResult.value.success) {
+      portfolioImages = imagesResult.value.data ?? [];
+    }
+    if (studies.status === 'fulfilled') {
+      caseStudies = studies.value ?? [];
+    }
   } catch {
-    // DB temporarily unreachable — render empty state
+    // Graceful degradation — render empty states below
   }
 
   return (
@@ -59,84 +72,69 @@ export default async function PortfolioPage() {
         </MotionDiv>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {(caseStudies.length > 0 ? caseStudies : [
-            {
-              id: '1',
-              title: "Global FinTech Dashboard",
-              clientName: "FinTech Inc",
-              sector: "Finance",
-              challenge: "Legacy system couldn't handle real-time trading data for 100k+ concurrent users.",
-              solution: "Migrated to Next.js App Router with a Supabase realtime backend and highly optimized server components.",
-              techStack: ["Next.js 14", "Supabase", "Tailwind", "WebSockets"],
-              liveDemoUrl: "#",
-              color: "from-blue-500/20"
-            },
-            {
-              id: '2',
-              title: "AI Legal Tech SaaS",
-              clientName: "LegalTech AI",
-              sector: "Legal",
-              challenge: "Required processing and summarizing thousands of legal documents with military-grade security.",
-              solution: "Built a robust RAG architecture using OpenAI, Node.js microservices, and Postgres vector embeddings.",
-              techStack: ["React", "Node.js", "Postgres", "OpenAI"],
-              liveDemoUrl: "#",
-              color: "from-purple-500/20"
-            }
-          ]).map((project: any, i) => (
-            <MotionDiv
-              key={project.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={`bg-white/[0.02] border border-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:bg-white/[0.04] transition-all group relative`}
-            >
-              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${project.color || 'from-blue-500'} to-transparent z-10`} />
-              
-              {/* Cover Image */}
-              <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" className="block relative w-full h-56 bg-slate-100 dark:bg-slate-900 overflow-hidden group/image">
-                {project.imageUrl ? (
-                  <img src={project.imageUrl} alt={project.title} className="object-cover object-top w-full h-full group-hover/image:scale-105 transition-transform duration-700 ease-out" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 dark:from-blue-500/5 dark:to-purple-500/5 flex items-center justify-center">
-                    <Code2 className="w-12 h-12 text-slate-400 dark:text-slate-600 opacity-50" />
-                  </div>
-                )}
-              </Link>
+          {caseStudies.length === 0 ? (
+            <div className="col-span-full py-20 text-center border border-dashed border-slate-200 dark:border-white/20 rounded-3xl bg-white dark:bg-white/[0.02]">
+              <Code2 className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-slate-900 dark:text-slate-300 mb-2">More projects coming soon</h3>
+              <p className="text-slate-600 dark:text-slate-500">We are currently documenting our enterprise case studies. Check back soon.</p>
+            </div>
+          ) : (
+            caseStudies.map((project: any, i: number) => (
+              <MotionDiv
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white/[0.02] border border-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:bg-white/[0.04] transition-all group relative"
+              >
+                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${project.color || 'from-blue-500'} to-transparent z-10`} />
 
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-6">
-                  <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" className="group/title">
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 group-hover/title:text-blue-600 dark:group-hover/title:text-blue-400 transition-colors">
-                      {project.title}
-                    </h3>
-                  </Link>
-                  <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0 mt-1">
-                    <ExternalLink className="w-5 h-5" />
-                  </Link>
-                </div>
-                
-                <div className="space-y-6 mb-8">
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">The Challenge</h4>
-                    <p className="text-slate-700 dark:text-slate-300">{project.challenge}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">The Solution</h4>
-                    <p className="text-slate-700 dark:text-slate-300">{project.solution}</p>
-                  </div>
-                </div>
+                {/* Cover Image */}
+                <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" className="block relative w-full h-56 bg-slate-100 dark:bg-slate-900 overflow-hidden group/image">
+                  {project.imageUrl ? (
+                    <img src={project.imageUrl} alt={project.title} className="object-cover object-top w-full h-full group-hover/image:scale-105 transition-transform duration-700 ease-out" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 dark:from-blue-500/5 dark:to-purple-500/5 flex items-center justify-center">
+                      <Code2 className="w-12 h-12 text-slate-400 dark:text-slate-600 opacity-50" />
+                    </div>
+                  )}
+                </Link>
 
-                <div className="flex flex-wrap gap-2 pt-6 border-t border-slate-200 dark:border-white/5">
-                  {(project.techStack || []).map((t: string) => (
-                    <span key={t} className="px-3 py-1 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-300 transition-colors cursor-default">
-                      {t}
-                    </span>
-                  ))}
+                <div className="p-8">
+                  <div className="flex justify-between items-start mb-6">
+                    <Link href={`/portfolio/${project.slug}`} className="group/title">
+                      <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 group-hover/title:text-blue-600 dark:group-hover/title:text-blue-400 transition-colors">
+                        {project.title}
+                      </h3>
+                    </Link>
+                    <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0 mt-1">
+                      <ExternalLink className="w-5 h-5" />
+                    </Link>
+                  </div>
+
+                  <div className="space-y-6 mb-8">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">The Challenge</h4>
+                      <p className="text-slate-700 dark:text-slate-300 line-clamp-3">{project.challenge?.replace(/<[^>]*>/g, '') || '—'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">The Solution</h4>
+                      <p className="text-slate-700 dark:text-slate-300 line-clamp-3">{project.solution?.replace(/<[^>]*>/g, '') || '—'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-6 border-t border-slate-200 dark:border-white/5">
+                    {(Array.isArray(project.techStack) ? project.techStack : []).map((t: string) => (
+                      <span key={t} className="px-3 py-1 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-300 transition-colors cursor-default">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </MotionDiv>
-          ))}
+              </MotionDiv>
+            ))
+          )}
         </div>
       </section>
 
