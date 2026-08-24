@@ -7,6 +7,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { prisma } from '@/lib/prisma';
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Force all pages to render dynamically — the root layout fetches from MongoDB
 // at request time, so SSG/ISR would fail when the DB is unreachable at build time.
@@ -144,6 +145,7 @@ export default async function RootLayout({
           <script dangerouslySetInnerHTML={{ __html: data.customFooterScripts }} />
         )}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
