@@ -8,12 +8,19 @@ import json
 import io
 import os
 
-# ── onnxruntime / rembg thread-safety fix for macOS ───────────────────────────
-# Prevents "recursive_mutex lock failed: Invalid argument" crash that occurs
-# when onnxruntime spawns inter-op threads inside a forked child process.
-os.environ.setdefault("OMP_NUM_THREADS", "1")
-os.environ.setdefault("ONNXRUNTIME_NUM_THREADS", "1")
-os.environ.setdefault("ORT_DISABLE_ALL_TELEMETRY", "1")
+# ── Thread-safety fix: macOS recursive_mutex crash ───────────────────────────
+# onnxruntime on macOS ignores OMP_NUM_THREADS for its internal inter-op pool.
+# Hard-assign ALL threading env vars BEFORE any imports so native libs see them.
+# These must be set, not just defaulted, to override any inherited parent values.
+for _k, _v in {
+    "OMP_NUM_THREADS":          "1",
+    "OPENBLAS_NUM_THREADS":      "1",
+    "MKL_NUM_THREADS":           "1",
+    "VECLIB_MAXIMUM_THREADS":    "1",   # macOS Accelerate framework
+    "NUMEXPR_NUM_THREADS":       "1",
+    "ORT_DISABLE_ALL_TELEMETRY": "1",
+}.items():
+    os.environ[_k] = _v
 
 
 def remove_white_spill(img):
@@ -101,7 +108,18 @@ def main():
             sys.exit(1)
 
         try:
-            session = new_session("isnet-general-use")
+            import onnxruntime as ort
+
+            # SessionOptions is the ONLY reliable way to limit onnxruntime
+            # threads on macOS — env vars alone are not respected by the
+            # inter-op thread pool, causing the recursive_mutex crash.
+            sess_opts = ort.SessionOptions()
+            sess_opts.intra_op_num_threads = 1
+            sess_opts.inter_op_num_threads = 1
+            sess_opts.execution_mode      = ort.ExecutionMode.ORT_SEQUENTIAL
+            sess_opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+
+            session = new_session("isnet-general-use", sess_options=sess_opts)
 
             # Feed original bytes directly — avoids re-encoding quality loss
             with open(input_path, "rb") as f:
