@@ -6,6 +6,14 @@ Usage: python3 image_processor.py <input_path> <output_path> <pipeline_json>
 import sys
 import json
 import io
+import os
+
+# ── onnxruntime / rembg thread-safety fix for macOS ───────────────────────────
+# Prevents "recursive_mutex lock failed: Invalid argument" crash that occurs
+# when onnxruntime spawns inter-op threads inside a forked child process.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("ONNXRUNTIME_NUM_THREADS", "1")
+os.environ.setdefault("ORT_DISABLE_ALL_TELEMETRY", "1")
 
 
 def remove_white_spill(img):
@@ -20,23 +28,33 @@ def remove_white_spill(img):
         Clamp to [0, 255].
 
     This mathematically reverses the premultiplication with a white BG.
+    Uses img.tobytes() instead of the deprecated img.getdata().
     """
-    pixels = list(img.getdata())
-    cleaned = []
-    for r, g, b, a in pixels:
+    import struct
+
+    # img.tobytes() returns raw RGBA bytes — 4 bytes per pixel
+    raw = img.tobytes()
+    width, height = img.size
+    n_pixels = width * height
+
+    cleaned_flat = bytearray(n_pixels * 4)
+    for i in range(n_pixels):
+        base = i * 4
+        r, g, b, a = raw[base], raw[base + 1], raw[base + 2], raw[base + 3]
         if a == 0:
-            cleaned.append((0, 0, 0, 0))
+            # fully transparent — zero out RGB too
+            cleaned_flat[base:base + 4] = bytes(4)
         elif a == 255:
-            cleaned.append((r, g, b, a))
+            cleaned_flat[base:base + 4] = bytes([r, g, b, a])
         else:
             fa = a / 255.0
-            # Un-mix white background contribution
             r2 = max(0, min(255, int((r - (1 - fa) * 255) / fa)))
             g2 = max(0, min(255, int((g - (1 - fa) * 255) / fa)))
             b2 = max(0, min(255, int((b - (1 - fa) * 255) / fa)))
-            cleaned.append((r2, g2, b2, a))
+            cleaned_flat[base:base + 4] = bytes([r2, g2, b2, a])
+
     result = img.copy()
-    result.putdata(cleaned)
+    result.frombytes(bytes(cleaned_flat))
     return result
 
 

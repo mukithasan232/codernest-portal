@@ -96,7 +96,16 @@ export async function POST(req: NextRequest) {
 
     // ── Execute Python Script ──────────────────────────────────────────────
     try {
-      const { stdout, stderr } = await execFileAsync('python3', args, { timeout: 180_000 });
+      const { stdout, stderr } = await execFileAsync('python3', args, {
+        timeout: 180_000,
+        env: {
+          ...process.env,
+          // Force single-threaded onnxruntime to prevent recursive_mutex crash on macOS
+          OMP_NUM_THREADS: '1',
+          ONNXRUNTIME_NUM_THREADS: '1',
+          ORT_DISABLE_ALL_TELEMETRY: '1',
+        },
+      });
 
       let result: { success: boolean; error?: string };
       try {
