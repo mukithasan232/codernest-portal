@@ -41,6 +41,13 @@ export interface Project {
   type: ProjectType | string;
   status: ProjectStatus | string;
   milestones: Milestone[];
+  live_link?: string;
+  marketingPixels?: {
+    fbPixel?: string | null;
+    googleAnalytics?: string | null;
+    googleTagManager?: string | null;
+  } | null;
+  techStack?: string[];
   createdAt: string | Date;
   completedAt?: string | Date | null;
 }
@@ -86,6 +93,11 @@ export interface CaseStudy {
   solution: string;
   results?: string | null;
   techStack: string[];
+  marketingPixels?: {
+    fbPixel?: string | null;
+    googleAnalytics?: string | null;
+    googleTagManager?: string | null;
+  } | null;
   imageUrl?: string | null;
   githubUrl?: string | null;
   liveDemoUrl?: string | null;
@@ -110,6 +122,11 @@ export interface ServicePricing {
   isPopular?: boolean;
   customHtml?: string | null;
   displayOrder?: number;
+  baseMonthlyPrice?: number | null;
+  baseYearlyPrice?: number | null;
+  hourlyLimit?: number | null;
+  marketRateMultiplier?: number;
+  featureToggles?: Record<string, any> | null;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 }

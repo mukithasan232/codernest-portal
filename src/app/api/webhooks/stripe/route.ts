@@ -16,8 +16,8 @@ export async function POST(req: Request) {
             signature,
             process.env.STRIPE_WEBHOOK_SECRET!
         );
-    } catch (error: any) {
-        return NextResponse.json({ error: `Webhook Error: ${error.message}` }, { status: 400 });
+    } catch (error: unknown) {
+        return NextResponse.json({ error: `Webhook Error: ${error instanceof Error ? error.message : "An unknown error occurred"}` }, { status: 400 });
     }
 
     const session = event.data.object as any;

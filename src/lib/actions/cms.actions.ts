@@ -32,9 +32,9 @@ export async function getCmsEntries(collectionName: string) {
         return { success: false, error: 'Invalid collection' };
     }
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Fetch Error in ${collectionName}:`, error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -69,9 +69,9 @@ export async function createCmsEntry(collectionName: string, payload: any) {
     }
     revalidatePath('/admin/cms');
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Create Error in ${collectionName}:`, error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -105,9 +105,9 @@ export async function updateCmsEntry(collectionName: string, id: string, payload
     }
     revalidatePath('/admin/cms');
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Update Error in ${collectionName}:`, error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -139,9 +139,9 @@ export async function deleteCmsEntry(collectionName: string, id: string) {
     }
     revalidatePath('/admin/cms');
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Delete Error in ${collectionName}:`, error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -164,8 +164,8 @@ export async function updatePricingOrder(items: { id: string, displayOrder: numb
     revalidatePath('/admin/cms');
     revalidatePath('/pricing');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update Pricing Order Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

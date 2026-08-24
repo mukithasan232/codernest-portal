@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, url, media });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Upload Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "An unknown error occurred" }, { status: 500 });
   }
 }

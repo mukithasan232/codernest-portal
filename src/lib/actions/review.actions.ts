@@ -22,9 +22,9 @@ export async function getAllReviews() {
     });
 
     return { success: true, data: data as unknown as Testimonial[] };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in getAllReviews:', error);
-    return { success: false, data: null, error: error.message };
+    return { success: false, data: null, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -59,9 +59,9 @@ export async function createReview(formData: FormData) {
     revalidatePath('/admin/cms/reviews');
 
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in createReview:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -92,9 +92,9 @@ export async function updateReview(id: string, formData: FormData) {
     revalidatePath('/admin/cms/reviews');
 
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in updateReview:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -117,8 +117,8 @@ export async function deleteReview(id: string) {
     revalidatePath('/admin/cms/reviews');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in deleteReview:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

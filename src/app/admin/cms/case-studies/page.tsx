@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { CaseStudy } from '@/types';
 import { getCmsEntries, createCmsEntry, updateCmsEntry, deleteCmsEntry } from '@/lib/actions/cms.actions';
-import { Layers, Plus, Pencil, Trash2, X, Star, ExternalLink, Github } from 'lucide-react';
+import { Layers, Plus, Pencil, Trash2, X, Star, ExternalLink, Github, Search } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,6 +27,8 @@ export default function CaseStudiesCmsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [fetchUrl, setFetchUrl] = useState('');
+  const [isFetchingData, setIsFetchingData] = useState(false);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CaseStudyFormValues>({
     resolver: zodResolver(caseStudySchema),
@@ -50,6 +52,7 @@ export default function CaseStudiesCmsPage() {
 
   const openNewModal = () => {
     setEditingId(null);
+    setFetchUrl('');
     reset({ title: '', slug: '', sector: 'web', clientName: '', challenge: '', solution: '', techStack: '' });
     setIsModalOpen(true);
   };
@@ -94,6 +97,41 @@ export default function CaseStudiesCmsPage() {
       toast.error(error.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleFetchUrl = async () => {
+    if (!fetchUrl) return;
+    setIsFetchingData(true);
+    try {
+      const res = await fetch('/api/fetch-project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: fetchUrl })
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+         const { metaTitle, techStack, challengeText, solutionText } = data.data;
+         if (metaTitle) setValue('title', metaTitle);
+         
+         const slugBase = fetchUrl.replace(/https?:\/\/(www\.)?/, '').split('/')[0];
+         setValue('slug', slugBase.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase());
+         
+         if (techStack && techStack.length > 0) {
+           setValue('techStack', techStack.join(', '));
+         }
+
+         if (challengeText) setValue('challenge', challengeText);
+         if (solutionText) setValue('solution', solutionText);
+
+         toast.success('Extracted Meta Data & Stack!');
+      } else {
+         toast.error(data.error || 'Failed to extract data');
+      }
+    } catch (error) {
+      toast.error('Network error during fetch');
+    } finally {
+      setIsFetchingData(false);
     }
   };
 
@@ -214,6 +252,30 @@ export default function CaseStudiesCmsPage() {
             </div>
             
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+              {!editingId && (
+                <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-xl p-4 mb-4">
+                  <label className="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2">⚡ Quick Add via URL</label>
+                  <div className="flex gap-2">
+                    <input
+                      value={fetchUrl}
+                      onChange={(e) => setFetchUrl(e.target.value)}
+                      placeholder="https://example.com"
+                      className="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleFetchUrl}
+                      disabled={isFetchingData || !fetchUrl}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg text-sm flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isFetchingData ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Search className="w-4 h-4" />}
+                      Fetch
+                    </button>
+                  </div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">Automatically extract Title, Marketing Pixels, and Tech Stack.</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title *</label>

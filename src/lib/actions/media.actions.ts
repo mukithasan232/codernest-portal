@@ -18,9 +18,9 @@ export async function getMedia() {
       orderBy: { createdAt: 'desc' },
     });
     return { success: true, data: media };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Fetch Media Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -36,8 +36,8 @@ export async function deleteMedia(id: string) {
     const deleted = await prisma.media.delete({ where: { id } });
     revalidatePath('/admin/media');
     return { success: true, data: deleted };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete Media Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

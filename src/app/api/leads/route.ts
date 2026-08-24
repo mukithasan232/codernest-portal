@@ -38,10 +38,10 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, data: newLead }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Leads API Error:', error);
     return NextResponse.json(
-      { error: 'Internal Server Error', details: error.message },
+      { error: 'Internal Server Error', details: error instanceof Error ? error.message : "An unknown error occurred" },
       { status: 500 }
     );
   }

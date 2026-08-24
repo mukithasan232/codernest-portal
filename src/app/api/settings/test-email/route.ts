@@ -46,8 +46,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, message: 'Test email sent successfully!' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Test Email Error:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Failed to send test email.' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Failed to send test email.' }, { status: 500 });
   }
 }

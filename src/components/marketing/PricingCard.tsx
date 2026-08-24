@@ -4,8 +4,30 @@ import { CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Tilt from 'react-parallax-tilt';
+import { useState, useMemo } from 'react';
 
 export default function PricingCard({ pkg, index = 0 }: { pkg: any, index?: number }) {
+  // Dynamic Pricing State
+  const isDynamic = pkg.tier === 'Dynamic Config';
+  const [hours, setHours] = useState(pkg.hourlyLimit || 20);
+  const [advancedSeo, setAdvancedSeo] = useState(false);
+  const [customAutomation, setCustomAutomation] = useState(false);
+
+  const baseMonthly = pkg.baseMonthlyPrice || pkg.price || 0;
+  const multiplier = pkg.marketRateMultiplier || 1.0;
+
+  const calculatedPrice = useMemo(() => {
+    if (!isDynamic) return pkg.price;
+    let total = baseMonthly + (hours * 50 * multiplier);
+    if (advancedSeo) total += 500 * multiplier;
+    if (customAutomation) total += 800 * multiplier;
+    return Math.round(total);
+  }, [isDynamic, pkg.price, baseMonthly, hours, multiplier, advancedSeo, customAutomation]);
+
+  const displayPrice = isDynamic 
+    ? `$${calculatedPrice.toLocaleString()}` 
+    : typeof pkg.price === 'number' ? `$${pkg.price.toLocaleString()}` : pkg.price;
+
   const cardContent = (
     <div 
       className={`relative rounded-3xl p-1 transition-all duration-300 h-full ${
@@ -38,21 +60,67 @@ export default function PricingCard({ pkg, index = 0 }: { pkg: any, index?: numb
             <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{pkg.name}</h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm h-10">{pkg.priceLabel}</p>
             <div className="mt-6 flex items-baseline gap-2">
-              <span className="text-5xl font-extrabold text-slate-900 dark:text-white">{pkg.price}</span>
-              <span className="text-slate-500 font-medium">{pkg.tier}</span>
+              <span className="text-5xl font-extrabold text-slate-900 dark:text-white">
+                {displayPrice}
+              </span>
+              <span className="text-slate-500 font-medium">{isDynamic ? '/ month' : pkg.tier}</span>
             </div>
           </div>
-          
-          <ul className="space-y-4 mb-10 flex-grow">
-            {(pkg.features || []).map((feature: string) => (
-              <li key={feature} className="flex items-start gap-3 text-slate-700 dark:text-slate-300">
-                <CheckCircle2 className={`w-5 h-5 shrink-0 ${pkg.isPopular ? 'text-blue-500' : 'text-slate-400'}`} />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
 
-          <Link href="/contact" className="mt-auto">
+          {isDynamic && (
+            <div className="mb-8 space-y-6">
+              {/* Range Slider */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Monthly Support Hours</label>
+                  <span className="text-sm font-bold text-blue-500">{hours} hrs</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="100" 
+                  step="10"
+                  value={hours} 
+                  onChange={(e) => setHours(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                />
+              </div>
+
+              {/* Toggles */}
+              <div className="space-y-4">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Advanced SEO Suite</span>
+                  <div className="relative">
+                    <input type="checkbox" className="sr-only" checked={advancedSeo} onChange={(e) => setAdvancedSeo(e.target.checked)} />
+                    <div className={`block w-10 h-6 rounded-full transition ${advancedSeo ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${advancedSeo ? 'translate-x-4' : ''}`}></div>
+                  </div>
+                </label>
+
+                <label className="flex items-center justify-between cursor-pointer">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Custom AI Automation</span>
+                  <div className="relative">
+                    <input type="checkbox" className="sr-only" checked={customAutomation} onChange={(e) => setCustomAutomation(e.target.checked)} />
+                    <div className={`block w-10 h-6 rounded-full transition ${customAutomation ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${customAutomation ? 'translate-x-4' : ''}`}></div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {!isDynamic && (
+            <ul className="space-y-4 mb-10 flex-grow">
+              {(pkg.features || []).map((feature: string) => (
+                <li key={feature} className="flex items-start gap-3 text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className={`w-5 h-5 shrink-0 ${pkg.isPopular ? 'text-blue-500' : 'text-slate-400'}`} />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <Link href="/contact" className={`mt-auto ${isDynamic ? '' : ''}`}>
             <button className={`w-full py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
               pkg.isPopular
                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:scale-[1.02]'

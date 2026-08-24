@@ -23,9 +23,9 @@ export async function uploadUserImage(formData: FormData) {
     
     const publicUrl = `/uploads/user-images/${session.user.id}/${fileName}`;
     return { success: true, publicUrl };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Upload Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -54,8 +54,8 @@ export async function createImageOrder(formData: FormData) {
       }
     });
     return { success: true, orderId: order.id };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Create Order Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

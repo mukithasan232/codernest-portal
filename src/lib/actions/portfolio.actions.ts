@@ -14,9 +14,9 @@ export async function getPortfolioImages() {
       orderBy: { createdAt: 'desc' }
     });
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Fetch Portfolio Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -56,8 +56,8 @@ export async function deletePortfolioImage(id: string, originalUrl: string, proc
     revalidatePath('/admin/portfolio');
     revalidatePath('/portfolio');
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -123,8 +123,8 @@ export async function uploadAndProcessImage(formData: FormData) {
     revalidatePath('/portfolio');
     
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Image Processing Error:', err);
-    return { success: false, error: err.message || 'Image processing pipeline failed.' };
+    return { success: false, error: err instanceof Error ? err.message : 'Image processing pipeline failed.' };
   }
 }

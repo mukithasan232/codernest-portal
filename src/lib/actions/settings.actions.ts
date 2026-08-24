@@ -20,9 +20,9 @@ export async function getGlobalSettings() {
       });
     }
     return { success: true, data: settings };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Fetch Settings Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -41,6 +41,10 @@ export async function updateGlobalSettings(payload: any) {
       update: updateData,
       create: {
         id: 'global_settings',
+        siteName: 'CoderNest',
+        siteTitle: 'Elite B2B software agency',
+        brandColor: '#3B82F6',
+        secondaryColor: '#00F2FE',
         ...updateData,
       }
     });
@@ -49,8 +53,8 @@ export async function updateGlobalSettings(payload: any) {
     revalidatePath('/', 'layout');
     
     return { success: true, data: settings };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update Settings Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

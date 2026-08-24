@@ -54,6 +54,10 @@ export default function PricingSplitEditor({
     stripePriceId: '',
     isPopular: false,
     customHtml: '',
+    baseMonthlyPrice: 0,
+    baseYearlyPrice: 0,
+    hourlyLimit: 0,
+    marketRateMultiplier: 1.0,
     ...initialData,
   });
   
@@ -75,6 +79,10 @@ export default function PricingSplitEditor({
       ...formData,
       customHtml: useHtml ? formData.customHtml : null,
       price: Number(formData.price),
+      baseMonthlyPrice: Number(formData.baseMonthlyPrice) || null,
+      baseYearlyPrice: Number(formData.baseYearlyPrice) || null,
+      hourlyLimit: Number(formData.hourlyLimit) || null,
+      marketRateMultiplier: Number(formData.marketRateMultiplier) || 1.0,
     });
     setSaving(false);
   };
@@ -169,17 +177,37 @@ export default function PricingSplitEditor({
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tier</label>
-                <select value={formData.tier} onChange={e => setFormData({...formData, tier: e.target.value})} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition">
+                <select value={formData.tier} onChange={e => setFormData({...formData, tier: e.target.value})} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition">
                   <option value="starter">Starter</option>
                   <option value="pro">Pro</option>
                   <option value="enterprise">Enterprise</option>
                   <option value="Milestone Based">Milestone Based</option>
                   <option value="Per Image">Per Image</option>
+                  <option value="Dynamic Config">Dynamic Config</option>
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">CTA Label</label>
-                <input type="text" value={formData.ctaLabel} onChange={e => setFormData({...formData, ctaLabel: e.target.value})} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition" />
+                <input type="text" value={formData.ctaLabel} onChange={e => setFormData({...formData, ctaLabel: e.target.value})} className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 p-4 border border-blue-500/20 bg-blue-500/5 rounded-xl">
+              <div>
+                <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Base Monthly</label>
+                <input type="number" value={formData.baseMonthlyPrice || 0} onChange={e => setFormData({...formData, baseMonthlyPrice: Number(e.target.value)})} className="w-full bg-white dark:bg-slate-900 border border-blue-500/30 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Base Yearly</label>
+                <input type="number" value={formData.baseYearlyPrice || 0} onChange={e => setFormData({...formData, baseYearlyPrice: Number(e.target.value)})} className="w-full bg-white dark:bg-slate-900 border border-blue-500/30 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Hourly Limit (Optional)</label>
+                <input type="number" value={formData.hourlyLimit || 0} onChange={e => setFormData({...formData, hourlyLimit: Number(e.target.value)})} className="w-full bg-white dark:bg-slate-900 border border-blue-500/30 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">Market Multiplier (e.g. 1.2)</label>
+                <input type="number" step="0.1" value={formData.marketRateMultiplier || 1.0} onChange={e => setFormData({...formData, marketRateMultiplier: Number(e.target.value)})} className="w-full bg-white dark:bg-slate-900 border border-blue-500/30 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition" />
               </div>
             </div>
 

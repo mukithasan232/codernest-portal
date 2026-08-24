@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Project, ProjectStatus, Milestone } from '@/types';
-import { updateProjectStatus, updateProjectMilestones } from '@/lib/actions/admin.actions';
+import { updateProjectStatus, updateProjectMilestones, updateProjectLiveLink } from '@/lib/actions/admin.actions';
 import { Briefcase, Plus, ChevronDown, ChevronUp, Save, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -11,6 +11,14 @@ const STATUS_COLORS: Record<string, string> = {
   'in-progress': 'bg-blue-50 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400',
   completed:   'bg-green-50 dark:bg-green-400/10 text-green-600 dark:text-green-400',
   cancelled:   'bg-red-50 dark:bg-red-400/10 text-red-600 dark:text-red-400',
+};
+
+const getValidUrl = (url?: string) => {
+  if (!url) return null;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
 };
 
 export default function AdminProjectsClient({ initialProjects }: { initialProjects: Project[] }) {
@@ -73,7 +81,19 @@ export default function AdminProjectsClient({ initialProjects }: { initialProjec
                     <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-slate-900 dark:text-white truncate">{project.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-900 dark:text-white truncate">{project.title}</h3>
+                      {project.live_link && (
+                        <a 
+                          href={getValidUrl(project.live_link) || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex items-center gap-1"
+                        >
+                          View Live
+                        </a>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-500 mt-0.5 capitalize">{project.type} · {new Date(project.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
@@ -131,6 +151,8 @@ function MilestoneEditor({ project, saving, onSave }: {
   onSave: (m: Milestone[]) => void;
 }) {
   const [milestones, setMilestones] = useState<Milestone[]>((project.milestones as Milestone[]) ?? []);
+  const [liveLink, setLiveLink] = useState<string>(project.live_link || '');
+  const [savingLink, setSavingLink] = useState(false);
 
   const update = (i: number, field: keyof Milestone, value: unknown) => {
     setMilestones(prev => prev.map((m, idx) => idx === i ? { ...m, [field]: value } : m));
@@ -144,43 +166,82 @@ function MilestoneEditor({ project, saving, onSave }: {
     setMilestones(prev => prev.filter((_, idx) => idx !== i));
   };
 
+  const handleSaveLiveLink = async () => {
+    setSavingLink(true);
+    try {
+      const res = await updateProjectLiveLink(project.id, liveLink);
+      if (res.success) {
+        toast.success('Live link saved!');
+      } else {
+        toast.error('Failed to save link.');
+      }
+    } catch (err: any) {
+      toast.error('An error occurred.');
+    } finally {
+      setSavingLink(false);
+    }
+  };
+
   return (
-    <div className="border-t border-slate-200 dark:border-white/10 p-5 space-y-4">
-      <h4 className="text-sm font-bold text-slate-900 dark:text-white">Milestones</h4>
-      {milestones.map((m, i) => (
-        <div key={i} className="grid grid-cols-12 gap-3 items-center">
+    <div className="border-t border-slate-200 dark:border-white/10 p-5 space-y-6">
+      
+      {/* Live Link Editor */}
+      <div className="flex flex-col gap-1 max-w-sm">
+        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Live Link / Domain</label>
+        <div className="flex items-center gap-2">
           <input
-            value={m.title}
-            onChange={e => update(i, 'title', e.target.value)}
-            placeholder="Milestone title"
-            className="col-span-5 bg-slate-50 border border-slate-200 dark:bg-white/5 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
+            value={liveLink}
+            onChange={e => setLiveLink(e.target.value)}
+            placeholder="e.g. codernest.agency"
+            className="flex-1 bg-slate-50 border border-slate-200 dark:bg-white/5 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
           />
-          <div className="col-span-3 flex items-center gap-2">
-            <input
-              type="range" min="0" max="100"
-              value={m.percentComplete}
-              onChange={e => update(i, 'percentComplete', parseInt(e.target.value))}
-              className="flex-1"
-            />
-            <span className="text-xs font-bold text-slate-900 dark:text-white w-8 text-right">{m.percentComplete}%</span>
-          </div>
-          <label className="col-span-2 flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={m.done} onChange={e => update(i, 'done', e.target.checked)}
-              className="w-4 h-4 rounded" />
-            <span className="text-xs text-slate-500 dark:text-slate-400">Done</span>
-          </label>
-          <button onClick={() => remove(i)} className="col-span-2 text-red-500 text-xs hover:text-red-400 transition text-right">Remove</button>
+          <button 
+            onClick={handleSaveLiveLink} 
+            disabled={savingLink}
+            className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-lg transition-all disabled:opacity-50 flex items-center justify-center min-w-[80px]"
+          >
+            {savingLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save'}
+          </button>
         </div>
-      ))}
-      <div className="flex gap-3 pt-2">
-        <button onClick={addMilestone} className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition">
-          <Plus className="w-3.5 h-3.5" /> Add Milestone
-        </button>
-        <button id={`save-milestones-${project.id}`} onClick={() => onSave(milestones)} disabled={saving}
-          className="flex items-center gap-1.5 text-xs px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-all disabled:opacity-50">
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          Save Milestones
-        </button>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-sm font-bold text-slate-900 dark:text-white">Milestones</h4>
+        {milestones.map((m, i) => (
+          <div key={i} className="grid grid-cols-12 gap-3 items-center">
+            <input
+              value={m.title}
+              onChange={e => update(i, 'title', e.target.value)}
+              placeholder="Milestone title"
+              className="col-span-5 bg-slate-50 border border-slate-200 dark:bg-white/5 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
+            />
+            <div className="col-span-3 flex items-center gap-2">
+              <input
+                type="range" min="0" max="100"
+                value={m.percentComplete}
+                onChange={e => update(i, 'percentComplete', parseInt(e.target.value))}
+                className="flex-1"
+              />
+              <span className="text-xs font-bold text-slate-900 dark:text-white w-8 text-right">{m.percentComplete}%</span>
+            </div>
+            <label className="col-span-2 flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={m.done} onChange={e => update(i, 'done', e.target.checked)}
+                className="w-4 h-4 rounded" />
+              <span className="text-xs text-slate-500 dark:text-slate-400">Done</span>
+            </label>
+            <button onClick={() => remove(i)} className="col-span-2 text-red-500 text-xs hover:text-red-400 transition text-right">Remove</button>
+          </div>
+        ))}
+        <div className="flex gap-3 pt-2">
+          <button onClick={addMilestone} className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition">
+            <Plus className="w-3.5 h-3.5" /> Add Milestone
+          </button>
+          <button id={`save-milestones-${project.id}`} onClick={() => onSave(milestones)} disabled={saving}
+            className="flex items-center gap-1.5 text-xs px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-all disabled:opacity-50">
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Save Milestones
+          </button>
+        </div>
       </div>
     </div>
   );

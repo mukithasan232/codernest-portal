@@ -56,7 +56,7 @@ export async function createLead(formData: FormData) {
 
     revalidatePath('/admin/leads');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lead Insert Error:', error);
     return { success: false, error: 'Failed to submit lead.' };
   }
@@ -73,8 +73,8 @@ export async function getLeads() {
     // Serialize object ids if needed, but since it's Next 14/15 RSC, plain objects work if we don't pass dates/functions. Wait, dates are passed.
     // RSC supports dates, but passing them to Client Components might require serialization. Let's return them.
     return { success: true, data: leads };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -89,8 +89,8 @@ export async function updateLeadStatus(id: string, status: LeadStatus) {
     });
     revalidatePath('/crm');
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -104,7 +104,7 @@ export async function deleteLead(id: string) {
     });
     revalidatePath('/crm');
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

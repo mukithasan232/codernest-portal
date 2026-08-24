@@ -114,6 +114,7 @@ model CaseStudy {
   solution    String
   results     String?
   techStack   String[]
+  marketingPixels Json?
   imageUrl    String?
   githubUrl   String?
   liveDemoUrl String?
@@ -138,6 +139,14 @@ model ServicePricing {
   isPopular     Boolean  @default(false)
   customHtml    String?
   displayOrder  Int      @default(0)
+  
+  // Dynamic Pricing Fields
+  baseMonthlyPrice     Float?
+  baseYearlyPrice      Float?
+  hourlyLimit          Int?
+  marketRateMultiplier Float    @default(1.0)
+  featureToggles       Json?
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -192,6 +201,9 @@ model SystemSettings {
   customHeaderScripts String?
   customFooterScripts String?
   
+  // Automation
+  n8nWebhookUrl       String?
+  
   updatedAt           DateTime @updatedAt
 }
 
@@ -210,6 +222,9 @@ model Project {
   type        String
   status      String   @default("pending")
   milestones  Json?
+  live_link   String?
+  marketingPixels Json?
+  techStack       String[]
   createdAt   DateTime @default(now())
   completedAt DateTime?
 }

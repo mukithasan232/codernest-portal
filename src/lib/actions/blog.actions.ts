@@ -66,9 +66,9 @@ export async function createBlog(formData: FormData) {
     revalidatePath('/admin/cms');
     revalidatePath('/blog');
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Insert Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -135,8 +135,8 @@ export async function updateBlog(id: string, formData: FormData) {
     revalidatePath('/blog');
     revalidatePath(`/blog/${slug}`);
     return { success: true, data };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -146,9 +146,9 @@ export async function getBlogs() {
       orderBy: { createdAt: 'desc' }
     });
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Fetch Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -164,9 +164,9 @@ export async function deleteBlog(id: string) {
     revalidatePath('/admin/cms');
     revalidatePath('/blog');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -187,7 +187,7 @@ export async function uploadBlogImage(formData: FormData) {
     await writeFile(path.join(uploadDir, fileName), buffer);
     
     return { success: true, url: `/uploads/${session.user.id}/inline-images/${fileName}` };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

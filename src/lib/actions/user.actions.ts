@@ -26,8 +26,8 @@ export async function getTeamMembers() {
     });
     
     return { success: true, data: users };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -51,8 +51,8 @@ export async function getClients() {
     });
     
     return { success: true, data: clients };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -84,8 +84,8 @@ export async function inviteTeamMember(data: { email: string, name: string, role
     });
 
     return { success: true, data: newUser };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -100,8 +100,8 @@ export async function getUserFreeCredits() {
     });
     
     return { success: true, creditsUsed: user?.freeCredits || 0 };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -117,7 +117,7 @@ export async function incrementUserFreeCredits() {
     });
     
     return { success: true, creditsUsed: user.freeCredits };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

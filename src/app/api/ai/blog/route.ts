@@ -12,8 +12,8 @@ export async function POST(req: Request) {
         const blog = await generateBlogPost(topic);
 
         return NextResponse.json(blog);
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("AI Blog API error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: error instanceof Error ? error.message : "An unknown error occurred" }, { status: 500 });
     }
 }

@@ -15,8 +15,8 @@ export async function getEmailTemplates() {
       orderBy: { createdAt: 'desc' }
     });
     return { success: true, data };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -41,8 +41,8 @@ export async function saveEmailTemplate(id: string | null, name: string, subject
 
     revalidatePath('/admin/settings');
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -60,8 +60,8 @@ export async function deleteEmailTemplate(id: string) {
     
     revalidatePath('/admin/settings');
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -97,9 +97,9 @@ export async function testSmtpConnection(smtpConfig: any) {
     });
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('SMTP Error:', err);
-    return { success: false, error: err.message || 'SMTP Verification failed' };
+    return { success: false, error: err instanceof Error ? err.message : 'SMTP Verification failed' };
   }
 }
 
@@ -135,9 +135,9 @@ export async function uploadProcessedImage(orderId: string, clientId: string, fo
 
     revalidatePath('/admin/image-orders');
     return { success: true, processedUrl };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Upload Error:', err);
-    return { success: false, error: err.message };
+    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
   }
 }
 
@@ -161,8 +161,8 @@ export async function createInvoice(data: any) {
 
     revalidatePath('/admin/invoices');
     return { success: true, invoice: inv };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
   }
 }
 
@@ -178,8 +178,8 @@ export async function markInvoicePaid(id: string) {
 
     revalidatePath('/admin/invoices');
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
   }
 }
 
@@ -200,8 +200,8 @@ export async function saveBlogPost(data: any) {
 
     revalidatePath('/admin/blogs');
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
   }
 }
 
@@ -218,8 +218,8 @@ export async function updateProjectStatus(id: string, status: string) {
 
     revalidatePath('/admin/projects');
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
   }
 }
 
@@ -235,8 +235,25 @@ export async function updateProjectMilestones(id: string, milestones: any) {
 
     revalidatePath('/admin/projects');
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
+  }
+}
+
+export async function updateProjectLiveLink(id: string, live_link: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+
+  try {
+    await prisma.project.update({
+      where: { id },
+      data: { live_link }
+    });
+
+    revalidatePath('/admin/projects');
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
   }
 }
 

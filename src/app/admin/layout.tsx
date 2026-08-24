@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import {
   BarChart3, Users, FileText, LogOut, ShieldCheck,
   Megaphone, Briefcase, Image as ImageIcon, DollarSign,
-  LayoutDashboard, Layers, Settings, UserCheck
+  LayoutDashboard, Layers, Settings, UserCheck, Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminNavbar from '@/components/admin/AdminNavbar';
@@ -15,6 +15,7 @@ import AdminNavbar from '@/components/admin/AdminNavbar';
 const NAV_ITEMS = [
   { href: '/admin',              icon: BarChart3,       label: 'Overview' },
   { href: '/admin/leads',        icon: Megaphone,       label: 'CRM / Leads' },
+  { href: '/admin/automation',   icon: Zap,             label: 'Automation' },
   { href: '/admin/projects',     icon: Briefcase,       label: 'Projects' },
   { href: '/admin/clients',      icon: UserCheck,       label: 'Clients' },
   { href: '/admin/image-orders', icon: ImageIcon,       label: 'Image Orders' },

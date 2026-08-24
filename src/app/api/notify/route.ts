@@ -53,10 +53,10 @@ export async function POST(req: Request) {
       { status: 200 }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API Notify Error:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal Server Error', details: error.message },
+      { success: false, error: 'Internal Server Error', details: error instanceof Error ? error.message : "An unknown error occurred" },
       { status: 500 }
     );
   }

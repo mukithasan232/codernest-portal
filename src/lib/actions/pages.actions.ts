@@ -18,9 +18,9 @@ export async function getDynamicPages() {
       orderBy: { createdAt: 'desc' },
     });
     return { success: true, data: pages };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Fetch Pages Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -29,8 +29,8 @@ export async function getDynamicPage(id: string) {
     const page = await prisma.dynamicPage.findUnique({ where: { id } });
     if (!page) return { success: false, error: 'Page not found' };
     return { success: true, data: page };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -39,8 +39,8 @@ export async function getDynamicPageBySlug(slug: string) {
     const page = await prisma.dynamicPage.findUnique({ where: { slug } });
     if (!page) return { success: false, error: 'Page not found' };
     return { success: true, data: page };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -56,9 +56,9 @@ export async function createDynamicPage(payload: any) {
     const page = await prisma.dynamicPage.create({ data: payload });
     revalidatePath('/admin/pages');
     return { success: true, data: page };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Create Page Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -82,9 +82,9 @@ export async function updateDynamicPage(id: string, payload: any) {
     }
     
     return { success: true, data: page };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Update Page Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
 
@@ -103,8 +103,8 @@ export async function deleteDynamicPage(id: string) {
       revalidatePath(`/${deleted.slug}`);
     }
     return { success: true, data: deleted };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete Page Error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

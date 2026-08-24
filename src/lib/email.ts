@@ -126,8 +126,8 @@ export async function sendOfficialNotification(payload: NotificationPayload) {
 
     return { success: true, messageId: info.messageId };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to send official notification:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
