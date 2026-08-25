@@ -24,7 +24,9 @@ export type AnalyticsResult =
 export async function getAnalyticsData(): Promise<AnalyticsResult> {
   const propertyId = process.env.GA4_PROPERTY_ID;
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY
+    ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n').replace(/"/g, '')
+    : '';
 
   // Gracefully signal "not configured" so the UI can show a placeholder
   if (!propertyId || !clientEmail || !privateKey) {
@@ -35,8 +37,7 @@ export async function getAnalyticsData(): Promise<AnalyticsResult> {
     const analyticsDataClient = new BetaAnalyticsDataClient({
       credentials: {
         client_email: clientEmail,
-        // Vercel stores multi-line env vars with literal \n — replace them
-        private_key: privateKey.replace(/\\n/g, '\n'),
+        private_key: privateKey,
       },
     });
 
