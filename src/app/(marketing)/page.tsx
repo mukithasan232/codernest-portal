@@ -4,11 +4,14 @@ import Link from 'next/link'
 import { Code, Camera, Shield, ArrowRight, LayoutTemplate, Database, Box, Server, Wind, FileCode, MapPin, ChevronRight, Calendar } from 'lucide-react'
 import { MotionDiv, MotionH1, MotionP, MotionSection } from '@/components/ui/motion'
 import LeadForm from '@/components/forms/LeadForm'
-import TestimonialSlider from '@/components/marketing/TestimonialSlider'
-import ClientLogos from '@/components/marketing/ClientLogos'
-import CaseStudiesHighlight from '@/components/marketing/CaseStudiesHighlight'
+
 import { sitemapCities } from '@/lib/data/targetCities'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+const TestimonialSlider = dynamic(() => import('@/components/marketing/TestimonialSlider'))
+const ClientLogos = dynamic(() => import('@/components/marketing/ClientLogos'))
+const CaseStudiesHighlight = dynamic(() => import('@/components/marketing/CaseStudiesHighlight'))
 
 export const metadata: Metadata = {
   title: 'CoderNest | Elite B2B Software Agency',
@@ -297,8 +300,9 @@ export default async function Page() {
                       <Image 
                         src={blog.cover_image} 
                         alt={blog.title} 
-                        fill 
-                        className="object-cover group-hover:scale-105 transition-transform duration-500" 
+                        width={400}
+                        height={300}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                       />
                     </div>
                   )}
@@ -336,6 +340,37 @@ export default async function Page() {
         <TestimonialSlider initialTestimonials={testimonials || []} />
       </section>
 
+      {/* Engaging Internal Links (Bounce Rate Reduction) */}
+      <section className="py-24 px-4 max-w-7xl mx-auto text-center">
+        <MotionDiv 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="bg-blue-600 dark:bg-blue-900/40 border border-blue-500/20 rounded-3xl p-12 max-w-4xl mx-auto relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-[#00F2FE]/20 to-[#3B82F6]/20 blur-3xl z-0" />
+          <div className="relative z-10">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">Not sure where to start?</h2>
+            <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
+              Explore our tech stack in detail or view more of our previous case studies to see if we're a good fit.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Link href="/services">
+                <button className="w-full sm:w-auto px-8 py-4 bg-white text-blue-600 font-bold rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2">
+                  Explore Our Services
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </Link>
+              <Link href="/about">
+                <button className="w-full sm:w-auto px-8 py-4 bg-blue-700/50 text-white font-bold rounded-xl border border-blue-400/30 hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+                  Learn About Us
+                </button>
+              </Link>
+            </div>
+          </div>
+        </MotionDiv>
+      </section>
+
       {/* Lead Generation Form */}
       <section className="pb-24 px-4 max-w-3xl mx-auto">
         <MotionDiv 
@@ -345,8 +380,8 @@ export default async function Page() {
           className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-lg rounded-3xl p-8 md:p-12 shadow-xl dark:shadow-none"
         >
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Ready to scale?</h2>
-            <p className="text-slate-600 dark:text-slate-400">Drop us a line and let's build something incredible together.</p>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">Get a Free Audit</h2>
+            <p className="text-slate-600 dark:text-slate-400">Drop us a line and we'll analyze your digital infrastructure for free.</p>
           </div>
           <LeadForm />
         </MotionDiv>

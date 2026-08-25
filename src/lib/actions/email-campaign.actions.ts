@@ -132,12 +132,19 @@ export async function sendEmailCampaignAction(formData: FormData) {
           status: 'SENT'
         });
         
-        // Add a simple 1x1 tracking pixel (Assuming our Next.js app host is accessible)
-        // If NEXT_PUBLIC_APP_URL is not set, we skip this to avoid broken images.
         const appUrl = process.env.NEXT_PUBLIC_APP_URL;
         if (appUrl) {
-          const trackingUrl = `${appUrl}/api/webhooks/email?action=open&campaignId=${campaign.id}&leadId=${lead.id}`;
-          personalizedBody += `<img src="${trackingUrl}" width="1" height="1" alt="" style="display:none;" />`;
+          // URL rewrite for click tracking
+          personalizedBody = personalizedBody.replace(/href="([^"]+)"/g, (match, p1) => {
+            // Ignore if it's already our webhook or mailto/tel links
+            if (p1.includes('/api/webhooks/track') || p1.startsWith('mailto:') || p1.startsWith('tel:')) return match;
+            const trackingUrl = `${appUrl}/api/webhooks/track?leadId=${lead.id}&campaignId=${campaign.id}&url=${encodeURIComponent(p1)}`;
+            return `href="${trackingUrl}"`;
+          });
+
+          // Open tracking pixel
+          const pixelUrl = `${appUrl}/api/webhooks/track?leadId=${lead.id}&campaignId=${campaign.id}`;
+          personalizedBody += `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;" />`;
         }
       }
 

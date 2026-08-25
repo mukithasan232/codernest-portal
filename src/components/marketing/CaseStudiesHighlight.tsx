@@ -26,6 +26,8 @@ export default function CaseStudiesHighlight({ studies }: { studies: CaseStudy[]
               <img
                 src={study.imageUrl || "https://images.unsplash.com/photo-1498050108023-c5249f4df085"}
                 alt={study.title}
+                width={800}
+                height={600}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute bottom-6 left-6 z-20">

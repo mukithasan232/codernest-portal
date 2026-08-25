@@ -56,7 +56,7 @@ export default function TestimonialSlider({ initialTestimonials }: { initialTest
           <div className="flex items-center gap-4 mt-auto">
             {testimonial.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={testimonial.avatar_url} alt={testimonial.client_name} className="w-12 h-12 rounded-full object-cover" />
+              <img src={testimonial.avatar_url} alt={testimonial.client_name} width={48} height={48} className="w-12 h-12 rounded-full object-cover" />
             ) : (
               <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center">
                 <UserCircle2 className="w-6 h-6 text-slate-400 dark:text-slate-500" />

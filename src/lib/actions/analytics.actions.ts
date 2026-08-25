@@ -23,8 +23,8 @@ export type AnalyticsResult =
  */
 export async function getAnalyticsData(): Promise<AnalyticsResult> {
   const propertyId = process.env.GA4_PROPERTY_ID;
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
   // Gracefully signal "not configured" so the UI can show a placeholder
   if (!propertyId || !clientEmail || !privateKey) {
