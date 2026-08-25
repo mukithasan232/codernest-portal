@@ -127,6 +127,20 @@ export default function EmailMarketingPage() {
   }
 
   async function handleSendCampaign(formData: FormData) {
+    if (!subject) {
+      toast.error('Please enter an Email Subject before broadcasting.');
+      return;
+    }
+    if (!htmlContent) {
+      toast.error('Please add content to the Email Body before broadcasting.');
+      return;
+    }
+    const audience = formData.get('audience');
+    if (!audience) {
+      toast.error('Please select a Target Audience before broadcasting.');
+      return;
+    }
+
     setIsSubmitting(true);
     setLastSuccess(null);
     
@@ -363,7 +377,7 @@ export default function EmailMarketingPage() {
 
             <button 
               type="submit" 
-              disabled={isSubmitting || !htmlContent || !subject}
+              disabled={isSubmitting}
               className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
