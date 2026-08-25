@@ -81,12 +81,12 @@ export async function sendEmailCampaignAction(formData: FormData) {
 
     // Setup Nodemailer Transport
     const transporter = nodemailer.createTransport({
-      host: settings.smtpHost,
+      host: settings.smtpHost as string,
       port: settings.smtpPort || 465,
       secure: settings.smtpPort === 465, // true for 465, false for 587
       auth: {
-        user: settings.smtpUser,
-        pass: settings.smtpPassword,
+        user: settings.smtpUser as string,
+        pass: settings.smtpPassword as string,
       },
       tls: {
         // Do not fail on invalid certs or hostname mismatches
