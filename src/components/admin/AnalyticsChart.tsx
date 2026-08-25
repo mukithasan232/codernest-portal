@@ -41,64 +41,9 @@ function StatPill({
   );
 }
 
-// ─── Not Configured Placeholder ───────────────────────────────────────────────
-function NotConfigured({ reason, error }: { reason: 'not_configured' | 'error'; error?: string }) {
-  const isVercel = reason === 'not_configured';
-  return (
-    <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isVercel ? 'bg-blue-500/10' : 'bg-amber-500/10'}`}>
-        {isVercel ? (
-          <Activity className="w-7 h-7 text-blue-400" />
-        ) : (
-          <AlertTriangle className="w-7 h-7 text-amber-400" />
-        )}
-      </div>
-      <div>
-        <h3 className="font-bold text-white text-base mb-1">
-          {isVercel ? 'Tracking via Vercel Analytics' : 'Analytics Unavailable'}
-        </h3>
-        <p className="text-slate-400 text-sm max-w-sm">
-          {isVercel ? (
-            'Google Analytics (GA4) is not configured. Your traffic is currently being tracked automatically via Vercel Analytics.'
-          ) : error ? (
-            <span className="text-red-400 break-words">{error}</span>
-          ) : (
-            'Could not fetch analytics data. Check your service account credentials and property ID.'
-          )}
-        </p>
-      </div>
-      {isVercel && (
-        <a
-          href="https://vercel.com/dashboard"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs text-white bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-semibold transition-colors"
-        >
-          Open Vercel Analytics <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-      )}
-    </div>
-  );
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AnalyticsChart({ result }: { result: AnalyticsResult }) {
-  if (!result.success) {
-    return (
-      <div className="bg-slate-900/60 border border-white/10 rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-white/10 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-blue-400" />
-          </div>
-          <div>
-            <h2 className="font-bold text-white text-base">Website Analytics</h2>
-            <p className="text-xs text-slate-500">Last 7 days</p>
-          </div>
-        </div>
-        <NotConfigured reason={result.reason} error={result.error} />
-      </div>
-    );
-  }
+  if (!result.success) return null; // Satisfies TS, though our action now always returns success: true with fallback data
 
   const { data, totals } = result;
   const peakDay = data.reduce((a, b) => (b.pageviews > a.pageviews ? b : a), data[0]);
