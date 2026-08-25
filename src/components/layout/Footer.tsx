@@ -16,9 +16,9 @@ const footerLinks = {
         { name: "UI/UX Design", href: "/services" },
     ],
     legal: [
-        { name: "Privacy Policy", href: "/privacy" },
-        { name: "Terms of Service", href: "/terms" },
-        { name: "Cookie Policy", href: "/cookies" },
+        { name: "Privacy Policy", href: "/privacy-policy" },
+        { name: "Terms of Service", href: "/terms-and-conditions" },
+        { name: "Cookie Policy", href: "/privacy-policy" },
     ],
 };
 
