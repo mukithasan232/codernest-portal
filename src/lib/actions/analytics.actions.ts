@@ -74,8 +74,8 @@ export async function getAnalyticsData(): Promise<AnalyticsResult> {
     );
 
     return { success: true, data, totals };
-  } catch (err: unknown) {
-    console.error('[Analytics] GA Data API error:', err instanceof Error ? err.message : err);
-    return { success: false, reason: 'error', error: err instanceof Error ? err.message : 'Unknown error' };
+  } catch (err: any) {
+    console.error('[Analytics] GA Data API full error:', err);
+    return { success: false, reason: 'error', error: err?.message || String(err) };
   }
 }

@@ -53,9 +53,13 @@ function NotConfigured({ reason }: { reason: 'not_configured' | 'error'; error?:
           {reason === 'not_configured' ? 'Analytics Not Configured' : 'Analytics Unavailable'}
         </h3>
         <p className="text-slate-400 text-sm max-w-xs">
-          {reason === 'not_configured'
-            ? 'Add your GA4_PROPERTY_ID and Google Service Account credentials to your environment variables to enable this chart.'
-            : 'Could not fetch analytics data. Check your service account credentials and property ID.'}
+          {reason === 'not_configured' ? (
+            'Add your GA4_PROPERTY_ID and Google Service Account credentials to your environment variables to enable this chart.'
+          ) : error ? (
+            <span className="text-red-400 break-words">{error}</span>
+          ) : (
+            'Could not fetch analytics data. Check your service account credentials and property ID.'
+          )}
         </p>
       </div>
       {reason === 'not_configured' && (
