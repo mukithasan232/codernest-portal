@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Mail, Send, Users, FileText, Loader2, CheckCircle2, LayoutTemplate, Code2, Type } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendEmailCampaignAction, getLeadsForCampaign } from '@/lib/actions/email-campaign.actions';
+import { sendEmailCampaignAction, getLeadsForCampaign, saveEmailTemplateAction, getEmailTemplatesAction } from '@/lib/actions/email-campaign.actions';
 import Editor from '@monaco-editor/react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -45,8 +45,10 @@ const PREDEFINED_TEMPLATES = [
 
 export default function EmailMarketingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [lastSuccess, setLastSuccess] = useState<string | null>(null);
   const [leads, setLeads] = useState<any[]>([]);
+  const [dbTemplates, setDbTemplates] = useState<any[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(true);
 
   // Editor State
@@ -80,21 +82,49 @@ export default function EmailMarketingPage() {
   }, [activeTab, htmlContent, tipTapEditor]);
 
   useEffect(() => {
-    async function fetchLeads() {
-      const res = await getLeadsForCampaign();
-      if (res.success && res.data) {
-        setLeads(res.data);
+    async function fetchData() {
+      const leadsRes = await getLeadsForCampaign();
+      if (leadsRes.success && leadsRes.data) {
+        setLeads(leadsRes.data);
+      }
+      const tplRes = await getEmailTemplatesAction();
+      if (tplRes.success && tplRes.data) {
+        setDbTemplates(tplRes.data);
       }
       setIsLoadingLeads(false);
     }
-    fetchLeads();
+    fetchData();
   }, []);
 
-  const handleApplyTemplate = (template: typeof PREDEFINED_TEMPLATES[0]) => {
+  const handleApplyTemplate = (template: { subject: string, html_body?: string, html?: string }) => {
     setSubject(template.subject);
-    setHtmlContent(template.html);
+    setHtmlContent(template.html_body || template.html || '');
     toast.success('Template applied!');
   };
+
+  async function handleSaveTemplate() {
+    if (!htmlContent || !subject) {
+      toast.error('Subject and body are required to save a template.');
+      return;
+    }
+    const name = prompt('Enter a name for this template:');
+    if (!name) return;
+    
+    setIsSaving(true);
+    try {
+      const res = await saveEmailTemplateAction({ name, subject, html_body: htmlContent });
+      if (res.error) {
+        toast.error(res.error);
+      } else if (res.success) {
+        toast.success(res.message || 'Template saved!');
+        setDbTemplates([res.data, ...dbTemplates]);
+      }
+    } catch (e) {
+      toast.error('An unexpected error occurred while saving.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   async function handleSendCampaign(formData: FormData) {
     setIsSubmitting(true);
@@ -222,14 +252,31 @@ export default function EmailMarketingPage() {
             
             {activeTab === 'template' && (
               <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full overflow-y-auto">
+                {/* Saved DB Templates */}
+                {dbTemplates.map(template => (
+                  <div key={template.id} className="bg-purple-900/10 border border-purple-500/20 rounded-2xl p-6 hover:border-purple-500 transition-all group flex flex-col relative overflow-hidden">
+                    <div className="absolute top-0 right-0 bg-purple-500 text-xs px-2 py-1 font-bold text-white rounded-bl-lg">Saved</div>
+                    <h3 className="text-lg font-bold text-white mb-2">{template.name}</h3>
+                    <p className="text-sm text-slate-400 mb-6 flex-1 line-clamp-2">Subject: {template.subject}</p>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyTemplate(template)}
+                      className="w-full py-2.5 bg-purple-500/10 hover:bg-purple-500 hover:text-white text-purple-400 font-semibold rounded-xl transition-all"
+                    >
+                      Use Template
+                    </button>
+                  </div>
+                ))}
+                
+                {/* Predefined Templates */}
                 {PREDEFINED_TEMPLATES.map(template => (
-                  <div key={template.id} className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 hover:border-purple-500/50 transition-all group flex flex-col">
+                  <div key={template.id} className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 hover:border-blue-500/50 transition-all group flex flex-col">
                     <h3 className="text-lg font-bold text-white mb-2">{template.name}</h3>
                     <p className="text-sm text-slate-400 mb-6 flex-1">Subject: {template.subject}</p>
                     <button
                       type="button"
                       onClick={() => handleApplyTemplate(template)}
-                      className="w-full py-2.5 bg-white/5 hover:bg-purple-500 hover:text-white text-purple-400 font-semibold rounded-xl transition-all"
+                      className="w-full py-2.5 bg-white/5 hover:bg-blue-500 hover:text-white text-blue-400 font-semibold rounded-xl transition-all"
                     >
                       Use Template
                     </button>
@@ -299,23 +346,39 @@ export default function EmailMarketingPage() {
             <p className="text-slate-400 text-sm">Emails will be dispatched using your configured SMTP settings.</p>
           )}
           
-          <button 
-            type="submit" 
-            disabled={isSubmitting || !htmlContent || !subject}
-            className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Dispatching...
-              </>
+          <div className="flex gap-4 items-center">
+            <button 
+              type="button" 
+              onClick={handleSaveTemplate}
+              disabled={isSaving || !htmlContent || !subject}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-bold transition-all border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+              ) : (
+                <LayoutTemplate className="w-5 h-5 text-slate-400" />
+              )}
+              Save as Template
+            </button>
+
+            <button 
+              type="submit" 
+              disabled={isSubmitting || !htmlContent || !subject}
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Dispatching...
+                </>
             ) : (
               <>
                 <Send className="w-5 h-5" />
                 Broadcast Campaign
               </>
             )}
-          </button>
+            </button>
+          </div>
         </div>
       </form>
     </div>

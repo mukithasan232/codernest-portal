@@ -64,7 +64,15 @@ export async function sendEmailCampaignAction(formData: FormData) {
     });
 
     if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
-      return { error: 'SMTP settings are not fully configured in System Settings. Please set Host, User, and Password.' };
+      if (process.env.NODE_ENV === 'development') {
+        console.log('\n--- MOCK EMAIL CAMPAIGN DISPATCH ---');
+        console.log(`To: ${targetLeads.length} recipients`);
+        console.log(`Subject: ${subject}`);
+        console.log(`Body Preview: ${body.substring(0, 150)}...`);
+        console.log('------------------------------------\n');
+        return { success: true, message: `Mock Mode: Campaign successfully sent to ${targetLeads.length} recipients. Check terminal logs.` };
+      }
+      return { error: 'SMTP configuration missing. Please add API keys in settings.' };
     }
 
     // Setup Nodemailer Transport
@@ -105,5 +113,49 @@ export async function sendEmailCampaignAction(formData: FormData) {
   } catch (error: any) {
     console.error('Failed to send campaign:', error);
     return { error: error.message || 'Failed to send emails.' };
+  }
+}
+
+export async function saveEmailTemplateAction(data: { name: string, subject: string, html_body: string }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+      return { error: 'Unauthorized' };
+    }
+
+    if (!data.name || !data.subject || !data.html_body) {
+      return { error: 'Name, subject, and content are required to save a template.' };
+    }
+
+    const template = await prisma.emailTemplate.create({
+      data: {
+        name: data.name,
+        subject: data.subject,
+        html_body: data.html_body,
+      }
+    });
+
+    return { success: true, data: template, message: 'Template saved successfully.' };
+  } catch (error: any) {
+    console.error('Failed to save template:', error);
+    return { error: 'Failed to save template.' };
+  }
+}
+
+export async function getEmailTemplatesAction() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+      return { success: false, data: [] };
+    }
+
+    const templates = await prisma.emailTemplate.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return { success: true, data: templates };
+  } catch (error) {
+    console.error('Failed to fetch templates:', error);
+    return { success: false, data: [] };
   }
 }
