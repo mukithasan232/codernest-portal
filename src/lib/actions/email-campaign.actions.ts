@@ -113,7 +113,7 @@ export async function sendEmailCampaignAction(formData: FormData) {
     });
 
     // 2. Prepare tracking logs and send emails
-    const logData = [];
+    const logData: { campaignId: string; leadId: string; status: 'SENT' | 'OPENED' | 'CLICKED' | 'BOUNCED' }[] = [];
     const sendPromises = targetLeads.map(lead => {
       // Dynamic Variable Replacements
       const clientName = lead.name || 'there';
@@ -154,18 +154,18 @@ export async function sendEmailCampaignAction(formData: FormData) {
     // 3. Insert all Email Tracking Logs in bulk
     if (logData.length > 0) {
       await prisma.emailTrackingLog.createMany({
-        data: logData as any
+        data: logData
       });
     }
 
     return { success: true, message: `Campaign successfully sent to ${targetLeads.length} recipients.` };
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to send campaign:', error);
-    if (error.message && error.message.includes('Greeting never received')) {
+    if (error instanceof Error && error.message && error.message.includes('Greeting never received')) {
       return { error: 'SMTP Error: Connection timed out. Check your SMTP Host and Port.' };
     }
-    return { error: `SMTP Error: ${error.message || 'Check your environment variables or SMTP settings'}` };
+    return { error: error instanceof Error ? error.message : 'Failed to send campaign. Please try again.' };
   }
 }
 
