@@ -64,15 +64,12 @@ export async function sendEmailCampaignAction(formData: FormData) {
     });
 
     if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('\n--- MOCK EMAIL CAMPAIGN DISPATCH ---');
-        console.log(`To: ${targetLeads.length} recipients`);
-        console.log(`Subject: ${subject}`);
-        console.log(`Body Preview: ${body.substring(0, 150)}...`);
-        console.log('------------------------------------\n');
-        return { success: true, message: `Mock Mode: Campaign successfully sent to ${targetLeads.length} recipients. Check terminal logs.` };
-      }
-      return { error: 'SMTP configuration missing. Please add API keys in settings.' };
+      console.log('\n--- MOCK EMAIL CAMPAIGN DISPATCH ---');
+      console.log(`To: ${targetLeads.length} recipients`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Body Preview: ${body.substring(0, 150)}...`);
+      console.log('------------------------------------\n');
+      return { success: true, message: `Mock Mode: Campaign successfully sent to ${targetLeads.length} recipients. (Check Vercel/Terminal logs)` };
     }
 
     // Setup Nodemailer Transport
