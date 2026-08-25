@@ -63,6 +63,15 @@ export async function sendEmailCampaignAction(formData: FormData) {
       where: { id: 'global_settings' }
     });
 
+    // 1. Create the Campaign Record
+    const campaign = await prisma.campaign.create({
+      data: {
+        name: `Campaign - ${subject} (${new Date().toLocaleDateString()})`,
+        subject: subject,
+        totalSent: targetLeads.length,
+      }
+    });
+
     const isMock = 
       !settings?.smtpHost || 
       !settings?.smtpUser || 
@@ -76,6 +85,16 @@ export async function sendEmailCampaignAction(formData: FormData) {
       console.log(`Subject: ${subject}`);
       console.log(`Body Preview: ${body.substring(0, 150)}...`);
       console.log('------------------------------------\n');
+
+      // Create Mock Tracking Logs
+      await prisma.emailTrackingLog.createMany({
+        data: targetLeads.filter(l => l.id).map(lead => ({
+          campaignId: campaign.id,
+          leadId: lead.id as string,
+          status: 'SENT'
+        }))
+      });
+
       return { success: true, message: `Mock Mode: Emails logged to console (No valid SMTP config found).` };
     }
 
@@ -89,22 +108,38 @@ export async function sendEmailCampaignAction(formData: FormData) {
         pass: settings.smtpPassword as string,
       },
       tls: {
-        // Do not fail on invalid certs or hostname mismatches
         rejectUnauthorized: false
       }
     });
 
-    // Send emails in parallel or batch (Using a simple loop for now)
+    // 2. Prepare tracking logs and send emails
+    const logData = [];
     const sendPromises = targetLeads.map(lead => {
       // Dynamic Variable Replacements
       const clientName = lead.name || 'there';
       const companyName = lead.company || 'your company';
 
-      const personalizedBody = body
+      let personalizedBody = body
         .replace(/\[Client Name\]/gi, clientName)
         .replace(/\{\{name\}\}/gi, clientName)
         .replace(/\[Company Name\]/gi, companyName)
         .replace(/\{\{company\}\}/gi, companyName);
+
+      if (lead.id) {
+        logData.push({
+          campaignId: campaign.id,
+          leadId: lead.id,
+          status: 'SENT'
+        });
+        
+        // Add a simple 1x1 tracking pixel (Assuming our Next.js app host is accessible)
+        // If NEXT_PUBLIC_APP_URL is not set, we skip this to avoid broken images.
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+        if (appUrl) {
+          const trackingUrl = `${appUrl}/api/webhooks/email?action=open&campaignId=${campaign.id}&leadId=${lead.id}`;
+          personalizedBody += `<img src="${trackingUrl}" width="1" height="1" alt="" style="display:none;" />`;
+        }
+      }
 
       return transporter.sendMail({
         from: `"${settings.siteName}" <${settings.smtpUser}>`,
@@ -115,6 +150,13 @@ export async function sendEmailCampaignAction(formData: FormData) {
     });
 
     await Promise.all(sendPromises);
+
+    // 3. Insert all Email Tracking Logs in bulk
+    if (logData.length > 0) {
+      await prisma.emailTrackingLog.createMany({
+        data: logData as any
+      });
+    }
 
     return { success: true, message: `Campaign successfully sent to ${targetLeads.length} recipients.` };
     

@@ -102,7 +102,7 @@ export default async function LiveTrafficPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5 text-slate-400">
                         <MapPin className="w-3.5 h-3.5" />
-                        {visitor.location || 'Unknown Region'}
+                        {visitor.location ? decodeURIComponent(visitor.location) : 'Unknown Region'}
                       </div>
                     </td>
                     <td className="px-6 py-4">

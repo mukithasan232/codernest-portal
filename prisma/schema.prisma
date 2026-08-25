@@ -102,6 +102,7 @@ model Lead {
   serviceRequested String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  emailLogs        EmailTrackingLog[]
 }
 
 model CaseStudy {
@@ -324,4 +325,35 @@ model PageView {
   createdAt DateTime @default(now())
   
   visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+}
+
+enum EmailStatus {
+  SENT
+  OPENED
+  CLICKED
+  BOUNCED
+}
+
+model Campaign {
+  id           String             @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  subject      String
+  totalSent    Int                @default(0)
+  totalOpened  Int                @default(0)
+  totalClicked Int                @default(0)
+  createdAt    DateTime           @default(now())
+  logs         EmailTrackingLog[]
+}
+
+model EmailTrackingLog {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  campaignId String      @db.ObjectId
+  leadId     String      @db.ObjectId
+  status     EmailStatus @default(SENT)
+  openedAt   DateTime?
+  clickedAt  DateTime?
+  createdAt  DateTime    @default(now())
+
+  campaign   Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  lead       Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
