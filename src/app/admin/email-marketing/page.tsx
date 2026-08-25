@@ -186,7 +186,6 @@ export default function EmailMarketingPage() {
             <select 
               name="audience" 
               id="audience" 
-              required
               disabled={isLoadingLeads}
               className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all disabled:opacity-50"
             >
@@ -223,7 +222,6 @@ export default function EmailMarketingPage() {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="e.g., Transform your web performance this quarter..."
-              required
               className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
             />
           </div>
