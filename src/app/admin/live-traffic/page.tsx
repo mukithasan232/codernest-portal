@@ -123,7 +123,7 @@ export default async function LiveTrafficPage() {
                             <span className="text-slate-500 w-4">{visitor.pageViews.length - idx}.</span>
                             <Globe className="w-3 h-3 text-slate-600" />
                             <span className="text-slate-300 truncate max-w-[200px]" title={pv.url}>
-                              {pv.url}
+                              {pv.url === '/' ? 'Homepage (/)' : pv.url}
                             </span>
                             <span className="text-slate-500 bg-white/5 px-1.5 py-0.5 rounded ml-auto flex-shrink-0">
                               {formatDuration(pv.timeSpent)}
