@@ -63,24 +63,35 @@ export async function sendEmailCampaignAction(formData: FormData) {
       where: { id: 'global_settings' }
     });
 
-    if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
+    const isMock = 
+      !settings?.smtpHost || 
+      !settings?.smtpUser || 
+      !settings?.smtpPassword ||
+      settings.smtpHost.includes('example.com') ||
+      settings.smtpHost.includes('mock');
+
+    if (isMock) {
       console.log('\n--- MOCK EMAIL CAMPAIGN DISPATCH ---');
       console.log(`To: ${targetLeads.length} recipients`);
       console.log(`Subject: ${subject}`);
       console.log(`Body Preview: ${body.substring(0, 150)}...`);
       console.log('------------------------------------\n');
-      return { success: true, message: `Mock Mode: Campaign successfully sent to ${targetLeads.length} recipients. (Check Vercel/Terminal logs)` };
+      return { success: true, message: `Mock Mode: Emails logged to console (No valid SMTP config found).` };
     }
 
     // Setup Nodemailer Transport
     const transporter = nodemailer.createTransport({
       host: settings.smtpHost,
       port: settings.smtpPort || 465,
-      secure: settings.smtpPort === 465,
+      secure: settings.smtpPort === 465, // true for 465, false for 587
       auth: {
         user: settings.smtpUser,
         pass: settings.smtpPassword,
       },
+      tls: {
+        // Do not fail on invalid certs or hostname mismatches
+        rejectUnauthorized: false
+      }
     });
 
     // Send emails in parallel or batch (Using a simple loop for now)
@@ -109,7 +120,10 @@ export async function sendEmailCampaignAction(formData: FormData) {
     
   } catch (error: any) {
     console.error('Failed to send campaign:', error);
-    return { error: error.message || 'Failed to send emails.' };
+    if (error.message && error.message.includes('Greeting never received')) {
+      return { error: 'SMTP Error: Connection timed out. Check your SMTP Host and Port.' };
+    }
+    return { error: `SMTP Error: ${error.message || 'Check your environment variables or SMTP settings'}` };
   }
 }
 
