@@ -41,17 +41,17 @@ export async function sendEmailCampaignAction(formData: FormData) {
     }
 
     // Resolve audience to emails and details
-    let targetLeads: { email: string; name?: string | null; company?: string | null }[] = [];
+    let targetLeads: { id?: string | null; email: string; name?: string | null; company?: string | null }[] = [];
     
     if (audience === 'all_leads') {
-      targetLeads = await prisma.lead.findMany({ select: { email: true, name: true, company: true } });
+      targetLeads = await prisma.lead.findMany({ select: { id: true, email: true, name: true, company: true } });
     } else if (audience.startsWith('lead_')) {
       const leadId = audience.replace('lead_', '');
-      const lead = await prisma.lead.findUnique({ where: { id: leadId }, select: { email: true, name: true, company: true } });
+      const lead = await prisma.lead.findUnique({ where: { id: leadId }, select: { id: true, email: true, name: true, company: true } });
       if (lead) targetLeads = [lead];
     } else {
       // For usa_leads, uk_leads, past_clients (Static mock resolution for now)
-      targetLeads = [{ email: `mock_${audience}@example.com`, name: 'Mock User', company: 'Mock Inc' }];
+      targetLeads = [{ id: null, email: `mock_${audience}@example.com`, name: 'Mock User', company: 'Mock Inc' }];
     }
 
     if (targetLeads.length === 0) {
