@@ -163,6 +163,12 @@ export default function EmailMarketingPage() {
     }
   }
 
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    await handleSendCampaign(formData);
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-24">
       <div className="flex items-center gap-3">
@@ -175,7 +181,7 @@ export default function EmailMarketingPage() {
         </div>
       </div>
 
-      <form action={handleSendCampaign} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         {/* Settings Bar */}
         <div className="glass rounded-2xl border border-white/10 p-6 shadow-lg flex flex-col md:flex-row gap-6">
           <div className="flex-1 space-y-2">
@@ -381,7 +387,7 @@ export default function EmailMarketingPage() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Dispatching...
+                  Sending...
                 </>
             ) : (
               <>
