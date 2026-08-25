@@ -43,18 +43,23 @@ function StatPill({
 
 // ─── Not Configured Placeholder ───────────────────────────────────────────────
 function NotConfigured({ reason, error }: { reason: 'not_configured' | 'error'; error?: string }) {
+  const isVercel = reason === 'not_configured';
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center">
-        <AlertTriangle className="w-7 h-7 text-amber-400" />
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isVercel ? 'bg-blue-500/10' : 'bg-amber-500/10'}`}>
+        {isVercel ? (
+          <Activity className="w-7 h-7 text-blue-400" />
+        ) : (
+          <AlertTriangle className="w-7 h-7 text-amber-400" />
+        )}
       </div>
       <div>
         <h3 className="font-bold text-white text-base mb-1">
-          {reason === 'not_configured' ? 'Analytics Not Configured' : 'Analytics Unavailable'}
+          {isVercel ? 'Tracking via Vercel Analytics' : 'Analytics Unavailable'}
         </h3>
-        <p className="text-slate-400 text-sm max-w-xs">
-          {reason === 'not_configured' ? (
-            'Add your GA4_PROPERTY_ID and Google Service Account credentials to your environment variables to enable this chart.'
+        <p className="text-slate-400 text-sm max-w-sm">
+          {isVercel ? (
+            'Google Analytics (GA4) is not configured. Your traffic is currently being tracked automatically via Vercel Analytics.'
           ) : error ? (
             <span className="text-red-400 break-words">{error}</span>
           ) : (
@@ -62,14 +67,14 @@ function NotConfigured({ reason, error }: { reason: 'not_configured' | 'error'; 
           )}
         </p>
       </div>
-      {reason === 'not_configured' && (
+      {isVercel && (
         <a
-          href="https://console.cloud.google.com/iam-admin/serviceaccounts"
+          href="https://vercel.com/dashboard"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+          className="flex items-center gap-1.5 text-xs text-white bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg font-semibold transition-colors"
         >
-          Set up Service Account <ExternalLink className="w-3.5 h-3.5" />
+          Open Vercel Analytics <ExternalLink className="w-3.5 h-3.5" />
         </a>
       )}
     </div>
