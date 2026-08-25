@@ -10,7 +10,7 @@ import { redirect } from 'next/navigation';
 import {
   TrendingUp, Users, Image as ImageIcon, Briefcase,
   LayoutDashboard, BookOpen, DollarSign, Mail,
-  ArrowUpRight, Layers
+  ArrowUpRight, Layers, Target
 } from 'lucide-react';
 
 const QUICK_LINKS = [
@@ -126,6 +126,39 @@ export default async function AdminDashboard() {
 
       {/* Analytics Chart */}
       <AnalyticsChart result={analyticsResult} />
+
+      {/* Marketing Integrations */}
+      <div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Marketing Integrations</h2>
+        <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-5 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-blue-600/10 flex items-center justify-center flex-shrink-0">
+              <Target className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white">Meta (Facebook) Pixel</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {process.env.NEXT_PUBLIC_META_PIXEL_ID ? (
+                  <>Pixel ID: <span className="font-mono bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-xs">{process.env.NEXT_PUBLIC_META_PIXEL_ID.replace(/.(?=.{4})/g, 'x')}</span></>
+                ) : (
+                  'Track conversions and measure ad ROI'
+                )}
+              </p>
+            </div>
+          </div>
+          <div>
+            {process.env.NEXT_PUBLIC_META_PIXEL_ID ? (
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-sm font-semibold whitespace-nowrap">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Active
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-sm font-semibold whitespace-nowrap">
+                <span className="w-2 h-2 rounded-full bg-amber-500" /> Not Configured
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Kanban Board */}
       <div>
