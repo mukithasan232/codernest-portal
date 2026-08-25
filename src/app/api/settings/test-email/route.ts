@@ -25,6 +25,9 @@ export async function POST(req: Request) {
         user,
         pass,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     const htmlContent = `

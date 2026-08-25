@@ -57,8 +57,14 @@ export default function SettingsForm({ initialSettings }: { initialSettings: any
     const testEmailTo = window.prompt('Enter email address to send the test email:');
     if (!testEmailTo) return;
 
-    if (!formData.smtpHost || !formData.smtpPort || !formData.smtpUser || !formData.smtpPassword) {
-      toast.error('Please fill all SMTP fields before testing.');
+    const missing = [];
+    if (!formData.smtpHost) missing.push('Host');
+    if (!formData.smtpPort) missing.push('Port');
+    if (!formData.smtpUser) missing.push('User');
+    if (!formData.smtpPassword) missing.push('Password');
+    
+    if (missing.length > 0) {
+      toast.error(`Missing fields: ${missing.join(', ')}`);
       return;
     }
 
