@@ -7,16 +7,18 @@ const TRANSPARENT_PIXEL = Buffer.from(
 );
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const leadId = searchParams.get('leadId');
-  const campaignId = searchParams.get('campaignId');
-  const url = searchParams.get('url');
-
-  if (!leadId || !campaignId) {
-    return new NextResponse('Missing parameters', { status: 400 });
-  }
-
   try {
+    console.log('[WEBHOOK HIT]:', request.url);
+
+    const searchParams = request.nextUrl.searchParams;
+    const leadId = searchParams.get('leadId');
+    const campaignId = searchParams.get('campaignId');
+    const url = searchParams.get('url');
+
+    if (!leadId || !campaignId) {
+      return new NextResponse('Missing parameters', { status: 400 });
+    }
+
     if (url) {
       // It's a click tracking hit
       await prisma.campaign.update({
@@ -89,18 +91,22 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Return a 1x1 transparent GIF
+      // Return a 1x1 transparent GIF with CORS headers
       return new NextResponse(TRANSPARENT_PIXEL, {
         headers: {
           'Content-Type': 'image/gif',
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
         },
       });
     }
   } catch (error) {
     console.error('Webhook tracking error:', error);
+    const searchParams = request.nextUrl.searchParams;
+    const url = searchParams.get('url');
     // Even if tracking fails, return the pixel or redirect to avoid breaking the user experience
     if (url) {
       return NextResponse.redirect(url);
@@ -108,6 +114,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(TRANSPARENT_PIXEL, {
       headers: {
         'Content-Type': 'image/gif',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   }
