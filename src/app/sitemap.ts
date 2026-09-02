@@ -16,7 +16,7 @@
 import type { MetadataRoute } from 'next';
 import { sitemapCities } from '@/lib/data/targetCities';
 
-const BASE_URL = 'https://codernest.agency';
+const BASE_URL = 'https://www.codernest.cloud/';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

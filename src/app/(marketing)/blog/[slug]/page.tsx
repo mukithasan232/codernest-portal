@@ -4,6 +4,7 @@ import { ArrowLeft, Clock, Share2, Twitter, Linkedin } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import BlogRenderer from "@/components/blog/BlogRenderer";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
@@ -57,10 +58,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                         />
                     </div>
 
-                    <div 
-                        className="prose dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: post.content }}
-                    />
+                    <BlogRenderer html={post.content} />
 
                     <div className="pt-12 border-t border-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-4">

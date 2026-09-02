@@ -57,11 +57,12 @@ export default async function RootLayout({
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning style={{ '--primary': primaryColor, '--secondary': secondaryColor } as React.CSSProperties}>
       <head>
-        <script
+        <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4590020337376910"
           crossOrigin="anonymous"
-        ></script>
+          strategy="afterInteractive"
+        />
         {data?.customHeaderScripts && (
           <script dangerouslySetInnerHTML={{ __html: data.customHeaderScripts }} />
         )}
@@ -84,7 +85,8 @@ export default async function RootLayout({
 
 
       
-        <script
+        <Script
+          id="organization-json-ld"
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({

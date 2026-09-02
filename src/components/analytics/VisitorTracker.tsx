@@ -70,6 +70,14 @@ export default function VisitorTracker() {
           }),
           // Optional: use keepalive so if user navigates during heartbeat it doesn't abort
           keepalive: true,
+        }).then(res => res.json()).then(data => {
+          if (data.triggerChatbot) {
+            // Check session storage so we only trigger this once per session
+            if (!sessionStorage.getItem('chatbot_triggered')) {
+              sessionStorage.setItem('chatbot_triggered', 'true');
+              window.dispatchEvent(new CustomEvent('forceOpenChatbot'));
+            }
+          }
         }).catch(() => {});
       }
     }, 1000);

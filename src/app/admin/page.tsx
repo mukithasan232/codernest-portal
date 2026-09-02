@@ -29,12 +29,13 @@ export default async function AdminDashboard() {
     redirect('/');
   }
 
-  const [totalLeads, totalUsers, pendingOrders, openProjects, analyticsResult] = await Promise.all([
+  const [totalLeads, totalUsers, pendingOrders, openProjects, analyticsResult, newRepliesCount] = await Promise.all([
     prisma.lead.count(),
     prisma.user.count(),
     prisma.imageOrder.count(),
     prisma.project.count(),
     getAnalyticsData(),
+    prisma.lead.count({ where: { hasNewReply: true } }),
   ]);
 
   const statCards = [
@@ -66,7 +67,7 @@ export default async function AdminDashboard() {
         {(() => {
           const Icon = statCards[0].icon;
           return (
-            <div className="bg-white dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+            <div className="bg-white dark:bg-white/5 p-5 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm relative">
               <div className="flex items-center gap-3">
                 <div className={`p-2.5 rounded-xl ${statCards[0].bg}`}>
                   <Icon className={`w-5 h-5 ${statCards[0].color}`} />
@@ -76,6 +77,17 @@ export default async function AdminDashboard() {
                   <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{statCards[0].value}</p>
                 </div>
               </div>
+              
+              {newRepliesCount > 0 && (
+                <div className="absolute top-4 right-4">
+                  <Link href="/admin/leads">
+                    <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded-full uppercase tracking-wide cursor-pointer hover:bg-emerald-500/20 transition-all">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      {newRepliesCount} New {newRepliesCount === 1 ? 'Reply' : 'Replies'}
+                    </span>
+                  </Link>
+                </div>
+              )}
             </div>
           );
         })()}

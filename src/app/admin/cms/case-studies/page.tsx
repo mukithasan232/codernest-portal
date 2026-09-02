@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import type { CaseStudy } from '@/types';
 import { getCmsEntries, createCmsEntry, updateCmsEntry, deleteCmsEntry } from '@/lib/actions/cms.actions';
-import { Layers, Plus, Pencil, Trash2, X, Star, ExternalLink, Github, Search } from 'lucide-react';
+import { Layers, Plus, Pencil, Trash2, X, Star, ExternalLink, Github, Search, UploadCloud } from 'lucide-react';
+import MediaDropzone from '@/components/admin/MediaDropzone';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,6 +18,7 @@ const caseStudySchema = z.object({
   challenge: z.string().min(1, 'Challenge is required'),
   solution: z.string().min(1, 'Solution is required'),
   techStack: z.string(), // We'll handle this as a comma-separated string for simplicity
+  imageUrl: z.string().optional(),
 });
 
 type CaseStudyFormValues = z.infer<typeof caseStudySchema>;
@@ -29,11 +31,12 @@ export default function CaseStudiesCmsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [fetchUrl, setFetchUrl] = useState('');
   const [isFetchingData, setIsFetchingData] = useState(false);
+  const [mediaUrl, setMediaUrl] = useState('');
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CaseStudyFormValues>({
     resolver: zodResolver(caseStudySchema),
     defaultValues: {
-      title: '', slug: '', sector: 'web', clientName: '', challenge: '', solution: '', techStack: ''
+      title: '', slug: '', sector: 'web', clientName: '', challenge: '', solution: '', techStack: '', imageUrl: ''
     }
   });
 
@@ -53,12 +56,15 @@ export default function CaseStudiesCmsPage() {
   const openNewModal = () => {
     setEditingId(null);
     setFetchUrl('');
-    reset({ title: '', slug: '', sector: 'web', clientName: '', challenge: '', solution: '', techStack: '' });
+    setMediaUrl('');
+    reset({ title: '', slug: '', sector: 'web', clientName: '', challenge: '', solution: '', techStack: '', imageUrl: '' });
     setIsModalOpen(true);
   };
 
   const openEditModal = (study: CaseStudy & { id: string }) => {
     setEditingId(study.id);
+    const currentImageUrl = study.imageUrl || '';
+    setMediaUrl(currentImageUrl);
     reset({
       title: study.title,
       slug: study.slug,
@@ -66,7 +72,8 @@ export default function CaseStudiesCmsPage() {
       clientName: study.clientName || '',
       challenge: study.challenge,
       solution: study.solution,
-      techStack: study.techStack?.join(', ') || ''
+      techStack: study.techStack?.join(', ') || '',
+      imageUrl: currentImageUrl,
     });
     setIsModalOpen(true);
   };
@@ -329,6 +336,14 @@ export default function CaseStudiesCmsPage() {
                   placeholder="Next.js, Tailwind CSS, Prisma"
                 />
               </div>
+
+              <MediaDropzone
+                value={mediaUrl}
+                onChange={(url) => {
+                  setMediaUrl(url);
+                  setValue('imageUrl', url);
+                }}
+              />
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">The Challenge *</label>

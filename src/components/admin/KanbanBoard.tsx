@@ -8,7 +8,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Lead, LeadStatus } from '@/types';
 import { Mail, Calendar, GripVertical, MoreVertical } from 'lucide-react';
-import { getLeads, updateLeadStatus } from '@/lib/actions/crm.actions';
+import { getLeads, updateLeadStatus, acknowledgeLeadReply } from '@/lib/actions/crm.actions';
 
 const COLUMNS: { id: LeadStatus; label: string; color: string; dot: string }[] = [
   { id: 'new',       label: 'New',       color: 'border-blue-500/40',   dot: 'bg-blue-400' },
@@ -24,15 +24,15 @@ export default function KanbanBoard() {
   const [dragOver, setDragOver] = useState<LeadStatus | null>(null);
   const dragLeadId = useRef<string | null>(null);
 
-  useEffect(() => {
-    const fetchLeads = async () => {
-      const res = await getLeads();
-      if (res.success && res.data) {
-        // Date objects need to be handled if returned from server actions, but Next 14 handles Date in Server Actions
-        setLeads(res.data as unknown as Lead[]);
-      }
-    };
+  const fetchLeads = async () => {
+    const res = await getLeads();
+    if (res.success && res.data) {
+      // Date objects need to be handled if returned from server actions
+      setLeads(res.data as unknown as Lead[]);
+    }
+  };
 
+  useEffect(() => {
     fetchLeads();
   }, []);
 
@@ -111,6 +111,10 @@ export default function KanbanBoard() {
                     isDragging={dragging === lead.id}
                     onDragStart={() => onDragStart(lead.id)}
                     onDragEnd={onDragEnd}
+                    onAcknowledge={async () => {
+                      setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, hasNewReply: false, lastReplySnippet: null } : l));
+                      await acknowledgeLeadReply(lead.id);
+                    }}
                   />
                 ))}
                 {colLeads.length === 0 && (
@@ -128,12 +132,13 @@ export default function KanbanBoard() {
 }
 
 function LeadCard({
-  lead, isDragging, onDragStart, onDragEnd
+  lead, isDragging, onDragStart, onDragEnd, onAcknowledge
 }: {
   lead: Lead;
   isDragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
+  onAcknowledge?: () => void;
 }) {
   return (
     <div
@@ -172,6 +177,30 @@ function LeadCard({
         <span className="inline-block text-[10px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
           {lead.budget}
         </span>
+      )}
+
+      {lead.hasNewReply && (
+        <div className="mt-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-1.5 cursor-default">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 uppercase tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              New Reply
+            </span>
+            {onAcknowledge && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); onAcknowledge(); }} 
+                className="text-[9px] text-emerald-300 hover:text-white hover:bg-emerald-500/30 px-1.5 py-0.5 rounded transition"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          {lead.lastReplySnippet && (
+            <p className="text-xs text-slate-300 italic line-clamp-2 leading-relaxed">
+              "{lead.lastReplySnippet}"
+            </p>
+          )}
+        </div>
       )}
 
       <div className="flex items-center gap-1 text-[10px] text-slate-600 pt-1 border-t border-white/5">

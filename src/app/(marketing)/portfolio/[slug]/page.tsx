@@ -102,16 +102,14 @@ export async function processRequest(input: RequestPayload) {
       </section>
 
       {/* Cover Image */}
-      {study.imageUrl && (
-        <div className="px-4 mb-12">
-          <div className="container mx-auto max-w-4xl">
-            <div className="rounded-3xl overflow-hidden border border-white/10 h-64 md:h-96">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={study.imageUrl} alt={study.title} className="w-full h-full object-cover" />
-            </div>
+      <div className="px-4 mb-12">
+        <div className="container mx-auto max-w-4xl">
+          <div className="rounded-3xl overflow-hidden border border-white/10 h-64 md:h-96">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={study.imageUrl || "/dummy-laptop.png"} alt={study.title} className={`w-full h-full object-cover ${!study.imageUrl ? 'opacity-50' : ''}`} />
           </div>
         </div>
-      )}
+      </div>
 
       {/* Case Study Content */}
       <div className="container mx-auto max-w-4xl px-4 pb-20 space-y-10">

@@ -51,7 +51,7 @@ export default function PricingCard({ pkg, index = 0 }: { pkg: any, index?: numb
 
       {pkg.customHtml ? (
         <div 
-          className="h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[23px] overflow-hidden"
+          className="h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[23px] overflow-hidden [&_svg]:max-w-[24px] [&_svg]:max-h-[24px] [&_svg]:shrink-0"
           dangerouslySetInnerHTML={{ __html: pkg.customHtml }}
         />
       ) : (

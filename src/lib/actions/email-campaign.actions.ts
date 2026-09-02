@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
 import nodemailer from 'nodemailer';
+import { isDummyEmail } from '@/utils/email';
 
 export async function getLeadsForCampaign() {
   try {
@@ -56,6 +57,19 @@ export async function sendEmailCampaignAction(formData: FormData) {
 
     if (targetLeads.length === 0) {
       return { error: 'Selected audience has no valid email addresses.' };
+    }
+
+    // Filter out dummy/test emails
+    targetLeads = targetLeads.filter(lead => {
+      if (isDummyEmail(lead.email)) {
+        console.warn(`Skipped dummy or test email: ${lead.email}`);
+        return false;
+      }
+      return true;
+    });
+
+    if (targetLeads.length === 0) {
+      return { error: 'Selected audience has no valid email addresses after filtering test emails.' };
     }
 
     // Fetch SMTP Settings from Prisma
@@ -114,7 +128,7 @@ export async function sendEmailCampaignAction(formData: FormData) {
 
     // 2. Prepare tracking logs and send emails
     const logData: { campaignId: string; leadId: string; status: 'SENT' | 'OPENED' | 'CLICKED' | 'BOUNCED' }[] = [];
-    const sendPromises = targetLeads.map(lead => {
+    const sendPromises = targetLeads.map(async (lead) => {
       // Dynamic Variable Replacements
       const clientName = lead.name || 'there';
       const companyName = lead.company || 'your company';
@@ -126,12 +140,6 @@ export async function sendEmailCampaignAction(formData: FormData) {
         .replace(/\{\{company\}\}/gi, companyName);
 
       if (lead.id) {
-        logData.push({
-          campaignId: campaign.id,
-          leadId: lead.id,
-          status: 'SENT'
-        });
-        
         const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://codernest.cloud';
         const baseUrl = rawAppUrl.replace(/\/$/, '');
 
@@ -153,26 +161,51 @@ export async function sendEmailCampaignAction(formData: FormData) {
         to: lead.email,
         subject: subject,
         html: personalizedBody,
+      }).then(() => {
+        if (lead.id) {
+          logData.push({
+            campaignId: campaign.id,
+            leadId: lead.id,
+            status: 'SENT'
+          });
+        }
       });
     });
 
-    await Promise.all(sendPromises);
+    const results = await Promise.allSettled(sendPromises);
+    const failedCount = results.filter(r => r.status === 'rejected').length;
 
-    // 3. Insert all Email Tracking Logs in bulk
+    // 3. Insert all Email Tracking Logs in bulk for successful sends
     if (logData.length > 0) {
       await prisma.emailTrackingLog.createMany({
         data: logData
       });
     }
 
-    return { success: true, message: `Campaign successfully sent to ${targetLeads.length} recipients.` };
+    if (failedCount > 0 && failedCount === targetLeads.length) {
+      // All failed
+      const firstError = (results.find(r => r.status === 'rejected') as PromiseRejectedResult).reason;
+      throw firstError;
+    }
+
+    return { 
+      success: true, 
+      message: `Campaign processed. Successfully sent: ${targetLeads.length - failedCount}, Failed: ${failedCount}.` 
+    };
     
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Failed to send campaign:', error);
-    if (error instanceof Error && error.message && error.message.includes('Greeting never received')) {
+    const msg = error?.message || '';
+    if (msg.includes('Greeting never received')) {
       return { error: 'SMTP Error: Connection timed out. Check your SMTP Host and Port.' };
     }
-    return { error: error instanceof Error ? error.message : 'Failed to send campaign. Please try again.' };
+    if (msg.includes('Invalid login') || msg.includes('Authentication failed') || msg.includes('Application-specific password required')) {
+      return { error: 'SMTP Error: Authentication failed. Please check your App Password or Credentials.' };
+    }
+    if (msg.includes('ECONNREFUSED')) {
+      return { error: 'SMTP Error: Connection refused. Ensure your port and host are correct.' };
+    }
+    return { error: msg ? `SMTP Error: ${msg}` : 'Failed to send campaign. Please try again.' };
   }
 }
 
@@ -219,3 +252,42 @@ export async function getEmailTemplatesAction() {
     return { success: false, data: [] };
   }
 }
+
+export async function deleteEmailTemplateAction(id: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+      return { error: 'Unauthorized' };
+    }
+    if (!id) return { error: 'Template ID is required.' };
+
+    await prisma.emailTemplate.delete({ where: { id } });
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to delete template:', error);
+    return { error: 'Failed to delete template.' };
+  }
+}
+
+export async function updateEmailTemplateAction(
+  id: string,
+  data: { name?: string; subject?: string; html_body?: string }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+      return { error: 'Unauthorized' };
+    }
+    if (!id) return { error: 'Template ID is required.' };
+
+    const updated = await prisma.emailTemplate.update({
+      where: { id },
+      data,
+    });
+    return { success: true, data: updated };
+  } catch (error: any) {
+    console.error('Failed to update template:', error);
+    return { error: 'Failed to update template.' };
+  }
+}
+

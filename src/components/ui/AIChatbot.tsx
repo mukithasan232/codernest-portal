@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Loader2, Sparkles } from "lucide-react";
 
@@ -21,6 +21,23 @@ export default function AIChatbot() {
         setLoading(true);
 
         try {
+            // Very simple email detection
+            const emailMatch = input.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+            if (emailMatch && emailMatch[1]) {
+                const email = emailMatch[1];
+                // Silently push to CRM using public endpoint
+                fetch('/api/leads/capture', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Chatbot Visitor',
+                        email: email,
+                        source: 'AI Chatbot Trigger',
+                        requirements: 'Captured via auto-trigger chat'
+                    })
+                }).catch(() => {});
+            }
+
             const response = await fetch("/api/ai/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -34,6 +51,24 @@ export default function AIChatbot() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const handleForceOpen = (e: Event) => {
+            if (!isOpen) {
+                setIsOpen(true);
+                // Use the context-aware message sent by BehavioralTrigger, or fall back to default
+                const customMessage = (e as CustomEvent<{ message?: string }>).detail?.message
+                    ?? "Hi! I see you're exploring our agency services. Can I get an email to send you a custom quote?";
+                setMessages(prev => [
+                    ...prev,
+                    { role: 'assistant', content: customMessage }
+                ]);
+            }
+        };
+        window.addEventListener('forceOpenChatbot', handleForceOpen);
+        return () => window.removeEventListener('forceOpenChatbot', handleForceOpen);
+    }, [isOpen]);
+
 
     return (
         <>

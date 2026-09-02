@@ -95,9 +95,7 @@ export default async function PortfolioPage() {
                   {project.imageUrl ? (
                     <img src={project.imageUrl} alt={project.title} className="object-cover object-top w-full h-full group-hover/image:scale-105 transition-transform duration-700 ease-out" />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 dark:from-blue-500/5 dark:to-purple-500/5 flex items-center justify-center">
-                      <Code2 className="w-12 h-12 text-slate-400 dark:text-slate-600 opacity-50" />
-                    </div>
+                    <img src="/dummy-laptop.png" alt={project.title} className="object-cover object-top w-full h-full group-hover/image:scale-105 transition-transform duration-700 ease-out opacity-50" />
                   )}
                 </Link>
 

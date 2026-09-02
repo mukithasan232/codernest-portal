@@ -24,7 +24,7 @@ export default function CaseStudiesHighlight({ studies }: { studies: CaseStudy[]
             <div className="relative aspect-[4/3] rounded-3xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-xl group">
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
               <img
-                src={study.imageUrl || "https://images.unsplash.com/photo-1498050108023-c5249f4df085"}
+                src={study.imageUrl || "/dummy-laptop.png"}
                 alt={study.title}
                 width={800}
                 height={600}

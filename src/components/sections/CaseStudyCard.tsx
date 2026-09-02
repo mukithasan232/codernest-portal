@@ -30,9 +30,11 @@ export default function CaseStudyCard({ study }: CaseStudyCardProps) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <SectorIcon className="w-16 h-16 text-white/10" />
-          </div>
+          <img
+            src="/dummy-laptop.png"
+            alt={study.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-50"
+          />
         )}
 
         {/* Sector badge */}

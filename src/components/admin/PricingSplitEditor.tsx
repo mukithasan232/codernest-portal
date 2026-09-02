@@ -221,9 +221,19 @@ export default function PricingSplitEditor({
                 <label className="block text-xs font-bold text-purple-400 uppercase tracking-wider mb-2">Custom HTML/Tailwind</label>
                 <textarea 
                   value={formData.customHtml || ''} 
-                  onChange={e => setFormData({...formData, customHtml: e.target.value})} 
+                  onChange={e => {
+                    let formatted = e.target.value
+                      .replace(/className=/g, 'class=')
+                      .replace(/strokeLinecap=/g, 'stroke-linecap=')
+                      .replace(/strokeLinejoin=/g, 'stroke-linejoin=')
+                      .replace(/strokeWidth=/g, 'stroke-width=')
+                      .replace(/fillRule=/g, 'fill-rule=')
+                      .replace(/clipRule=/g, 'clip-rule=')
+                      .replace(/viewBox=/gi, 'viewBox=');
+                    setFormData({...formData, customHtml: formatted});
+                  }} 
                   className="w-full h-96 bg-slate-100 dark:bg-black/50 border border-white/10 font-mono text-xs text-green-400 p-4 rounded-xl focus:outline-none focus:border-purple-500 transition"
-                  placeholder="<div className='p-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl'>...</div>"
+                  placeholder="<div class='p-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl'>...</div>"
                 />
               </div>
             ) : (

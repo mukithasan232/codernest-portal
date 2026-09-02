@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Mail, Send, Users, FileText, Loader2, CheckCircle2, LayoutTemplate, Code2, Type, BarChart3 } from 'lucide-react';
+import { Mail, Send, Users, FileText, Loader2, CheckCircle2, LayoutTemplate, Code2, Type, BarChart3, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { sendEmailCampaignAction, getLeadsForCampaign, saveEmailTemplateAction, getEmailTemplatesAction } from '@/lib/actions/email-campaign.actions';
+import { sendEmailCampaignAction, getLeadsForCampaign, saveEmailTemplateAction, getEmailTemplatesAction, deleteEmailTemplateAction, updateEmailTemplateAction } from '@/lib/actions/email-campaign.actions';
+import { isDummyEmail } from '@/utils/email';
 import Editor from '@monaco-editor/react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -51,11 +52,33 @@ export default function EmailMarketingPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [dbTemplates, setDbTemplates] = useState<any[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(true);
+  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editSubject, setEditSubject] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Editor State
   const [activeTab, setActiveTab] = useState<'template' | 'html' | 'visual'>('html');
   const [subject, setSubject] = useState('');
+  const [audience, setAudience] = useState('');
   const [htmlContent, setHtmlContent] = useState(PREDEFINED_TEMPLATES[0].html);
+
+  const hasDummyEmails = useMemo(() => {
+    if (!audience) return false;
+    if (audience === 'all_leads') {
+      return leads.some(lead => isDummyEmail(lead.email));
+    } else if (audience.startsWith('lead_')) {
+      const leadId = audience.replace('lead_', '');
+      const lead = leads.find(l => l.id === leadId);
+      return lead ? isDummyEmail(lead.email) : false;
+    }
+    
+    if (['usa_leads', 'uk_leads', 'past_clients'].includes(audience)) {
+      return true; // Backend uses @example.com for these mock options
+    }
+    return false;
+  }, [audience, leads]);
 
   // Tiptap Editor for Visual Tab
   const tipTapEditor = useEditor({
@@ -125,6 +148,43 @@ export default function EmailMarketingPage() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function handleDeleteTemplate(id: string, name: string) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    const toastId = toast.loading('Deleting template...');
+    const res = await deleteEmailTemplateAction(id);
+    if (res.success) {
+      toast.success('Template deleted.', { id: toastId });
+      setDbTemplates(prev => prev.filter(t => t.id !== id));
+    } else {
+      toast.error(res.error || 'Failed to delete.', { id: toastId });
+    }
+  }
+
+  function openEditModal(template: any) {
+    setEditingTemplate(template);
+    setEditName(template.name);
+    setEditSubject(template.subject);
+    setIsEditModalOpen(true);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingTemplate) return;
+    setIsSavingEdit(true);
+    const res = await updateEmailTemplateAction(editingTemplate.id, {
+      name: editName,
+      subject: editSubject,
+    });
+    if (res.success) {
+      toast.success('Template updated!');
+      setDbTemplates(prev => prev.map(t => t.id === editingTemplate.id ? { ...t, name: editName, subject: editSubject } : t));
+      setIsEditModalOpen(false);
+    } else {
+      toast.error(res.error || 'Failed to update.');
+    }
+    setIsSavingEdit(false);
   }
 
   async function handleSendCampaign(formData: FormData) {
@@ -202,10 +262,12 @@ export default function EmailMarketingPage() {
             <select 
               name="audience" 
               id="audience" 
+              value={audience}
+              onChange={(e) => setAudience(e.target.value)}
               disabled={isLoadingLeads}
               className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all disabled:opacity-50"
             >
-              <option value="" disabled defaultValue="">
+              <option value="" disabled>
                 {isLoadingLeads ? 'Loading audience data...' : 'Select an audience segment...'}
               </option>
               
@@ -243,6 +305,15 @@ export default function EmailMarketingPage() {
           </div>
         </div>
 
+        {hasDummyEmails && (
+          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-5 py-4 rounded-xl flex items-center gap-3 shadow-lg">
+            <AlertTriangle className="w-6 h-6 shrink-0" />
+            <p className="text-sm font-medium">
+              <strong>Warning:</strong> The selected audience segment contains dummy or placeholder email addresses (e.g., example.com). These will be automatically skipped during broadcast to prevent bounce errors. Please clean your lead list.
+            </p>
+          </div>
+        )}
+
         {/* Builder Area */}
         <div className="glass rounded-2xl border border-white/10 shadow-xl overflow-hidden flex flex-col h-[700px]">
           {/* Tabs */}
@@ -279,32 +350,80 @@ export default function EmailMarketingPage() {
           <div className="flex-1 overflow-hidden">
             
             {activeTab === 'template' && (
-              <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full overflow-y-auto">
-                {/* Saved DB Templates */}
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 h-full overflow-y-auto">
+
+                {/* ── Saved DB Templates ─────────────────────────────────── */}
                 {dbTemplates.map(template => (
-                  <div key={template.id} className="bg-purple-900/10 border border-purple-500/20 rounded-2xl p-6 hover:border-purple-500 transition-all group flex flex-col relative overflow-hidden">
-                    <div className="absolute top-0 right-0 bg-purple-500 text-xs px-2 py-1 font-bold text-white rounded-bl-lg">Saved</div>
-                    <h3 className="text-lg font-bold text-white mb-2">{template.name}</h3>
-                    <p className="text-sm text-slate-400 mb-6 flex-1 line-clamp-2">Subject: {template.subject}</p>
+                  <div
+                    key={template.id}
+                    className="bg-purple-900/10 border border-purple-500/20 rounded-2xl p-5 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10 hover:border-purple-400/40 transition-all group flex flex-col gap-4"
+                  >
+                    {/* Card header: badge + action icons */}
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 bg-purple-500 text-white rounded-full shrink-0">
+                        Saved
+                      </span>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          title="Edit template"
+                          onClick={() => openEditModal(template)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete template"
+                          onClick={() => handleDeleteTemplate(template.id, template.name)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Card body */}
+                    <div className="flex-1">
+                      <h3 className="font-bold text-white text-sm leading-snug mb-1">{template.name}</h3>
+                      <p className="text-xs text-slate-400 line-clamp-2">Subject: {template.subject}</p>
+                    </div>
+
+                    {/* Always-visible Use Template button */}
                     <button
                       type="button"
                       onClick={() => handleApplyTemplate(template)}
-                      className="w-full py-2.5 bg-purple-500/10 hover:bg-purple-500 hover:text-white text-purple-400 font-semibold rounded-xl transition-all"
+                      className="mt-auto w-full py-2.5 bg-purple-500/10 group-hover:bg-gradient-to-r group-hover:from-purple-500 group-hover:to-indigo-600 group-hover:text-white text-purple-400 text-sm font-semibold rounded-xl transition-all"
                     >
                       Use Template
                     </button>
                   </div>
                 ))}
-                
-                {/* Predefined Templates */}
+
+                {/* ── Predefined Templates ────────────────────────────────── */}
                 {PREDEFINED_TEMPLATES.map(template => (
-                  <div key={template.id} className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 hover:border-blue-500/50 transition-all group flex flex-col">
-                    <h3 className="text-lg font-bold text-white mb-2">{template.name}</h3>
-                    <p className="text-sm text-slate-400 mb-6 flex-1">Subject: {template.subject}</p>
+                  <div
+                    key={template.id}
+                    className="bg-slate-900/50 border border-white/10 rounded-2xl p-5 hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-500/30 transition-all group flex flex-col gap-4"
+                  >
+                    {/* Badge row */}
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 bg-slate-700 text-slate-300 rounded-full">
+                        Built-in
+                      </span>
+                    </div>
+
+                    {/* Card body */}
+                    <div className="flex-1">
+                      <h3 className="font-bold text-white text-sm leading-snug mb-1">{template.name}</h3>
+                      <p className="text-xs text-slate-400 line-clamp-2">Subject: {template.subject}</p>
+                    </div>
+
+                    {/* Always-visible Use Template button */}
                     <button
                       type="button"
                       onClick={() => handleApplyTemplate(template)}
-                      className="w-full py-2.5 bg-white/5 hover:bg-blue-500 hover:text-white text-blue-400 font-semibold rounded-xl transition-all"
+                      className="mt-auto w-full py-2.5 bg-white/5 group-hover:bg-gradient-to-r group-hover:from-orange-500 group-hover:to-red-500 group-hover:text-white text-slate-300 text-sm font-semibold rounded-xl transition-all"
                     >
                       Use Template
                     </button>
@@ -409,6 +528,57 @@ export default function EmailMarketingPage() {
           </div>
         </div>
       </form>
+
+      {/* ── Edit Template Modal ──────────────────────────────────────────────── */}
+      {isEditModalOpen && editingTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <h3 className="font-bold text-white">Edit Template</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+                <span className="text-xl leading-none">&times;</span>
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Template Name</label>
+                <input
+                  required
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Subject Line</label>
+                <input
+                  required
+                  value={editSubject}
+                  onChange={e => setEditSubject(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-5 py-2 text-slate-400 hover:text-white text-sm font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-50"
+                >
+                  {isSavingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />}
+                  {isSavingEdit ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

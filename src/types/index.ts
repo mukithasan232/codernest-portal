@@ -22,6 +22,8 @@ export interface Lead {
   status: LeadStatus | string;
   source?: string;
   serviceRequested?: string | null;
+  hasNewReply?: boolean;
+  lastReplySnippet?: string | null;
   createdAt?: string | Date;
 }
 

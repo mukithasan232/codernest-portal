@@ -102,9 +102,31 @@ export async function deleteLead(id: string) {
     await prisma.lead.delete({
       where: { id },
     });
-    revalidatePath('/crm');
+    revalidatePath('/admin/leads');
+    revalidatePath('/admin');
     return { success: true };
   } catch (error: unknown) {
     return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }
+
+export async function acknowledgeLeadReply(id: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { success: false, error: 'Unauthorized' };
+
+  try {
+    await prisma.lead.update({
+      where: { id },
+      data: {
+        hasNewReply: false,
+        lastReplySnippet: null,
+      },
+    });
+    revalidatePath('/admin/leads');
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (error: unknown) {
+    return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
+  }
+}
+

@@ -10,7 +10,7 @@ import type { Lead, LeadStatus } from '@/types';
 import { Mail, Plus, X, Loader2, Search, Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
-import { getLeads, updateLeadStatus, createLead } from '@/lib/actions/crm.actions';
+import { getLeads, updateLeadStatus, createLead, acknowledgeLeadReply } from '@/lib/actions/crm.actions';
 import { bulkImportLeads, type CsvLeadRow } from '@/lib/actions/leads.actions';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -228,6 +228,13 @@ export default function AdminLeadsPage() {
     const res = await updateLeadStatus(id, status);
     if (res.success) toast.success('Lead status updated!');
     else toast.error('Failed to update status.');
+  }
+
+  async function handleAcknowledge(id: string) {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, hasNewReply: false, lastReplySnippet: null } : l));
+    const res = await acknowledgeLeadReply(id);
+    if (res.success) toast.success('Reply acknowledged!');
+    else toast.error('Failed to acknowledge reply.');
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -519,6 +526,12 @@ export default function AdminLeadsPage() {
                         {lead.budget}
                       </span>
                     )}
+                    {lead.hasNewReply && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 uppercase tracking-wide">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        New Reply
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-500">
                     {lead.email} · {new Date(lead.createdAt || new Date().toISOString()).toLocaleDateString()}
@@ -530,6 +543,17 @@ export default function AdminLeadsPage() {
                   )}
                   {lead.message && (
                     <p className="text-xs text-slate-400 mt-1 truncate">{lead.message}</p>
+                  )}
+                  {lead.hasNewReply && lead.lastReplySnippet && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 max-w-2xl">
+                      <p className="text-sm text-slate-300 italic mb-2">"{lead.lastReplySnippet}"</p>
+                      <button 
+                        onClick={() => handleAcknowledge(lead.id)}
+                        className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 hover:text-white hover:bg-emerald-500/20 px-2 py-1 rounded transition"
+                      >
+                        Acknowledge Reply
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
