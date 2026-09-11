@@ -141,28 +141,44 @@ export async function uploadProcessedImage(orderId: string, clientId: string, fo
   }
 }
 
-export async function createInvoice(data: any) {
+export async function createInvoice(data: {
+  clientName?: string;
+  clientEmail: string;
+  amount: number | string;
+  currency?: string;
+  description?: string;
+  paymentMethod?: string;
+  stripePaymentLink?: string;
+  paypalLink?: string;
+}) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+    return { success: false, error: 'Unauthorized.' };
+  }
 
   try {
+    const invoiceNumber = `CN-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`;
+    const parsedAmount = Math.round(Number(data.amount));
+
     const inv = await prisma.invoice.create({
       data: {
-        clientId: data.clientId || data.clientEmail,
+        clientName: data.clientName || null,
         clientEmail: data.clientEmail,
-        amount: parseFloat(data.amount),
-        currency: data.currency,
+        amount: parsedAmount,
+        currency: data.currency || 'USD',
         status: 'pending',
-        paymentMethod: data.paymentMethod,
+        invoiceNumber,
+        description: data.description || 'Custom Agency Project Invoice',
+        paymentMethod: data.paymentMethod || 'Stripe Payment Link',
         stripePaymentLink: data.stripePaymentLink || null,
         paypalLink: data.paypalLink || null,
-      }
+      },
     });
 
     revalidatePath('/admin/invoices');
     return { success: true, invoice: inv };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "An unknown error occurred" };
+    return { success: false, error: err instanceof Error ? err.message : 'An unknown error occurred' };
   }
 }
 

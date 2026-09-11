@@ -145,16 +145,23 @@ export type InvoiceStatus = 'draft' | 'pending' | 'paid' | 'overdue';
 
 export interface Invoice {
   id: string;
-  clientId: string;
+  clientId?: string | null;
+  clientName?: string | null;
   clientEmail?: string | null;
   amount: number;
   currency: string;
   status: InvoiceStatus | string;
+  invoiceNumber?: string | null;
+  description?: string | null;
+  items?: any;
   dueDate?: string | Date | null;
   paymentMethod?: string | null;
+  stripeSessionId?: string | null;
   stripePaymentLink?: string | null;
   paypalLink?: string | null;
   escrowLink?: string | null;
+  invoiceHtml?: string | null;
+  invoicePdfUrl?: string | null;
   createdAt: string | Date;
   paidAt?: string | Date | null;
 }

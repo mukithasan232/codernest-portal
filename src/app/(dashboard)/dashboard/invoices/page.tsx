@@ -26,8 +26,13 @@ export default async function DashboardInvoicesPage() {
   }
 
   const data = await prisma.invoice.findMany({
-    where: { clientId: appUser.id },
-    orderBy: { createdAt: 'desc' }
+    where: {
+      OR: [
+        { clientId: appUser.id },
+        ...(appUser.email ? [{ clientEmail: appUser.email }] : []),
+      ],
+    },
+    orderBy: { createdAt: 'desc' },
   });
 
   const invoices = data as unknown as Invoice[];
@@ -39,8 +44,8 @@ export default async function DashboardInvoicesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">Invoices</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">View and pay your outstanding invoices.</p>
+        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">Invoices & Receipts</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">View and pay your outstanding project packages and download official receipts.</p>
       </div>
 
       {/* Summary */}
@@ -81,10 +86,10 @@ export default async function DashboardInvoicesPage() {
                     </div>
                     <div>
                       <p className="font-bold text-slate-900 dark:text-white">
-                        #{inv.id.slice(0, 8).toUpperCase()} · ${inv.amount.toLocaleString()} {inv.currency}
+                        {inv.invoiceNumber || `#${inv.id.slice(0, 8).toUpperCase()}`} · ${(inv.amount || 0).toLocaleString()} {inv.currency || 'USD'}
                       </p>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {new Date(inv.createdAt).toLocaleDateString()} · {inv.paymentMethod ?? 'Stripe'}
+                        {new Date(inv.createdAt).toLocaleDateString()} · {inv.description || inv.paymentMethod || 'Stripe Card'}
                         {inv.dueDate ? ` · Due: ${new Date(inv.dueDate).toLocaleDateString()}` : ''}
                       </p>
                     </div>
@@ -94,6 +99,14 @@ export default async function DashboardInvoicesPage() {
                     <span className={`text-xs font-bold capitalize px-2.5 py-1 rounded-full ${sc.bg} ${sc.color}`}>
                       {inv.status}
                     </span>
+                    <a
+                      href={`/api/invoices/${inv.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl transition"
+                    >
+                      Receipt <ExternalLink className="w-3 h-3" />
+                    </a>
                     {inv.status !== 'paid' && paymentLink && (
                       <a
                         id={`pay-invoice-${inv.id}`}

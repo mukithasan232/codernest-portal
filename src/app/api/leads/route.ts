@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { triggerOnboardingWorkflow } from '@/lib/workflow';
 
 export async function POST(request: Request) {
   try {
@@ -36,6 +37,17 @@ export async function POST(request: Request) {
         source: source || 'Main B2B Agency',
       },
     });
+
+    // Trigger durable onboarding workflow via Upstash Workflow
+    triggerOnboardingWorkflow({
+      leadId: newLead.id,
+      email: newLead.email,
+      name: newLead.name,
+      company: newLead.company,
+      serviceRequested: newLead.serviceRequested,
+      source: newLead.source,
+      budget: newLead.budget,
+    }).catch((err) => console.error('[Leads API] Failed to trigger onboarding workflow:', err));
 
     return NextResponse.json({ success: true, data: newLead }, { status: 201 });
   } catch (error: unknown) {

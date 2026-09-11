@@ -18,23 +18,50 @@ const COLUMNS: { id: LeadStatus; label: string; color: string; dot: string }[] =
   { id: 'closed',    label: 'Closed',    color: 'border-slate-500/40',  dot: 'bg-slate-400' },
 ];
 
-export default function KanbanBoard() {
-  const [leads, setLeads] = useState<Lead[]>([]);
+export interface KanbanBoardProps {
+  leads?: Lead[];
+  onLeadsChange?: (leads: Lead[]) => void;
+  onRefresh?: () => void;
+}
+
+export default function KanbanBoard({
+  leads: externalLeads,
+  onLeadsChange,
+  onRefresh,
+}: KanbanBoardProps = {}) {
+  const [internalLeads, setInternalLeads] = useState<Lead[]>([]);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<LeadStatus | null>(null);
   const dragLeadId = useRef<string | null>(null);
 
+  const isControlled = externalLeads !== undefined;
+  const leads = isControlled ? externalLeads : internalLeads;
+
+  const updateLeads = (updater: (prev: Lead[]) => Lead[]) => {
+    if (isControlled && onLeadsChange) {
+      onLeadsChange(updater(externalLeads));
+    } else {
+      setInternalLeads(updater);
+    }
+  };
+
   const fetchLeads = async () => {
     const res = await getLeads();
     if (res.success && res.data) {
-      // Date objects need to be handled if returned from server actions
-      setLeads(res.data as unknown as Lead[]);
+      const data = res.data as unknown as Lead[];
+      if (isControlled && onLeadsChange) {
+        onLeadsChange(data);
+      } else {
+        setInternalLeads(data);
+      }
     }
   };
 
   useEffect(() => {
-    fetchLeads();
-  }, []);
+    if (!isControlled) {
+      fetchLeads();
+    }
+  }, [isControlled]);
 
   const getColumnLeads = (status: LeadStatus) =>
     leads.filter(l => l.status === status);
@@ -58,7 +85,7 @@ export default function KanbanBoard() {
     const lead = leads.find(l => l.id === leadId);
     if (lead && lead.status !== status) {
       // Optimistic update
-      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
+      updateLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
       // Persist to DB
       await updateLeadStatus(leadId, status);
     }
@@ -112,7 +139,7 @@ export default function KanbanBoard() {
                     onDragStart={() => onDragStart(lead.id)}
                     onDragEnd={onDragEnd}
                     onAcknowledge={async () => {
-                      setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, hasNewReply: false, lastReplySnippet: null } : l));
+                      updateLeads(prev => prev.map(l => l.id === lead.id ? { ...l, hasNewReply: false, lastReplySnippet: null } : l));
                       await acknowledgeLeadReply(lead.id);
                     }}
                   />

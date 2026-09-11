@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
 import nodemailer from 'nodemailer';
 import { isDummyEmail } from '@/utils/email';
+import { isQStashConfigured, enqueueBulkEmails, EmailJobPayload } from '@/lib/qstash';
 
 export async function getLeadsForCampaign() {
   try {
@@ -111,8 +112,53 @@ export async function sendEmailCampaignAction(formData: FormData) {
 
       return { success: true, message: `Mock Mode: Emails logged to console (No valid SMTP config found).` };
     }
+    // ─── QSTASH ASYNCHRONOUS QUEUEING (Recommended) ───────────────────────────
+    if (isQStashConfigured) {
+      const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://codernest.agency';
+      const baseUrl = rawAppUrl.replace(/\/$/, '');
 
-    // Setup Nodemailer Transport
+      const emailJobs: EmailJobPayload[] = targetLeads.map((lead) => {
+        const clientName = lead.name || 'there';
+        const companyName = lead.company || 'your company';
+
+        let personalizedBody = body
+          .replace(/\[Client Name\]/gi, clientName)
+          .replace(/\{\{name\}\}/gi, clientName)
+          .replace(/\[Company Name\]/gi, companyName)
+          .replace(/\{\{company\}\}/gi, companyName);
+
+        if (lead.id) {
+          personalizedBody = personalizedBody.replace(/href="([^"]+)"/g, (match, p1) => {
+            if (p1.includes('/api/webhooks/track') || p1.startsWith('mailto:') || p1.startsWith('tel:')) return match;
+            const trackingUrl = `${baseUrl}/api/webhooks/track?leadId=${lead.id}&campaignId=${campaign.id}&url=${encodeURIComponent(p1)}`;
+            return `href="${trackingUrl}"`;
+          });
+
+          const pixelUrl = `${baseUrl}/api/webhooks/track?leadId=${lead.id}&campaignId=${campaign.id}`;
+          personalizedBody += `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;" />`;
+        }
+
+        return {
+          to: lead.email,
+          subject,
+          html: personalizedBody,
+          leadId: lead.id,
+          campaignId: campaign.id,
+          clientName,
+          companyName,
+          type: 'campaign',
+        };
+      });
+
+      const queueResult = await enqueueBulkEmails(emailJobs, { delayStepSeconds: 1 });
+
+      return {
+        success: true,
+        message: `Successfully offloaded campaign to QStash queue (${queueResult.queued} emails queued for asynchronous delivery).`,
+      };
+    }
+
+    // Setup Nodemailer Transport (Fallback if QStash is not configured)
     const transporter = nodemailer.createTransport({
       host: settings.smtpHost as string,
       port: settings.smtpPort || 465,

@@ -7,11 +7,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { Lead, LeadStatus } from '@/types';
-import { Mail, Plus, X, Loader2, Search, Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, Plus, X, Loader2, Search, Upload, FileText, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
 import { getLeads, updateLeadStatus, createLead, acknowledgeLeadReply } from '@/lib/actions/crm.actions';
 import { bulkImportLeads, type CsvLeadRow } from '@/lib/actions/leads.actions';
+import QuickOutreachModal from '@/components/admin/crm/QuickOutreachModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -195,6 +196,7 @@ export default function AdminLeadsPage() {
   const [showCreate, setShowCreate]   = useState(false);
   const [form, setForm]               = useState({ name: '', email: '', company: '', message: '', budget: '' });
   const [saving, setSaving]           = useState(false);
+  const [isOutreachOpen, setIsOutreachOpen] = useState(false);
 
   // CSV import state
   const csvInputRef               = useRef<HTMLInputElement>(null);
@@ -207,6 +209,11 @@ export default function AdminLeadsPage() {
     if (res.success && res.data) {
       setLeads(res.data as unknown as Lead[]);
     }
+  };
+
+  const handleOutreachSuccess = (newLead: Lead) => {
+    setLeads(prev => [newLead, ...prev.filter(l => l.id !== newLead.id && l.email !== newLead.email)]);
+    fetchLeads();
   };
 
   useEffect(() => { fetchLeads(); }, []);
@@ -332,6 +339,13 @@ export default function AdminLeadsPage() {
 
   return (
     <div className="space-y-8">
+      {/* Quick Lead & Direct Outreach Modal */}
+      <QuickOutreachModal
+        isOpen={isOutreachOpen}
+        onClose={() => setIsOutreachOpen(false)}
+        onSuccess={handleOutreachSuccess}
+      />
+
       {/* CSV Preview Modal */}
       {csvRows && (
         <CsvPreviewModal
@@ -360,6 +374,15 @@ export default function AdminLeadsPage() {
           <p className="text-slate-400 mt-1">{leads.length} total leads in pipeline.</p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Quick Lead & Direct Outreach button */}
+          <button
+            id="quick-outreach-open-btn"
+            onClick={() => setIsOutreachOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-sm shadow-lg shadow-blue-500/20 hover:shadow-blue-500/35 transition-all duration-200"
+          >
+            <Send className="w-4 h-4 text-blue-200" />
+            + New Lead & Send Outreach
+          </button>
           {/* Import CSV button */}
           <button
             id="csv-import-btn"

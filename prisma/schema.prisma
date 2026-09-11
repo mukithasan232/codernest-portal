@@ -267,16 +267,23 @@ model ImageOrder {
 
 model Invoice {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  clientId          String   @db.ObjectId
+  clientId          String?  @db.ObjectId
+  clientName        String?
   clientEmail       String?
   amount            Int
   currency          String   @default("USD")
   status            String   @default("draft")
+  invoiceNumber     String?
+  description       String?
+  items             Json?
   dueDate           DateTime?
   paymentMethod     String?
+  stripeSessionId   String?
   stripePaymentLink String?
   paypalLink        String?
   escrowLink        String?
+  invoiceHtml       String?
+  invoicePdfUrl     String?
   createdAt         DateTime @default(now())
   paidAt            DateTime?
 }

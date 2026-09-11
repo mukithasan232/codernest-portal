@@ -17,14 +17,21 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // ─── IMPORTANT: Local filesystem writes ──────────────────────────────────
-  // /api/upload and portfolio.actions.ts write to public/uploads/ on disk.
-  // This works in local dev and on a persistent VPS, but Vercel's serverless
-  // filesystem is ephemeral — files written at runtime are lost on next deploy.
-  //
-  // TODO (before full scale): Migrate upload routes to use Vercel Blob,
-  // Cloudflare R2, or Supabase Storage so files persist across deployments.
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─── Global HTTP Security Headers ─────────────────────────────────────────
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

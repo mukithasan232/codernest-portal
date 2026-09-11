@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveScrapedLead } from '@/actions/lead-collector.actions';
+import { triggerOnboardingWorkflow } from '@/lib/workflow';
 
 /**
  * POST /api/leads/capture
@@ -37,6 +38,17 @@ export async function POST(req: NextRequest) {
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    if (!result.isProxyEmail && result.lead) {
+      // Trigger durable onboarding workflow via Upstash Workflow
+      triggerOnboardingWorkflow({
+        leadId: result.lead.id,
+        email: result.lead.email,
+        name: result.lead.name,
+        source: result.lead.source,
+        serviceRequested: requirements,
+      }).catch((err) => console.error('[Lead Capture] Failed to trigger onboarding workflow:', err));
     }
 
     return NextResponse.json({

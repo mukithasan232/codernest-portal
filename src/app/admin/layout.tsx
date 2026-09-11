@@ -17,7 +17,8 @@ import AdminNavbar from '@/components/admin/AdminNavbar';
 const NAV_ITEMS = [
   { href: '/admin',              icon: BarChart3,       label: 'Overview' },
   { href: '/admin/live-traffic', icon: Activity,        label: 'Live Traffic' },
-  { href: '/admin/leads',        icon: Megaphone,       label: 'CRM / Leads' },
+  { href: '/admin/crm',          icon: Megaphone,       label: 'CRM & Pipeline' },
+  { href: '/admin/leads',        icon: Users,           label: 'All Leads' },
   { href: '/admin/leads-harvester', icon: Globe,        label: 'Lead Harvester' },
   { href: '/admin/job-hunter',   icon: Target,          label: 'Job Hunter' },
   { href: '/admin/email-marketing', icon: Mail,         label: 'Email Campaigns' },

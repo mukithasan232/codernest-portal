@@ -176,7 +176,7 @@ export default async function AdminDashboard() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Leads Pipeline</h2>
-          <Link href="/admin/leads" className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+          <Link href="/admin/crm" className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
             Full view <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
