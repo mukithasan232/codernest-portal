@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import { Code, Camera, Shield, ArrowRight, LayoutTemplate, Database, Box, Server, Wind, FileCode, MapPin, ChevronRight, Calendar } from 'lucide-react'
+import { Code, Camera, Shield, ArrowRight, MapPin, ChevronRight, Calendar } from 'lucide-react'
 import { MotionDiv, MotionH1, MotionP, MotionSection } from '@/components/ui/motion'
 import LeadForm from '@/components/forms/LeadForm'
 
@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic'
 const TestimonialSlider = dynamic(() => import('@/components/marketing/TestimonialSlider'))
 const ClientLogos = dynamic(() => import('@/components/marketing/ClientLogos'))
 const CaseStudiesHighlight = dynamic(() => import('@/components/marketing/CaseStudiesHighlight'))
+const TechStack = dynamic(() => import('@/components/sections/TechStack'))
 
 export const metadata: Metadata = {
   title: 'CoderNest | Elite B2B Software Agency',
@@ -133,36 +134,8 @@ export default async function Page() {
         <ClientLogos brands={allPortfolioBrands} />
       </MotionSection>
 
-      {/* Tech Stack Marquee (Static Grid Layout for sleekness) */}
-      <section className="py-12 border-b border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-white/[0.02] transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-center text-sm font-medium text-slate-500 dark:text-slate-500 uppercase tracking-widest mb-8">
-            Powered by cutting-edge technology
-          </p>
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-70">
-            {[
-              { name: "Next.js", icon: LayoutTemplate },
-              { name: "React", icon: Box },
-              { name: "Node.js", icon: Server },
-              { name: "Supabase", icon: Database },
-              { name: "Tailwind", icon: Wind },
-              { name: "TypeScript", icon: FileCode },
-            ].map((tech, i) => (
-              <MotionDiv 
-                key={tech.name}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white transition-colors cursor-default"
-              >
-                <tech.icon className="w-6 h-6" />
-                <span className="font-medium">{tech.name}</span>
-              </MotionDiv>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Tech Stack Marquee */}
+      <TechStack />
 
       {/* Why Choose CoderNest */}
       <section className="py-24 px-4 max-w-7xl mx-auto">

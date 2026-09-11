@@ -58,8 +58,8 @@ export default function VisitorTracker() {
     intervalRef.current = setInterval(() => {
       timeSpentRef.current += 1; // Increment by 1 second
 
-      // Heartbeat: sync with server every 10 seconds
-      if (timeSpentRef.current % 10 === 0 && pageViewIdRef.current) {
+      // Heartbeat: sync with server every 30 seconds (throttled from 10s to reduce DB load by 300%)
+      if (timeSpentRef.current % 30 === 0 && pageViewIdRef.current) {
         fetch('/api/track/pageview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -67,11 +67,12 @@ export default function VisitorTracker() {
             action: 'update',
             pageViewId: pageViewIdRef.current,
             timeSpent: timeSpentRef.current,
+            url: pathname,
           }),
           // Optional: use keepalive so if user navigates during heartbeat it doesn't abort
           keepalive: true,
         }).then(res => res.json()).then(data => {
-          if (data.triggerChatbot) {
+          if (data?.triggerChatbot) {
             // Check session storage so we only trigger this once per session
             if (!sessionStorage.getItem('chatbot_triggered')) {
               sessionStorage.setItem('chatbot_triggered', 'true');
@@ -94,6 +95,7 @@ export default function VisitorTracker() {
           action: 'update',
           pageViewId: pageViewIdRef.current,
           timeSpent: timeSpentRef.current,
+          url: pathname,
         });
 
         // Use sendBeacon for more reliable delivery during page unload
@@ -119,6 +121,7 @@ export default function VisitorTracker() {
           action: 'update',
           pageViewId: pageViewIdRef.current,
           timeSpent: timeSpentRef.current,
+          url: pathname,
         });
         if (navigator.sendBeacon) {
           navigator.sendBeacon('/api/track/pageview', new Blob([payload], { type: 'application/json' }));
@@ -130,7 +133,7 @@ export default function VisitorTracker() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [pathname]);
 
   return null; // Invisible component
 }

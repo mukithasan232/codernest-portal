@@ -49,12 +49,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, blocked: true });
     }
 
+    // ─── 1. INITIALIZE PAGEVIEW (FAST UPSERT & DIRECT WRITE) ─────────────────────
     if (action === 'init') {
       if (!sessionId || !url) {
         return NextResponse.json({ error: 'Missing sessionId or url' }, { status: 400 });
       }
 
-      // Upsert the visitor
+      // Upsert visitor selecting only essential fields (avoids heavy serialization)
       const visitor = await prisma.visitor.upsert({
         where: { sessionId },
         update: {
@@ -68,11 +69,14 @@ export async function POST(req: NextRequest) {
           location,
           isBot: false,
         },
+        select: {
+          id: true,
+          isIdentified: true,
+        },
       });
 
       // Background task: If the visitor hasn't been identified yet, attempt reverse IP lookup
       if (!visitor.isIdentified && ipAddress !== 'Unknown') {
-        // We don't await this so it doesn't block the request
         resolveVisitorIdentity(ipAddress).then(async (identity) => {
           if (identity.isIdentified) {
             await prisma.visitor.update({
@@ -80,72 +84,61 @@ export async function POST(req: NextRequest) {
               data: {
                 companyName: identity.companyName,
                 isIdentified: true,
-              }
+              },
+              select: { id: true },
             });
           }
-        }).catch(err => console.error('Background identity resolution failed', err));
+        }).catch(err => console.error('[Tracking API] Background identity resolution failed:', err));
       }
 
-      // Create a new PageView
+      // Create a new PageView with lean select
       const pageView = await prisma.pageView.create({
         data: {
           visitorId: visitor.id,
           url,
           timeSpent: 0,
         },
+        select: { id: true },
       });
 
       return NextResponse.json({ success: true, pageViewId: pageView.id });
     }
 
+    // ─── 2. HEARTBEAT UPDATE (ZERO BLOCKING, SINGLE NESTED WRITE) ────────────────
     if (action === 'update') {
       if (!pageViewId || timeSpent === undefined) {
         return NextResponse.json({ error: 'Missing pageViewId or timeSpent' }, { status: 400 });
       }
 
-      const updatedPageView = await prisma.pageView.update({
-        where: { id: pageViewId },
-        data: { timeSpent: Math.floor(timeSpent) },
-        include: { visitor: { include: { pageViews: true } } }
-      });
+      const safeTimeSpent = Math.max(0, Math.floor(Number(timeSpent) || 0));
 
-      // Touch the visitor to update their "updatedAt" for "last active time"
-      await prisma.visitor.update({
-        where: { id: updatedPageView.visitorId },
-        data: { updatedAt: new Date() }
-      });
+      // Calculate high-intent trigger instantly from request metadata without DB reads
+      const isCriticalPage = Boolean(url && ['/pricing', '/services', '/contact'].some((p: string) => url.includes(p)));
+      const triggerChatbot = safeTimeSpent >= 30 && isCriticalPage;
 
-      // ─── LEAD SCORE CALCULATION ────────────────────────────────────────────────
-      const pageViews = updatedPageView.visitor.pageViews;
-      let score = 0;
-      let isHighIntent = false;
-      
-      // +10 for exploring > 3 pages (deep engagement)
-      if (pageViews.length > 3) score += 10;
-      
-      pageViews.forEach(pv => {
-        // +10 for landing on high-value conversion pages
-        if (pv.url.includes('/contact') || pv.url.includes('/pricing')) {
-          score += 10;
+      // Asynchronous background write: Single Prisma nested update for PageView + Visitor
+      // Return 200 OK immediately so the visitor's browser is NEVER held up by DB latency
+      (async () => {
+        try {
+          await prisma.pageView.update({
+            where: { id: pageViewId },
+            data: {
+              timeSpent: safeTimeSpent,
+              visitor: {
+                update: {
+                  updatedAt: new Date(),
+                },
+              },
+            },
+            select: { id: true },
+          });
+        } catch (err) {
+          // Gracefully catch cases where record does not exist or transient connection dropped
+          console.error('[Tracking API] Background heartbeat update error:', err);
         }
-        // +5 for each page where they spent > 60s (genuine reading)
-        if (pv.timeSpent > 60) {
-          score += 5;
-        }
-      });
+      })();
 
-      // High-intent: score ≥ 20 AND currently on a critical page
-      const HIGH_INTENT_PAGES = ['/pricing', '/services', '/contact'];
-      const isOnCriticalPage = HIGH_INTENT_PAGES.some(p => url?.includes(p));
-      
-      if (score >= 20 && isOnCriticalPage) {
-        isHighIntent = true;
-      }
-
-      // Trigger chatbot/alert if score ≥ 20
-      const triggerChatbot = score >= 20;
-
-      return NextResponse.json({ success: true, triggerChatbot, score, isHighIntent });
+      return NextResponse.json({ success: true, triggerChatbot });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

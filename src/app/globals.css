@@ -146,3 +146,31 @@ body {
     @apply font-outfit font-bold tracking-tight;
   }
 }
+
+/* Infinite Marquee Animation for Tech Stack */
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee-scroll {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee-scroll 45s linear infinite;
+}
+
+.group-marquee:hover .animate-marquee-scroll,
+.animate-marquee-scroll:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-scroll {
+    animation-play-state: paused;
+  }
+}
