@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Target, Lightbulb, TrendingUp, Code2 } from 'lucide-react';
 import type { Metadata } from 'next';
+import LiveInteractiveViewer from '@/components/portfolio/LiveInteractiveViewer';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -83,10 +84,10 @@ export async function processRequest(input: RequestPayload) {
             <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 dark:text-white">{study.title}</h1>
 
             {/* External links */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-wrap gap-3 pt-2">
               {study.liveDemoUrl && (
                 <a href={study.liveDemoUrl} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all">
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-sm">
                   <ExternalLink className="w-4 h-4" /> Live Demo
                 </a>
               )}
@@ -113,6 +114,11 @@ export async function processRequest(input: RequestPayload) {
 
       {/* Case Study Content */}
       <div className="container mx-auto max-w-4xl px-4 pb-20 space-y-10">
+
+        {/* Live Interactive Viewer (Loads Live Portfolio / Demo) */}
+        {study.liveDemoUrl && (
+          <LiveInteractiveViewer url={study.liveDemoUrl} title={study.title} />
+        )}
 
         {/* Three pillars */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

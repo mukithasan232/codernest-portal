@@ -5,6 +5,8 @@ import { MotionDiv, MotionH1, MotionP } from '@/components/ui/motion'
 import ImageSlider from '@/components/ui/ImageSlider'
 import { getPortfolioImages } from '@/lib/actions/portfolio.actions'
 import { prisma } from '@/lib/prisma'
+import FounderPortfolioSpotlight from '@/components/portfolio/FounderPortfolioSpotlight'
+import PortfolioCardActions from '@/components/portfolio/PortfolioCardActions'
 
 export const metadata: Metadata = {
   title: 'Portfolio | CoderNest — Enterprise Web & Image Studio',
@@ -18,7 +20,12 @@ export default async function PortfolioPage() {
   try {
     const [imagesResult, studies] = await Promise.allSettled([
       getPortfolioImages(),
-      prisma.caseStudy.findMany({ orderBy: { createdAt: 'desc' } }),
+      prisma.caseStudy.findMany({ 
+        orderBy: [
+          { featured: 'desc' },
+          { createdAt: 'desc' }
+        ] 
+      }),
     ]);
 
     if (imagesResult.status === 'fulfilled' && imagesResult.value.success) {
@@ -38,7 +45,7 @@ export default async function PortfolioPage() {
       <div className="absolute bottom-40 left-1/4 w-[600px] h-[600px] bg-gradient-to-tr from-[#00F2FE]/10 to-transparent blur-[120px] pointer-events-none -z-10" />
 
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-4 text-center mb-20">
+      <div className="max-w-7xl mx-auto px-4 text-center mb-16">
         <MotionH1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -56,6 +63,11 @@ export default async function PortfolioPage() {
           A selection of our finest engineering solutions and visual productions. Proof that we don't just write code and edit photos—we build businesses.
         </MotionP>
       </div>
+
+      {/* Founder & Lead Architect Showcase (mukit.codernest.cloud) */}
+      <section className="max-w-7xl mx-auto px-4">
+        <FounderPortfolioSpotlight />
+      </section>
 
       {/* Web Development Portfolio */}
       <section className="max-w-7xl mx-auto px-4 mb-32">
@@ -86,49 +98,75 @@ export default async function PortfolioPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-white/[0.02] border border-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:bg-white/[0.04] transition-all group relative"
+                className="bg-white/[0.02] border border-white/10 backdrop-blur-md rounded-2xl overflow-hidden hover:bg-white/[0.04] transition-all group relative flex flex-col justify-between"
               >
                 <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${project.color || 'from-blue-500'} to-transparent z-10`} />
 
                 {/* Cover Image */}
-                <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" className="block relative w-full h-56 bg-slate-100 dark:bg-slate-900 overflow-hidden group/image">
+                <Link 
+                  href={project.liveDemoUrl || `/portfolio/${project.slug}`} 
+                  target={project.liveDemoUrl ? "_blank" : undefined}
+                  className="block relative w-full h-56 bg-slate-100 dark:bg-slate-900 overflow-hidden group/image"
+                >
                   {project.imageUrl ? (
                     <img src={project.imageUrl} alt={project.title} className="object-cover object-top w-full h-full group-hover/image:scale-105 transition-transform duration-700 ease-out" />
                   ) : (
                     <img src="/dummy-laptop.png" alt={project.title} className="object-cover object-top w-full h-full group-hover/image:scale-105 transition-transform duration-700 ease-out opacity-50" />
                   )}
+                  {project.featured && (
+                    <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-blue-600/90 text-white text-[11px] font-bold uppercase tracking-wider backdrop-blur-sm z-20">
+                      Featured
+                    </span>
+                  )}
                 </Link>
 
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-6">
-                    <Link href={`/portfolio/${project.slug}`} className="group/title">
-                      <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 group-hover/title:text-blue-600 dark:group-hover/title:text-blue-400 transition-colors">
-                        {project.title}
-                      </h3>
-                    </Link>
-                    <Link href={project.liveDemoUrl || project.githubUrl || '#'} target="_blank" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0 mt-1">
-                      <ExternalLink className="w-5 h-5" />
-                    </Link>
+                <div className="p-8 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start mb-6">
+                      <Link href={`/portfolio/${project.slug}`} className="group/title">
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 group-hover/title:text-blue-600 dark:group-hover/title:text-blue-400 transition-colors">
+                          {project.title}
+                        </h3>
+                      </Link>
+                      {project.liveDemoUrl && (
+                        <a 
+                          href={project.liveDemoUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-shrink-0 mt-1"
+                          title="Open live site"
+                        >
+                          <ExternalLink className="w-5 h-5" />
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="space-y-6 mb-8">
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">The Challenge</h4>
+                        <p className="text-slate-700 dark:text-slate-300 line-clamp-3">{project.challenge?.replace(/<[^>]*>/g, '') || '—'}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">The Solution</h4>
+                        <p className="text-slate-700 dark:text-slate-300 line-clamp-3">{project.solution?.replace(/<[^>]*>/g, '') || '—'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {(Array.isArray(project.techStack) ? project.techStack : []).map((t: string) => (
+                        <span key={t} className="px-3 py-1 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-300 transition-colors cursor-default">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="space-y-6 mb-8">
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">The Challenge</h4>
-                      <p className="text-slate-700 dark:text-slate-300 line-clamp-3">{project.challenge?.replace(/<[^>]*>/g, '') || '—'}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">The Solution</h4>
-                      <p className="text-slate-700 dark:text-slate-300 line-clamp-3">{project.solution?.replace(/<[^>]*>/g, '') || '—'}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 pt-6 border-t border-slate-200 dark:border-white/5">
-                    {(Array.isArray(project.techStack) ? project.techStack : []).map((t: string) => (
-                      <span key={t} className="px-3 py-1 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 border border-blue-200 dark:border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-300 transition-colors cursor-default">
-                        {t}
-                      </span>
-                    ))}
-                  </div>
+                  <PortfolioCardActions
+                    slug={project.slug}
+                    title={project.title}
+                    liveDemoUrl={project.liveDemoUrl}
+                    githubUrl={project.githubUrl}
+                  />
                 </div>
               </MotionDiv>
             ))

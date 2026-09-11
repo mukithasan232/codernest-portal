@@ -15,6 +15,8 @@ const caseStudySchema = z.object({
   slug: z.string().min(1, 'Slug is required'),
   sector: z.string().min(1, 'Sector is required'),
   clientName: z.string().optional(),
+  liveDemoUrl: z.string().optional(),
+  githubUrl: z.string().optional(),
   challenge: z.string().min(1, 'Challenge is required'),
   solution: z.string().min(1, 'Solution is required'),
   techStack: z.string(), // We'll handle this as a comma-separated string for simplicity
@@ -36,7 +38,7 @@ export default function CaseStudiesCmsPage() {
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CaseStudyFormValues>({
     resolver: zodResolver(caseStudySchema),
     defaultValues: {
-      title: '', slug: '', sector: 'web', clientName: '', challenge: '', solution: '', techStack: '', imageUrl: ''
+      title: '', slug: '', sector: 'web', clientName: '', liveDemoUrl: '', githubUrl: '', challenge: '', solution: '', techStack: '', imageUrl: ''
     }
   });
 
@@ -57,7 +59,7 @@ export default function CaseStudiesCmsPage() {
     setEditingId(null);
     setFetchUrl('');
     setMediaUrl('');
-    reset({ title: '', slug: '', sector: 'web', clientName: '', challenge: '', solution: '', techStack: '', imageUrl: '' });
+    reset({ title: '', slug: '', sector: 'web', clientName: '', liveDemoUrl: '', githubUrl: '', challenge: '', solution: '', techStack: '', imageUrl: '' });
     setIsModalOpen(true);
   };
 
@@ -70,6 +72,8 @@ export default function CaseStudiesCmsPage() {
       slug: study.slug,
       sector: study.sector,
       clientName: study.clientName || '',
+      liveDemoUrl: study.liveDemoUrl || '',
+      githubUrl: study.githubUrl || '',
       challenge: study.challenge,
       solution: study.solution,
       techStack: study.techStack?.join(', ') || '',
@@ -123,6 +127,7 @@ export default function CaseStudiesCmsPage() {
          
          const slugBase = fetchUrl.replace(/https?:\/\/(www\.)?/, '').split('/')[0];
          setValue('slug', slugBase.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase());
+         setValue('liveDemoUrl', fetchUrl);
          
          if (techStack && techStack.length > 0) {
            setValue('techStack', techStack.join(', '));
@@ -335,6 +340,26 @@ export default function CaseStudiesCmsPage() {
                   className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-slate-900 dark:text-white"
                   placeholder="Next.js, Tailwind CSS, Prisma"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Live Demo URL</label>
+                  <input
+                    {...register('liveDemoUrl')}
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-slate-900 dark:text-white text-sm"
+                    placeholder="https://mukit.codernest.cloud"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">GitHub Repo URL</label>
+                  <input
+                    {...register('githubUrl')}
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-slate-900 dark:text-white text-sm"
+                    placeholder="https://github.com/mukithasan232/repo"
+                  />
+                </div>
               </div>
 
               <MediaDropzone
