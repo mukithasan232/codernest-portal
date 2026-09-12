@@ -751,13 +751,13 @@ export default function AlertChannelsClient({
                       className="cursor-pointer bg-blue-500/15 border border-blue-500/40 hover:border-blue-400 rounded-xl p-3 text-center transition-all group shadow-sm"
                     >
                       <p className="text-xs text-blue-300 font-medium flex items-center justify-center gap-2 flex-wrap">
-                        <span>🛡️ Super Admin Test OTP:</span>
-                        <span className="font-mono font-bold tracking-widest text-white px-2.5 py-0.5 bg-blue-600/40 rounded-lg border border-blue-400/50">
+                        <span>🛡️ Dev/Test OTP:</span>
+                        <span className="font-mono font-bold tracking-widest text-white px-2.5 py-0.5 bg-blue-600/50 rounded-lg border border-blue-400/60">
                           {sandboxCode}
                         </span>
                       </p>
                       <p className="text-[11px] text-blue-400/90 mt-1 group-hover:text-blue-200">
-                        (Click here to auto-fill code)
+                        (Click to auto-fill)
                       </p>
                     </div>
                   )}
