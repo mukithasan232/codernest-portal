@@ -88,12 +88,13 @@ export async function dispatchAdminAlert(
 
         if (channel.platform === 'WHATSAPP') {
           const waText = `🚨 *CoderNest Alert: ${title}*\n\n${fullMessage}`;
-          await sendWhatsAppTextMessage(channel.identifier, waText);
+          const res = await sendWhatsAppTextMessage(channel.identifier, waText);
           return {
             channelId: channel.id,
             platform: 'WHATSAPP',
             identifier: channel.identifier,
-            success: true,
+            success: res.success,
+            error: res.error,
           };
         }
 

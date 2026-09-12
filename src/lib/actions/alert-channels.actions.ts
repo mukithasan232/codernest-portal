@@ -476,9 +476,21 @@ export async function dispatchTestAlert(customMessage?: string) {
       },
     });
 
+    const failedItems = summary.results.filter((r) => !r.success);
+    const failureList = failedItems
+      .map((r) => `• ${r.platform} (${r.identifier}): ${r.error || 'Failed'}`)
+      .join('\n');
+
+    let message = `Test alert dispatched to ${summary.successfulDispatches} of ${summary.totalChannels} active channels.`;
+    if (summary.successfulDispatches === 0 && summary.totalChannels > 0) {
+      message = `All ${summary.totalChannels} channels failed.\n${failureList}`;
+    } else if (failedItems.length > 0) {
+      message = `Dispatched to ${summary.successfulDispatches} of ${summary.totalChannels} channels.\nFailures:\n${failureList}`;
+    }
+
     return {
-      success: true,
-      message: `Test alert dispatched to ${summary.successfulDispatches} of ${summary.totalChannels} active channels.`,
+      success: summary.successfulDispatches > 0,
+      message,
       summary,
     };
   } catch (error: unknown) {
@@ -486,6 +498,135 @@ export async function dispatchTestAlert(customMessage?: string) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to dispatch test alert.',
+    };
+  }
+}
+
+/**
+ * 7. Fetch configured gateway credentials from SystemSettings / env
+ */
+export async function getGatewaySettings() {
+  try {
+    await requireSuperAdmin();
+
+    const settings = await prisma.systemSettings.findUnique({
+      where: { id: 'global_settings' },
+      select: {
+        telegramBotToken: true,
+        whatsappAccessToken: true,
+        whatsappPhoneId: true,
+        twilioAccountSid: true,
+        twilioAuthToken: true,
+        twilioPhoneNumber: true,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        telegramBotToken: settings?.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '',
+        whatsappAccessToken: settings?.whatsappAccessToken || process.env.WHATSAPP_ACCESS_TOKEN || '',
+        whatsappPhoneId: settings?.whatsappPhoneId || process.env.WHATSAPP_PHONE_NUMBER_ID || '',
+        twilioAccountSid: settings?.twilioAccountSid || process.env.TWILIO_ACCOUNT_SID || '',
+        twilioAuthToken: settings?.twilioAuthToken || process.env.TWILIO_AUTH_TOKEN || '',
+        twilioPhoneNumber: settings?.twilioPhoneNumber || process.env.TWILIO_PHONE_NUMBER || '',
+      },
+    };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch gateway settings',
+    };
+  }
+}
+
+/**
+ * 8. Save gateway credentials directly in MongoDB
+ */
+export async function saveGatewaySettings(data: {
+  telegramBotToken?: string;
+  whatsappAccessToken?: string;
+  whatsappPhoneId?: string;
+  twilioAccountSid?: string;
+  twilioAuthToken?: string;
+  twilioPhoneNumber?: string;
+}) {
+  try {
+    await requireSuperAdmin();
+
+    await prisma.systemSettings.upsert({
+      where: { id: 'global_settings' },
+      update: {
+        telegramBotToken: data.telegramBotToken?.trim() || null,
+        whatsappAccessToken: data.whatsappAccessToken?.trim() || null,
+        whatsappPhoneId: data.whatsappPhoneId?.trim() || null,
+        twilioAccountSid: data.twilioAccountSid?.trim() || null,
+        twilioAuthToken: data.twilioAuthToken?.trim() || null,
+        twilioPhoneNumber: data.twilioPhoneNumber?.trim() || null,
+      },
+      create: {
+        id: 'global_settings',
+        telegramBotToken: data.telegramBotToken?.trim() || null,
+        whatsappAccessToken: data.whatsappAccessToken?.trim() || null,
+        whatsappPhoneId: data.whatsappPhoneId?.trim() || null,
+        twilioAccountSid: data.twilioAccountSid?.trim() || null,
+        twilioAuthToken: data.twilioAuthToken?.trim() || null,
+        twilioPhoneNumber: data.twilioPhoneNumber?.trim() || null,
+      },
+    });
+
+    revalidatePath('/admin/settings/alerts');
+
+    return {
+      success: true,
+      message: 'Gateway API credentials successfully saved and activated in database!',
+    };
+  } catch (error: unknown) {
+    console.error('Save Gateway Settings Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to save gateway settings.',
+    };
+  }
+}
+
+/**
+ * 9. Live verify Telegram Bot Token with Telegram API
+ */
+export async function verifyTelegramBotToken(token: string) {
+  try {
+    await requireSuperAdmin();
+
+    const cleanToken = token.trim();
+    if (!cleanToken || !cleanToken.includes(':')) {
+      return {
+        success: false,
+        error: "Invalid token format. A valid token from @BotFather must contain a colon (e.g. '8787866779:AAH...').",
+      };
+    }
+
+    const res = await fetch(`https://api.telegram.org/bot${cleanToken}/getMe`);
+    const data = await res.json();
+
+    if (!data.ok) {
+      return {
+        success: false,
+        error: data.description || 'Telegram API returned failure. Please verify the token from @BotFather.',
+      };
+    }
+
+    return {
+      success: true,
+      bot: {
+        id: data.result.id,
+        firstName: data.result.first_name,
+        username: data.result.username,
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Network error verifying Telegram token.',
     };
   }
 }

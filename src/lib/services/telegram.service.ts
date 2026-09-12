@@ -1,8 +1,4 @@
-/**
- * Telegram Bot API Alert Service
- * 
- * Uses TELEGRAM_BOT_TOKEN to dispatch alerts directly to verified Chat IDs / Channels.
- */
+import { prisma } from '@/lib/prisma';
 
 export interface SendTelegramPayload {
   chatId: string;
@@ -17,14 +13,42 @@ export interface SendTelegramResult {
   mode?: 'telegram-api' | 'sandbox';
 }
 
+/**
+ * Helper to retrieve Telegram Bot Token from process.env or database SystemSettings
+ */
+export async function resolveTelegramBotToken(): Promise<string | null> {
+  const envToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  if (envToken && envToken !== 'your_telegram_bot_token_here') {
+    return envToken;
+  }
+
+  try {
+    const settings = await prisma.systemSettings.findUnique({
+      where: { id: 'global_settings' },
+      select: { telegramBotToken: true },
+    });
+    return settings?.telegramBotToken?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function sendTelegramMessage({
   chatId,
   text,
   parseMode = 'HTML',
 }: SendTelegramPayload): Promise<SendTelegramResult> {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const token = await resolveTelegramBotToken();
 
   if (token) {
+    // Validate token format: Bot tokens from @BotFather ALWAYS contain a colon ":" (e.g. 123456789:ABC...)
+    if (!token.includes(':')) {
+      return {
+        success: false,
+        error: `Invalid Telegram Bot Token format. You entered '${token}', which looks like a Bot ID. The full token from @BotFather must include the secret hash after a colon (e.g. ${token}:AAH...).`,
+      };
+    }
+
     try {
       const url = `https://api.telegram.org/bot${token}/sendMessage`;
       const response = await fetch(url, {
@@ -42,7 +66,15 @@ export async function sendTelegramMessage({
 
       if (!response.ok || !data.ok) {
         console.error('[Telegram Service] API Error:', data);
-        return { success: false, error: data.description || 'Telegram dispatch failed' };
+        let errorDesc = data.description || 'Telegram dispatch failed';
+
+        if (errorDesc.includes('chat not found')) {
+          errorDesc = `Chat ID ${chatId} not found. Please open your bot in Telegram and click 'Start' (/start) once so it has permission to message you.`;
+        } else if (errorDesc.includes('Not Found') || data.error_code === 404) {
+          errorDesc = 'Invalid Bot Token. Telegram Bot API returned 404 Not Found. Please check the token provided by @BotFather.';
+        }
+
+        return { success: false, error: errorDesc };
       }
 
       return {
@@ -54,21 +86,14 @@ export async function sendTelegramMessage({
       console.error('[Telegram Service] Exception:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown Telegram error',
+        error: error instanceof Error ? error.message : 'Unknown Telegram network error',
       };
     }
   }
 
-  // Fallback Sandbox Mode
-  console.log(`\n================== [TELEGRAM GATEWAY SANDBOX] ==================`);
-  console.log(`✈️ CHAT ID   : ${chatId}`);
-  console.log(`💬 MESSAGE   : ${text}`);
-  console.log(`🕒 TIMESTAMP : ${new Date().toISOString()}`);
-  console.log(`================================================================\n`);
-
+  // If no token configured
   return {
-    success: true,
-    messageId: `sandbox-tg-${Date.now()}`,
-    mode: 'sandbox',
+    success: false,
+    error: 'Telegram Bot Token is not configured. Please set TELEGRAM_BOT_TOKEN in Vercel or save it in Gateway Settings.',
   };
 }

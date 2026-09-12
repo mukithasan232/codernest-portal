@@ -6,6 +6,8 @@
  * - WHATSAPP_PHONE_NUMBER_ID
  */
 
+import { prisma } from '@/lib/prisma';
+
 export interface WhatsAppTemplatePayload {
   to: string;
   templateName: string;
@@ -66,14 +68,41 @@ export const sendWhatsAppTemplateMessage = async ({
 };
 
 /**
+ * Helper to resolve WhatsApp credentials from process.env or database SystemSettings
+ */
+export async function resolveWhatsAppCredentials(): Promise<{ token: string | null; phoneNumberId: string | null }> {
+  const envToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
+  const envPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
+
+  if (envToken && envPhoneId && envToken !== 'your_whatsapp_access_token_here') {
+    return { token: envToken, phoneNumberId: envPhoneId };
+  }
+
+  try {
+    const settings = await prisma.systemSettings.findUnique({
+      where: { id: 'global_settings' },
+      select: { whatsappAccessToken: true, whatsappPhoneId: true },
+    });
+    return {
+      token: settings?.whatsappAccessToken?.trim() || null,
+      phoneNumberId: settings?.whatsappPhoneId?.trim() || null,
+    };
+  } catch {
+    return { token: null, phoneNumberId: null };
+  }
+}
+
+/**
  * Utility for sending a simple text message via WhatsApp
  */
-export const sendWhatsAppTextMessage = async (to: string, text: string) => {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN;
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+export const sendWhatsAppTextMessage = async (to: string, text: string): Promise<{ success: boolean; data?: any; error?: string }> => {
+  const { token, phoneNumberId } = await resolveWhatsAppCredentials();
 
   if (!token || !phoneNumberId) {
-    throw new Error('WhatsApp API credentials are not configured.');
+    return {
+      success: false,
+      error: 'WhatsApp credentials (access token / phone ID) are not configured. Please configure them in Gateway Settings.',
+    };
   }
 
   const url = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
@@ -100,12 +129,15 @@ export const sendWhatsAppTextMessage = async (to: string, text: string) => {
 
     if (!response.ok) {
       console.error('WhatsApp API Error:', data);
-      throw new Error(data.error?.message || 'Failed to send WhatsApp message');
+      return { success: false, error: data.error?.message || 'Failed to send WhatsApp message' };
     }
 
     return { success: true, data };
   } catch (error: unknown) {
-    console.error('Error in sendWhatsAppTextMessage:', error instanceof Error ? error.message : "An unknown error occurred");
-    throw error;
+    console.error('Error in sendWhatsAppTextMessage:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown WhatsApp network error',
+    };
   }
 };
