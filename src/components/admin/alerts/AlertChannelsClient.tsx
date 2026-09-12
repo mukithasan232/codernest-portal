@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import {
   Bell, Phone, MessageSquare, Send, CheckCircle2,
   Clock, AlertTriangle, Trash2, Plus, RefreshCw,
-  ShieldCheck, Smartphone, Check, Loader2, Play
+  ShieldCheck, Smartphone, Check, Loader2, Play, Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   requestChannelOtp,
   verifyChannelOtp,
+  quickConnectChannel,
   toggleChannelStatus,
   deleteAlertChannel,
   dispatchTestAlert,
@@ -98,6 +99,51 @@ export default function AlertChannelsClient({
     setIsModalOpen(true);
   };
 
+  // Direct Super Admin Quick-Add (Bypass Option)
+  const handleQuickConnect = async () => {
+    if (!identifier.trim()) {
+      toast.error('Please enter a phone number or identifier');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await quickConnectChannel({
+        platform: selectedPlatform,
+        identifier: identifier.trim(),
+        label: label.trim() || undefined,
+      });
+
+      if (!res.success) {
+        toast.error(res.error || 'Failed to connect channel');
+        setLoading(false);
+        return;
+      }
+
+      toast.success(res.message || 'Channel verified and connected instantly!');
+
+      if (res.channel) {
+        setChannels((prev) => {
+          const index = prev.findIndex(
+            (c) => c.platform === selectedPlatform && c.identifier === identifier.trim()
+          );
+          if (index >= 0) {
+            const updated = [...prev];
+            updated[index] = res.channel as any as AlertChannel;
+            return updated;
+          }
+          return [res.channel as any as AlertChannel, ...prev];
+        });
+      }
+
+      setIsModalOpen(false);
+    } catch {
+      toast.error('Failed to connect channel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Step 2 -> Step 3: Request OTP
   const handleRequestOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -120,9 +166,10 @@ export default function AlertChannelsClient({
         return;
       }
 
-      toast.success(res.message || 'OTP code sent via SMS!');
-      if (res.sandboxDevCode) {
-        setSandboxCode(res.sandboxDevCode);
+      toast.success(res.message || 'OTP code sent!');
+      const code = res.devCode || res.sandboxDevCode;
+      if (code) {
+        setSandboxCode(code);
       }
       setCountdown(300);
       setResendCooldown(30);
@@ -640,36 +687,43 @@ export default function AlertChannelsClient({
 
                   <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3.5 flex items-start gap-3">
                     <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                    <p className="text-xs text-blue-300">
-                      We will dispatch a secure 6-digit verification code via SMS to confirm phone ownership before activating alerts.
-                    </p>
+                    <div className="text-xs text-blue-300">
+                      <p className="font-semibold text-white">Super Admin Options:</p>
+                      <p className="mt-0.5 text-slate-300">
+                        Receive a verification code via {selectedPlatform === 'TELEGRAM' ? 'direct Telegram Bot / SMS' : 'SMS'}, or click <strong>Verify & Connect Instantly</strong> to bypass OTP check.
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="pt-3 flex items-center justify-between">
+                  <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold order-3 sm:order-1"
                     >
                       Back
                     </button>
 
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Sending Code...
-                        </>
-                      ) : (
-                        <>
-                          Send Verification Code ➔
-                        </>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end order-1 sm:order-2">
+                      <button
+                        type="button"
+                        disabled={loading || !identifier.trim()}
+                        onClick={handleQuickConnect}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-amber-200 fill-amber-200" />}
+                        Verify & Connect Instantly
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        Send OTP ➔
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}
@@ -687,11 +741,23 @@ export default function AlertChannelsClient({
                     </p>
                   </div>
 
-                  {/* Sandbox Dev Code Banner (shown when running in non-production) */}
+                  {/* Sandbox / Dev Test OTP Banner (clickable to auto-fill) */}
                   {sandboxCode && (
-                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-center">
-                      <p className="text-xs text-emerald-400 font-medium">
-                        🛠️ Sandbox Dev Mode OTP: <span className="font-mono font-bold tracking-widest text-white">{sandboxCode}</span>
+                    <div
+                      onClick={() => {
+                        setOtp(sandboxCode);
+                        toast.success(`OTP ${sandboxCode} auto-filled!`);
+                      }}
+                      className="cursor-pointer bg-blue-500/15 border border-blue-500/40 hover:border-blue-400 rounded-xl p-3 text-center transition-all group shadow-sm"
+                    >
+                      <p className="text-xs text-blue-300 font-medium flex items-center justify-center gap-2 flex-wrap">
+                        <span>🛡️ Super Admin Test OTP:</span>
+                        <span className="font-mono font-bold tracking-widest text-white px-2.5 py-0.5 bg-blue-600/40 rounded-lg border border-blue-400/50">
+                          {sandboxCode}
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-blue-400/90 mt-1 group-hover:text-blue-200">
+                        (Click here to auto-fill code)
                       </p>
                     </div>
                   )}
@@ -726,32 +792,44 @@ export default function AlertChannelsClient({
                     </button>
                   </div>
 
-                  <div className="pt-3 flex items-center justify-between">
+                  <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <button
                       type="button"
                       onClick={() => setStep(2)}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold order-3 sm:order-1"
                     >
                       Change Number
                     </button>
 
-                    <button
-                      type="submit"
-                      disabled={loading || otp.length !== 6 || countdown <= 0}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/25 transition-all disabled:opacity-50"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="w-4 h-4" />
-                          Verify & Activate
-                        </>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end order-1 sm:order-2">
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={handleQuickConnect}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-amber-200 text-xs font-semibold border border-amber-500/30 transition-all disabled:opacity-50"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                        Bypass & Activate
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={loading || otp.length !== 6 || countdown <= 0}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/25 transition-all disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Verifying...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="w-4 h-4" />
+                            Verify & Activate
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}

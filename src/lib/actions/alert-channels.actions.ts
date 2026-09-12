@@ -151,32 +151,149 @@ export async function requestChannelOtp({
       },
     });
 
-    // Dispatch OTP via SMS to the specified phone number
-    const smsMessage = `Your CoderNest verification code is: ${otp}. Valid for 5 minutes.`;
-    const smsResult = await sendSms({
-      to: cleanIdentifier,
-      message: smsMessage,
-    });
+    // 1. Direct Telegram OTP Dispatch
+    if (platform === 'TELEGRAM') {
+      const tgOtpText = `🔐 <b>CoderNest Admin Verification</b>:\nYour code is <code>${otp}</code>. Valid for 5 minutes.`;
+      const tgRes = await sendTelegramMessage({
+        chatId: cleanIdentifier,
+        text: tgOtpText,
+        parseMode: 'HTML',
+      });
 
-    if (!smsResult.success) {
-      console.warn('[Alert Channel Action] SMS dispatch note:', smsResult.error);
+      if (!tgRes.success) {
+        console.warn('[Alert Channel Action] Direct Telegram OTP failed:', tgRes.error);
+        // If identifier is also a numeric phone number, attempt SMS fallback
+        const digitsOnly = cleanIdentifier.replace(/\D/g, '');
+        if (digitsOnly.length >= 8) {
+          await sendSms({
+            to: cleanIdentifier,
+            message: `Your CoderNest Telegram verification code is: ${otp}. Valid for 5 minutes.`,
+          });
+        }
+      }
+    } else {
+      // 2. Dispatch OTP via SMS for SMS and WhatsApp verification
+      const smsMessage = `Your CoderNest verification code is: ${otp}. Valid for 5 minutes.`;
+      const smsResult = await sendSms({
+        to: cleanIdentifier,
+        message: smsMessage,
+      });
+
+      if (!smsResult.success) {
+        console.warn('[Alert Channel Action] SMS dispatch note:', smsResult.error);
+      }
     }
 
     revalidatePath('/admin/settings/alerts');
 
     return {
       success: true,
-      message: 'Verification code sent via SMS to ' + cleanIdentifier,
+      message: platform === 'TELEGRAM'
+        ? `Verification code sent to Telegram ${cleanIdentifier}`
+        : `Verification code sent to ${cleanIdentifier}`,
       platform,
       identifier: cleanIdentifier,
-      // For local development sandbox convenience:
-      sandboxDevCode: process.env.NODE_ENV !== 'production' ? otp : undefined,
+      // Super Admin bypass & test fallback: always provide the generated OTP for one-click fill
+      devCode: otp,
+      sandboxDevCode: otp,
     };
   } catch (error: unknown) {
     console.error('Request OTP Error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to generate verification OTP',
+    };
+  }
+}
+
+/**
+ * 2b. Direct Super Admin Quick-Add (Bypass Option)
+ * Skips OTP check and sets isVerified: true, isActive: true immediately since session is authenticated.
+ */
+export async function quickConnectChannel({
+  platform,
+  identifier,
+  label,
+}: RequestOtpParams) {
+  try {
+    await requireSuperAdmin();
+
+    let cleanIdentifier = identifier.trim();
+    if (!cleanIdentifier) {
+      return { success: false, error: 'Phone number or identifier is required.' };
+    }
+
+    if (platform === 'SMS' || platform === 'WHATSAPP') {
+      cleanIdentifier = normalizePhoneNumber(cleanIdentifier);
+      const digitsOnly = cleanIdentifier.replace(/\D/g, '');
+      if (digitsOnly.length < 8 || digitsOnly.length > 15) {
+        return {
+          success: false,
+          error: 'Please enter a valid phone number (e.g. +8801700000000 or 017XXXXXXXX).',
+        };
+      }
+    } else if (platform === 'TELEGRAM') {
+      const digitsOnly = cleanIdentifier.replace(/\D/g, '');
+      if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
+        cleanIdentifier = normalizePhoneNumber(cleanIdentifier);
+      }
+    }
+
+    // Upsert directly with isVerified: true, isActive: true
+    const channel = await prisma.alertChannel.upsert({
+      where: {
+        platform_identifier: {
+          platform,
+          identifier: cleanIdentifier,
+        },
+      },
+      update: {
+        label: label?.trim() || undefined,
+        isVerified: true,
+        isActive: true,
+        otpHash: null,
+        otpExpiresAt: null,
+      },
+      create: {
+        platform,
+        identifier: cleanIdentifier,
+        label: label?.trim() || null,
+        isVerified: true,
+        isActive: true,
+        otpHash: null,
+        otpExpiresAt: null,
+      },
+    });
+
+    // Send immediate welcome test alert
+    try {
+      const welcomeMsg = `🎉 CoderNest Alert Gateway: Channel ${channel.label || channel.identifier} (${platform}) has been successfully connected and activated by Super Admin!`;
+      if (platform === 'SMS') {
+        await sendSms({ to: cleanIdentifier, message: welcomeMsg });
+      } else if (platform === 'WHATSAPP') {
+        await sendWhatsAppTextMessage(cleanIdentifier, welcomeMsg);
+      } else if (platform === 'TELEGRAM') {
+        await sendTelegramMessage({ chatId: cleanIdentifier, text: welcomeMsg });
+      }
+    } catch (notifyErr) {
+      console.warn('[Quick Connect] Welcome ping notice:', notifyErr);
+    }
+
+    revalidatePath('/admin/settings/alerts');
+
+    return {
+      success: true,
+      message: `${platform} channel verified and connected instantly!`,
+      channel: {
+        ...channel,
+        id: channel.id.toString(),
+      },
+    };
+  } catch (error: unknown) {
+    console.error('Quick Connect Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to connect channel.',
     };
   }
 }
@@ -208,7 +325,7 @@ export async function verifyChannelOtp({
       return { success: false, error: 'Please enter a valid 6-digit OTP code.' };
     }
 
-    const channel = await prisma.alertChannel.findUnique({
+    let channel = await prisma.alertChannel.findUnique({
       where: {
         platform_identifier: {
           platform,
@@ -216,6 +333,18 @@ export async function verifyChannelOtp({
         },
       },
     });
+
+    // Fallback: check with raw input if normalized didn't find a record
+    if (!channel && cleanIdentifier !== identifier.trim()) {
+      channel = await prisma.alertChannel.findUnique({
+        where: {
+          platform_identifier: {
+            platform,
+            identifier: identifier.trim(),
+          },
+        },
+      });
+    }
 
     if (!channel) {
       return { success: false, error: 'Verification record not found. Please request a new code.' };
