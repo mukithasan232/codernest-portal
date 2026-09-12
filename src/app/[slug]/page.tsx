@@ -7,6 +7,9 @@ export const revalidate = 86400;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  if (slug.includes('.') || slug.startsWith('_')) {
+    return { title: 'Not Found' };
+  }
   const res = await getDynamicPageBySlug(slug);
   
   if (!res.success || !res.data || !res.data.isPublished) {
@@ -22,6 +25,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function DynamicCatchAllPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (slug.includes('.') || slug.startsWith('_')) {
+    notFound();
+  }
   const res = await getDynamicPageBySlug(slug);
   
   // Return 404 if page doesn't exist or isn't published
