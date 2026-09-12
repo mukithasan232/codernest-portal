@@ -4,8 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { put } from '@vercel/blob';
 
 
 
@@ -114,15 +113,12 @@ export async function uploadProcessedImage(orderId: string, clientId: string, fo
   if (!file || file.size === 0) return { success: false, error: 'No file provided' };
 
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
     const fileExt = file.name.split('.').pop();
-    const fileName = `${orderId}_${Date.now()}.${fileExt}`;
-    const uploadDir = path.join(process.cwd(), 'public/uploads/processed', clientId);
+    const fileName = `uploads/processed/${clientId}/${orderId}_${Date.now()}.${fileExt}`;
     
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, fileName), buffer);
+    const blob = await put(fileName, file, { access: 'public' });
     
-    const processedUrl = `/uploads/processed/${clientId}/${fileName}`;
+    const processedUrl = blob.url;
 
     await prisma.imageOrder.update({
       where: { id: orderId },

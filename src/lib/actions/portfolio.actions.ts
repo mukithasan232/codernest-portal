@@ -5,8 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import sharp from 'sharp';
-import { writeFile, mkdir, unlink } from 'fs/promises';
-import path from 'path';
+import { put, del } from '@vercel/blob';
 
 export async function getPortfolioImages() {
   try {
@@ -27,24 +26,18 @@ export async function deletePortfolioImage(id: string, originalUrl: string, proc
     return { success: false, error: 'Forbidden.' };
   }
 
-  // Extract filenames from URLs
-  const originalPath = originalUrl.split('/').pop();
-  const processedPath = processedUrl ? processedUrl.split('/').pop() : null;
-
-  const uploadDir = path.join(process.cwd(), 'public/uploads/portfolio');
-  
-  if (originalPath) {
+  if (originalUrl && originalUrl.includes('.vercel-storage.com')) {
     try {
-      await unlink(path.join(uploadDir, originalPath));
+      await del(originalUrl);
     } catch (e) {
-      console.warn('Failed to delete original image file', e);
+      console.warn('Failed to delete original image blob', e);
     }
   }
-  if (processedPath) {
+  if (processedUrl && processedUrl.includes('.vercel-storage.com')) {
     try {
-      await unlink(path.join(uploadDir, processedPath));
+      await del(processedUrl);
     } catch (e) {
-      console.warn('Failed to delete processed image file', e);
+      console.warn('Failed to delete processed image blob', e);
     }
   }
 
@@ -80,11 +73,8 @@ export async function uploadAndProcessImage(formData: FormData) {
     const buffer = Buffer.from(arrayBuffer);
 
     const timestamp = Date.now();
-    const originalFileName = `raw-${timestamp}.webp`;
-    const processedFileName = `pro-${timestamp}.webp`;
-    const uploadDir = path.join(process.cwd(), 'public/uploads/portfolio');
-    
-    await mkdir(uploadDir, { recursive: true });
+    const originalFileName = `uploads/portfolio/raw-${timestamp}.webp`;
+    const processedFileName = `uploads/portfolio/pro-${timestamp}.webp`;
 
     // 1. Convert original to WebP (optimized)
     const originalBuffer = await sharp(buffer)
@@ -103,18 +93,18 @@ export async function uploadAndProcessImage(formData: FormData) {
       .webp({ quality: 90 })
       .toBuffer();
 
-    // 3. Write Original to Disk
-    await writeFile(path.join(uploadDir, originalFileName), originalBuffer);
+    // 3. Write Original to Blob
+    const originalBlob = await put(originalFileName, originalBuffer, { access: 'public' });
 
-    // 4. Write Processed to Disk
-    await writeFile(path.join(uploadDir, processedFileName), processedBuffer);
+    // 4. Write Processed to Blob
+    const processedBlob = await put(processedFileName, processedBuffer, { access: 'public' });
 
     // 5. Save to Database
     await prisma.portfolioImage.create({
       data: {
         title,
-        original_image_url: `/uploads/portfolio/${originalFileName}`,
-        processed_image_url: `/uploads/portfolio/${processedFileName}`,
+        original_image_url: originalBlob.url,
+        processed_image_url: processedBlob.url,
         status: 'completed'
       }
     });

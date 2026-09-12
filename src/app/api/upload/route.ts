@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
-import fs from 'fs';
-import path from 'path';
+import { put } from '@vercel/blob';
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -24,20 +23,11 @@ export async function POST(req: NextRequest) {
     
     // Create unique filename
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+    const filename = `uploads/media/${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
     
-    // Save to public/uploads/media
-    const uploadDir = path.join(process.cwd(), 'public/uploads/media');
+    const blob = await put(filename, file, { access: 'public' });
     
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    const filePath = path.join(uploadDir, filename);
-    fs.writeFileSync(filePath, buffer);
-    
-    // Generate public URL
-    const url = `/uploads/media/${filename}`;
+    const url = blob.url;
     
     // Save to database
     const media = await prisma.media.create({

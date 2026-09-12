@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { put } from '@vercel/blob';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,12 +15,6 @@ export async function POST(req: NextRequest) {
     }
 
     const uploadedUrls: string[] = [];
-    
-    // Save to public/uploads/trial
-    const uploadDir = path.join(process.cwd(), 'public/uploads/trial');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
 
     for (const file of files) {
       // Validate type
@@ -34,14 +27,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `File ${file.name} exceeds 10MB limit.` }, { status: 400 });
       }
 
-      const buffer = Buffer.from(await file.arrayBuffer());
       const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const filename = `uploads/trial/${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
       
-      const filePath = path.join(uploadDir, filename);
-      fs.writeFileSync(filePath, buffer);
+      const blob = await put(filename, file, { access: 'public' });
       
-      uploadedUrls.push(`/uploads/trial/${filename}`);
+      uploadedUrls.push(blob.url);
     }
 
     return NextResponse.json({ success: true, urls: uploadedUrls });

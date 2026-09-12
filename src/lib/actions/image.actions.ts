@@ -2,8 +2,7 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { put } from '@vercel/blob';
 
 export async function uploadUserImage(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -13,15 +12,12 @@ export async function uploadUserImage(formData: FormData) {
   if (!file) return { success: false, error: 'No file provided.' };
 
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
     const fileExt = file.name.split('.').pop() || 'png';
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const uploadDir = path.join(process.cwd(), 'public/uploads/user-images', session.user.id);
+    const fileName = `uploads/user-images/${session.user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, fileName), buffer);
+    const blob = await put(fileName, file, { access: 'public' });
     
-    const publicUrl = `/uploads/user-images/${session.user.id}/${fileName}`;
+    const publicUrl = blob.url;
     return { success: true, publicUrl };
   } catch (error: unknown) {
     console.error('Upload Error:', error);
