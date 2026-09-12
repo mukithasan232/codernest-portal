@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { getCachedBlogBySlug } from "@/lib/cache/cached-queries";
 import { formatDate } from "@/lib/utils";
-import { ArrowLeft, Clock, Share2, Twitter, Linkedin } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import BlogRenderer from "@/components/blog/BlogRenderer";
+import ShareButtons from "@/components/blog/ShareButtons";
 
 // Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
 export const revalidate = 86400;
@@ -31,40 +32,33 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
     if (!post) return { title: 'Post Not Found' };
 
-    const title = post.metaTitle || post.title;
-    const description = post.metaDesc || `Read ${post.title} on CoderNest`;
-    const canonicalUrl = `${SITE_URL}/blog/${slug}`;
-    const coverImage = post.cover_image || `${SITE_URL}/opengraph-image.jpg`;
+    const postUrl = `${SITE_URL}/blog/${slug}`;
+    const imageUrl = post.cover_image || post.imageUrl || `${SITE_URL}/default-og.png`;
+    const description = post.excerpt || post.metaDesc || `Read ${post.title} on CoderNest`;
 
     return {
-        title: `${title} | CoderNest`,
-        description,
-        keywords: post.keywords ? post.keywords.split(',').map((k) => k.trim()) : undefined,
-        alternates: {
-            canonical: canonicalUrl,
-        },
+        title: `${post.title} | CoderNest`,
+        description: description,
         openGraph: {
-            title,
-            description,
-            url: canonicalUrl,
-            siteName: 'CoderNest',
+            title: post.title,
+            description: description,
+            url: postUrl,
             type: 'article',
             publishedTime: new Date(post.createdAt).toISOString(),
-            modifiedTime: post.updatedAt ? new Date(post.updatedAt).toISOString() : undefined,
             images: [
                 {
-                    url: coverImage,
+                    url: imageUrl,
                     width: 1200,
                     height: 630,
-                    alt: title,
+                    alt: post.title,
                 },
             ],
         },
         twitter: {
             card: 'summary_large_image',
-            title,
-            description,
-            images: [coverImage],
+            title: post.title,
+            description: description,
+            images: [imageUrl],
         },
     };
 }
@@ -77,6 +71,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     if (!post) {
         return notFound();
     }
+
+    // Increment view organically (fire and forget)
+    // Note: Due to ISR caching, this will mainly increment on cache revalidations,
+    // which acts as a lightweight heuristic rather than a strict 1:1 view counter.
+    prisma.blog.update({
+        where: { slug: post.slug },
+        data: { views: { increment: 1 } }
+    }).catch(console.error);
+
 
     const canonicalUrl = `${SITE_URL}/blog/${slug}`;
     const coverImage = post.cover_image || `${SITE_URL}/opengraph-image.jpg`;
@@ -153,17 +156,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                                 <p className="text-xs text-slate-500">Expert Insights</p>
                             </div>
                         </div>
-                        <div className="flex gap-4">
-                            <button className="p-3 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all">
-                                <Twitter className="w-5 h-5" />
-                            </button>
-                            <button className="p-3 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all">
-                                <Linkedin className="w-5 h-5" />
-                            </button>
-                            <button className="p-3 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all">
-                                <Share2 className="w-5 h-5" />
-                            </button>
-                        </div>
+                        <ShareButtons title={post.title} />
                     </div>
                 </div>
             </div>

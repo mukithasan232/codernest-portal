@@ -11,6 +11,7 @@ import CmsEditor, { CmsField } from '@/components/admin/CmsEditor';
 import Link from 'next/link';
 import { Plus, FileText, Eye, EyeOff, Pencil, TrendingUp, BarChart2 } from 'lucide-react';
 import { getCmsEntries } from '@/lib/actions/cms.actions';
+import BlogAnalyticsModal from '@/components/admin/BlogAnalyticsModal';
 
 const BLOG_FIELDS: CmsField[] = [
   { key: 'title',     label: 'Title',           type: 'text',     required: true,  placeholder: 'Post title…' },
@@ -29,6 +30,7 @@ export default function BlogCmsPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [editing, setEditing] = useState<(BlogPost & { id: string }) | null>(null);
   const [creating, setCreating] = useState(false);
+  const [selectedAnalyticsSlug, setSelectedAnalyticsSlug] = useState<string | null>(null);
 
   const fetchPosts = async () => {
     const res = await getCmsEntries('blogs');
@@ -68,6 +70,13 @@ export default function BlogCmsPage() {
           item={editing}
           onSuccess={() => { setEditing(null); setCreating(false); fetchPosts(); }}
           onCancel={() => { setEditing(null); setCreating(false); }}
+        />
+      )}
+
+      {selectedAnalyticsSlug && (
+        <BlogAnalyticsModal 
+          slug={selectedAnalyticsSlug} 
+          onClose={() => setSelectedAnalyticsSlug(null)} 
         />
       )}
 
@@ -118,21 +127,24 @@ export default function BlogCmsPage() {
                 <div className="flex items-center gap-6 flex-shrink-0 ml-4">
                   
                   {/* Analytics Metric */}
-                  <div className="hidden sm:flex flex-col items-end mr-4 border-r border-slate-200 dark:border-white/10 pr-6">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setSelectedAnalyticsSlug(post.slug); }}
+                    className="hidden sm:flex flex-col items-end mr-4 border-r border-slate-200 dark:border-white/10 pr-6 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md p-2 transition-all cursor-pointer"
+                  >
                     <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                       <BarChart2 className="w-3 h-3" /> Views
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-bold text-slate-900 dark:text-white text-lg leading-none">
-                        {((post as any).views || 0).toLocaleString()}
+                        {(post.views || 0).toLocaleString()}
                       </span>
-                      {((post as any).views || 0) > 100 && (
+                      {(post.views || 0) > 100 && (
                         <div className="flex items-center text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded text-[10px] font-bold" title="Trending up">
                           <TrendingUp className="w-3 h-3 mr-0.5" /> +24%
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
 
                   <div className="flex items-center gap-3">
                     <Link

@@ -173,3 +173,15 @@ body {
     animation-play-state: paused;
   }
 }
+
+@layer utilities {
+  .prose pre {
+    @apply bg-[#0d1117] p-4 rounded-xl overflow-x-auto relative my-6;
+  }
+  .prose pre code {
+    @apply text-sm font-mono text-slate-50 font-normal bg-transparent p-0;
+  }
+  .prose code {
+    @apply font-mono text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm;
+  }
+}

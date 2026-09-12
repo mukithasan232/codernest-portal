@@ -81,6 +81,7 @@ export interface BlogPost {
   tags?: string[];
   published?: boolean;
   status?: string;
+  views?: number;
   createdAt: string | Date;
   updatedAt?: string | Date;
 }
