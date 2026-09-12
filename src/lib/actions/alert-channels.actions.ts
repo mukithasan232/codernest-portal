@@ -36,9 +36,21 @@ function hashOtp(otp: string): string {
 
 /**
  * Normalize phone number to E.164 format (+XXXXXXXXXXX)
+ * Automatically handles Bangladesh local format (01XXXXXXXXX -> +8801XXXXXXXXX)
  */
 function normalizePhoneNumber(phone: string): string {
   let cleaned = phone.replace(/[^0-9+]/g, '').trim();
+
+  // Bangladesh local 11-digit format: 013..., 017..., 018..., 019...
+  if (cleaned.startsWith('01') && cleaned.length === 11) {
+    return `+88${cleaned}`;
+  }
+
+  // BD format with 88 without plus: 8801XXXXXXXXX
+  if (cleaned.startsWith('8801') && cleaned.length === 13) {
+    return `+${cleaned}`;
+  }
+
   if (!cleaned.startsWith('+')) {
     cleaned = `+${cleaned}`;
   }
