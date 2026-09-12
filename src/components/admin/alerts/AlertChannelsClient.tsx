@@ -174,8 +174,9 @@ export default function AlertChannelsClient({
       setCountdown(300);
       setResendCooldown(30);
       setStep(3);
-    } catch {
-      toast.error('Network error requesting OTP');
+    } catch (err: unknown) {
+      console.error('Request OTP exception:', err);
+      toast.error('Network error or new version deployed. Please refresh the page (F5 / Cmd+R).');
     } finally {
       setLoading(false);
     }
