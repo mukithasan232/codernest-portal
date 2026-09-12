@@ -654,22 +654,28 @@ export default function AlertChannelsClient({
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                       {selectedPlatform === 'TELEGRAM'
-                        ? 'Telegram Chat ID or Mobile Number'
-                        : 'Phone Number (International format with country code)'}
+                        ? 'Telegram Numeric Chat ID'
+                        : 'Phone Number (International format or 01XXXXXXXXX)'}
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder={selectedPlatform === 'TELEGRAM' ? '@username or 123456789' : '+8801700000000'}
+                      placeholder={selectedPlatform === 'TELEGRAM' ? 'e.g. 652194821' : '+8801700000000 or 01302522870'}
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 font-mono text-sm"
                     />
-                    <p className="text-xs text-slate-500 mt-1.5">
-                      {selectedPlatform === 'SMS' || selectedPlatform === 'WHATSAPP'
-                        ? 'Example: +8801712345678 (Bangladesh) or +14155552671 (USA)'
-                        : 'Your Telegram numerical Chat ID or linked phone'}
-                    </p>
+                    {selectedPlatform === 'TELEGRAM' ? (
+                      <div className="mt-2 p-2.5 bg-sky-500/10 border border-sky-500/20 rounded-xl text-xs text-sky-300 space-y-1">
+                        <p className="font-semibold text-sky-200">ℹ️ Telegram requires your numeric Chat ID (not a phone number):</p>
+                        <p>1. Open Telegram, search <strong className="text-white font-mono">@userinfobot</strong>, and click <strong>Start</strong> to copy your numeric ID.</p>
+                        <p>2. Open your configured alert bot and click <strong>Start</strong> once to allow it to message you.</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 mt-1.5">
+                        Example: +8801712345678 or 01302522870 (Bangladesh) or +14155552671 (USA)
+                      </p>
+                    )}
                   </div>
 
                   <div>
