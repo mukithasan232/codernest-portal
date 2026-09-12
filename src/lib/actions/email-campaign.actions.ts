@@ -1,11 +1,20 @@
 'use server';
 
+import fs from 'fs';
+import path from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
 import nodemailer from 'nodemailer';
 import { isDummyEmail } from '@/utils/email';
-import { isQStashConfigured, enqueueBulkEmails, EmailJobPayload } from '@/lib/qstash';
+import { isQStashConfigured, enqueueBulkEmails, EmailJobPayload, EmailAttachmentPayload } from '@/lib/qstash';
+
+export interface CampaignAttachmentInput {
+  filename: string;
+  content: string; // Base64
+  contentType?: string;
+  size?: number;
+}
 
 export async function getLeadsForCampaign() {
   try {
@@ -40,6 +49,76 @@ export async function sendEmailCampaignAction(formData: FormData) {
 
     if (!subject || !audience || !body) {
       return { error: 'All fields are required.' };
+    }
+
+    // ─── Attachments Processing ─────────────────────────────────────────────
+    const attachments: EmailAttachmentPayload[] = [];
+
+    // 1. Process files uploaded directly via FormData ('attachments' entries)
+    const uploadedFiles = formData.getAll('attachments');
+    for (const item of uploadedFiles) {
+      if (item && typeof item === 'object' && 'arrayBuffer' in item) {
+        const file = item as File;
+        if (file.size > 0) {
+          if (file.size > 10 * 1024 * 1024) {
+            return { error: `File "${file.name}" exceeds the 10MB limit.` };
+          }
+          const buffer = Buffer.from(await file.arrayBuffer());
+          attachments.push({
+            filename: file.name,
+            content: buffer.toString('base64'),
+            contentType: file.type || 'application/octet-stream',
+          });
+        }
+      }
+    }
+
+    // 2. Process pre-encoded JSON attachments array if provided
+    const attachmentsJson = formData.get('attachmentsJson') as string | null;
+    if (attachmentsJson) {
+      try {
+        const parsedAttachments = JSON.parse(attachmentsJson);
+        if (Array.isArray(parsedAttachments)) {
+          for (const att of parsedAttachments) {
+            if (att.filename && att.content) {
+              if (!attachments.some((a) => a.filename === att.filename)) {
+                attachments.push({
+                  filename: att.filename,
+                  content: att.content,
+                  contentType: att.contentType || 'application/octet-stream',
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[Campaign Action] Error parsing attachmentsJson:', err);
+      }
+    }
+
+    // 3. Quick Toggle Checkbox: Attach Default Resume (MD_Mukit_Hasan_Resume.pdf)
+    const attachDefaultResume =
+      formData.get('attachDefaultResume') === 'true' ||
+      formData.get('attachDefaultResume') === 'on';
+
+    if (attachDefaultResume) {
+      const resumeFileName = 'MD_Mukit_Hasan_Resume.pdf';
+      if (!attachments.some((a) => a.filename === resumeFileName)) {
+        const resumePath = path.join(process.cwd(), 'public', resumeFileName);
+        if (fs.existsSync(resumePath)) {
+          const resumeBuffer = fs.readFileSync(resumePath);
+          attachments.push({
+            filename: resumeFileName,
+            content: resumeBuffer.toString('base64'),
+            contentType: 'application/pdf',
+          });
+        }
+      }
+    }
+
+    // Limit check: up to 5 files
+    if (attachments.length > 5) {
+      return { error: 'Maximum limit of 5 attachments exceeded. Please select up to 5 files.' };
     }
 
     // Resolve audience to emails and details
@@ -98,6 +177,7 @@ export async function sendEmailCampaignAction(formData: FormData) {
       console.log('\n--- MOCK EMAIL CAMPAIGN DISPATCH ---');
       console.log(`To: ${targetLeads.length} recipients`);
       console.log(`Subject: ${subject}`);
+      console.log(`Attachments: ${attachments.length} files (${attachments.map(a => a.filename).join(', ') || 'None'})`);
       console.log(`Body Preview: ${body.substring(0, 150)}...`);
       console.log('------------------------------------\n');
 
@@ -110,7 +190,8 @@ export async function sendEmailCampaignAction(formData: FormData) {
         }))
       });
 
-      return { success: true, message: `Mock Mode: Emails logged to console (No valid SMTP config found).` };
+      const attachNote = attachments.length > 0 ? ` with ${attachments.length} attachment(s)` : '';
+      return { success: true, message: `Mock Mode: Emails logged to console (No valid SMTP config found)${attachNote}.` };
     }
     // ─── QSTASH ASYNCHRONOUS QUEUEING (Recommended) ───────────────────────────
     if (isQStashConfigured) {
@@ -147,14 +228,16 @@ export async function sendEmailCampaignAction(formData: FormData) {
           clientName,
           companyName,
           type: 'campaign',
+          attachments: attachments.length > 0 ? attachments : undefined,
         };
       });
 
       const queueResult = await enqueueBulkEmails(emailJobs, { delayStepSeconds: 1 });
 
+      const attachNote = attachments.length > 0 ? ` and ${attachments.length} attachment(s)` : '';
       return {
         success: true,
-        message: `Successfully offloaded campaign to QStash queue (${queueResult.queued} emails queued for asynchronous delivery).`,
+        message: `Successfully offloaded campaign to QStash queue (${queueResult.queued} emails queued for asynchronous delivery${attachNote}).`,
       };
     }
 
@@ -202,11 +285,20 @@ export async function sendEmailCampaignAction(formData: FormData) {
         personalizedBody += `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;" />`;
       }
 
+      const nodemailerAttachments = attachments.length > 0
+        ? attachments.map((att) => ({
+            filename: att.filename,
+            content: Buffer.from(att.content, 'base64'),
+            contentType: att.contentType,
+          }))
+        : undefined;
+
       return transporter.sendMail({
         from: `"${settings.siteName}" <${settings.smtpUser}>`,
         to: lead.email,
         subject: subject,
         html: personalizedBody,
+        attachments: nodemailerAttachments,
       }).then(() => {
         if (lead.id) {
           logData.push({

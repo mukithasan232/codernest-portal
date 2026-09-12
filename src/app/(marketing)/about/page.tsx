@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { ExternalLink, Code2, Users, Rocket, Target } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import Image from 'next/image';
+import { getCachedSystemSettings, getCachedTeamMembers } from '@/lib/cache/cached-queries';
 
 export const metadata: Metadata = {
   title: 'About Us & The Founder | CoderNest',
@@ -18,7 +19,8 @@ export const metadata: Metadata = {
   }
 };
 
-export const revalidate = 60; // Revalidate every minute
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
 
 export default async function AboutPage() {
   // Safe fetching from DB
@@ -27,12 +29,10 @@ export default async function AboutPage() {
 
   try {
     const [settingsRes, teamRes] = await Promise.all([
-      prisma.systemSettings.findUnique({ where: { id: 'global_settings' } }),
-      prisma.teamMember.findMany({
-        where: { isActive: true },
-        orderBy: { order: 'asc' }
-      })
+      getCachedSystemSettings(),
+      getCachedTeamMembers(),
     ]);
+
 
     if (settingsRes) {
       stats.foundedYear = settingsRes.foundedYear || stats.foundedYear;

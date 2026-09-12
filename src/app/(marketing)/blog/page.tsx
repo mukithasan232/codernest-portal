@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getCachedAllBlogs } from "@/lib/cache/cached-queries";
 import { formatDate } from "@/lib/utils";
 import { ArrowRight, Search } from "lucide-react";
 import Link from "next/link";
@@ -8,17 +8,11 @@ export const metadata = {
     description: "Insights on web development, SaaS, and AI from the CoderNest team.",
 };
 
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
+
 export default async function BlogPage() {
-    let posts: any[] = [];
-    try {
-        const result = await prisma.blog.findMany({
-            where: { status: 'published' },
-            orderBy: { createdAt: 'desc' }
-        });
-        posts = result;
-    } catch {
-        // DB temporarily unreachable — render empty state
-    }
+    const posts = await getCachedAllBlogs();
 
     return (
         <div className="pt-32 pb-24">

@@ -3,8 +3,7 @@ import Link from 'next/link'
 import { Code2, Camera, ExternalLink, ImageIcon } from 'lucide-react'
 import { MotionDiv, MotionH1, MotionP } from '@/components/ui/motion'
 import ImageSlider from '@/components/ui/ImageSlider'
-import { getPortfolioImages } from '@/lib/actions/portfolio.actions'
-import { prisma } from '@/lib/prisma'
+import { getCachedCaseStudies, getCachedPortfolioImages } from '@/lib/cache/cached-queries';
 import FounderPortfolioSpotlight from '@/components/portfolio/FounderPortfolioSpotlight'
 import PortfolioCardActions from '@/components/portfolio/PortfolioCardActions'
 
@@ -13,30 +12,24 @@ export const metadata: Metadata = {
   description: 'Explore our finest engineering solutions and visual productions. From FinTech dashboards to AI SaaS platforms.',
 }
 
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
+
 export default async function PortfolioPage() {
-  let portfolioImages: Awaited<ReturnType<typeof getPortfolioImages>>['data'] = [];
+  let portfolioImages: any[] = [];
   let caseStudies: any[] = [];
 
   try {
-    const [imagesResult, studies] = await Promise.allSettled([
-      getPortfolioImages(),
-      prisma.caseStudy.findMany({ 
-        orderBy: [
-          { featured: 'desc' },
-          { createdAt: 'desc' }
-        ] 
-      }),
+    const [images, studies] = await Promise.all([
+      getCachedPortfolioImages(),
+      getCachedCaseStudies(),
     ]);
-
-    if (imagesResult.status === 'fulfilled' && imagesResult.value.success) {
-      portfolioImages = imagesResult.value.data ?? [];
-    }
-    if (studies.status === 'fulfilled') {
-      caseStudies = studies.value ?? [];
-    }
+    portfolioImages = images;
+    caseStudies = studies;
   } catch {
     // Graceful degradation — render empty states below
   }
+
 
   return (
     <main className="relative min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-50 overflow-hidden pt-28 pb-24 transition-colors duration-300">

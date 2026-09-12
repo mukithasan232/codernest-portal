@@ -1,50 +1,37 @@
 import { Metadata } from 'next';
-import { motion } from 'framer-motion'
-import { prisma } from '@/lib/prisma'
-import PricingClient from '@/components/marketing/PricingClient'
-
+import { getCachedPricingPlans } from '@/lib/cache/cached-queries';
+import UniversalPricingSection from '@/components/pricing/UniversalPricingSection';
 
 export const metadata: Metadata = {
-  title: 'Transparent Pricing | CoderNest',
-  description: 'No hidden fees, no surprise retainers. Transparent pricing for our elite software engineering services.',
+  title: 'Transparent Pricing & Retainers | CoderNest',
+  description: 'Enterprise dual-mode pricing engine for Software Development and Photo Editing services. Transparent hourly rates and fixed milestone retainers.',
   openGraph: {
-    title: 'Transparent Pricing | CoderNest',
-    description: 'No hidden fees, no surprise retainers. Transparent pricing for our elite software engineering services.',
+    title: 'Transparent Pricing & Retainers | CoderNest',
+    description: 'Enterprise dual-mode pricing engine for Software Development and Photo Editing services. Transparent hourly rates and fixed milestone retainers.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Transparent Pricing | CoderNest',
-    description: 'No hidden fees, no surprise retainers. Transparent pricing for our elite software engineering services.',
+    title: 'Transparent Pricing & Retainers | CoderNest',
+    description: 'Enterprise dual-mode pricing engine for Software Development and Photo Editing services. Transparent hourly rates and fixed milestone retainers.',
   }
 };
 
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
+
 export default async function PricingPage() {
-  let pricingData: any[] = [];
-  try {
-    pricingData = await prisma.servicePricing.findMany({
-      orderBy: { price: 'asc' }
-    });
-  } catch {
-    // DB temporarily unreachable — render empty state
-  }
+  const plans = await getCachedPricingPlans();
 
   return (
-    <main className="relative min-h-screen overflow-hidden pt-28 pb-24">
-      {/* Background ambient glows */}
-      <div className="absolute top-0 right-1/2 translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-[#3B82F6]/10 to-transparent blur-[120px] pointer-events-none -z-10" />
-
-      {/* Header */}
-      <div className="max-w-4xl mx-auto px-4 text-center mb-16">
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-          Transparent <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00F2FE] to-[#3B82F6]">Pricing</span>
-        </h1>
-        <p className="text-lg text-slate-400">
-          No hidden fees, no surprise retainers. Choose your discipline below.
-        </p>
-      </div>
-
-      <PricingClient pricingData={pricingData} />
+    <main className="relative min-h-screen overflow-hidden pt-28 pb-24 bg-[#050505]">
+      <UniversalPricingSection
+        plans={plans}
+        initialCategory="SOFTWARE_DEV"
+        initialModel="FIXED_PACKAGE"
+        title="Transparent, Value-Driven Pricing"
+        subtitle="Choose your discipline and billing model below. No surprises, no hidden retainers."
+      />
     </main>
-  )
+  );
 }

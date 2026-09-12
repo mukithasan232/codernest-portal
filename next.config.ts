@@ -4,7 +4,12 @@ const nextConfig: NextConfig = {
   // Required to prevent Prisma from being bundled into edge/client chunks
   serverExternalPackages: ['@prisma/client', 'prisma', 'sharp'],
 
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
+
   images: {
+    formats: ['image/avif', 'image/webp'],
     // Allow Next.js <Image> to optimize images from these external sources.
     // Add more domains here as new integrations are added.
     remotePatterns: [

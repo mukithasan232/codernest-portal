@@ -33,6 +33,8 @@ import { MotionDiv, MotionH1, MotionP } from '@/components/ui/motion';
 import { getCityBySlug, targetCities, type TargetCity } from '@/lib/data/targetCities';
 
 // ─── Static params: all known cities are pre-rendered at build time ───────────
+export const revalidate = 86400; // 24 hours CDN cache
+
 export function generateStaticParams() {
   return targetCities.map((c) => ({ city: c.slug }));
 }

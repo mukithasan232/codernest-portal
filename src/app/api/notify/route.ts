@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendOfficialNotification } from '@/lib/email';
+import { dispatchAdminAlert } from '@/lib/notifications.service';
 import { headers } from 'next/headers';
 
 export async function POST(req: Request) {
@@ -46,6 +47,13 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    // Also broadcast to verified SMS, WhatsApp, and Telegram channels
+    dispatchAdminAlert({
+      title,
+      message,
+      data,
+    }).catch((err) => console.error('[API Notify] Multi-channel broadcast error:', err));
 
     // 4. Return Success Response
     return NextResponse.json(

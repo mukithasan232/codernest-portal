@@ -5,17 +5,26 @@
  */
 
 import Link from 'next/link';
-import { BookOpen, Layers, DollarSign, ArrowRight } from 'lucide-react';
+import { BookOpen, Layers, DollarSign, ArrowRight, Scissors, Sparkles } from 'lucide-react';
 
 const CMS_SECTIONS = [
   {
-    href: '/admin/cms/blog',
-    icon: BookOpen,
-    label: 'Blog Posts',
-    description: 'Create, edit, and publish blog articles. Markdown supported.',
-    color: 'text-blue-400',
-    bg: 'bg-blue-400/10',
-    border: 'border-blue-400/20',
+    href: '/admin/pricing',
+    icon: DollarSign,
+    label: 'Universal Pricing Engine',
+    description: 'Dual-mode unit rates (hourly, per-image) & retainers for Software and Photo editing.',
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-400/10',
+    border: 'border-cyan-400/20',
+  },
+  {
+    href: '/admin/services',
+    icon: Scissors,
+    label: 'Photo Services & Showcases',
+    description: 'Manage ClippingBD services, Photoshop features, and interactive Before/After sliders.',
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-400/10',
+    border: 'border-emerald-400/20',
   },
   {
     href: '/admin/cms/case-studies',
@@ -27,15 +36,16 @@ const CMS_SECTIONS = [
     border: 'border-purple-400/20',
   },
   {
-    href: '/admin/cms/pricing',
-    icon: DollarSign,
-    label: 'Service Pricing',
-    description: 'Update pricing tiers for Web Dev and Image Studio services.',
-    color: 'text-green-400',
-    bg: 'bg-green-400/10',
-    border: 'border-green-400/20',
+    href: '/admin/cms/blog',
+    icon: BookOpen,
+    label: 'Blog Posts',
+    description: 'Create, edit, and publish blog articles. Markdown supported.',
+    color: 'text-blue-400',
+    bg: 'bg-blue-400/10',
+    border: 'border-blue-400/20',
   },
 ];
+
 
 export default function CmsHubPage() {
   return (

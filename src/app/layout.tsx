@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import Script from "next/script";
@@ -5,26 +6,19 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { prisma } from '@/lib/prisma';
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import MetaPixel from "@/components/MetaPixel";
+import { getCachedSystemSettings } from "@/lib/cache/cached-queries";
 
-// Force all pages to render dynamically — the root layout fetches from MongoDB
-// at request time, so SSG/ISR would fail when the DB is unreachable at build time.
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
 
-const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
-const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
+const inter = Inter({ subsets: ["latin"], variable: '--font-inter', display: 'swap' });
+const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit', display: 'swap' });
 
 export async function generateMetadata(): Promise<Metadata> {
-  let data = null;
-  try {
-    data = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' }, select: { siteName: true, siteTitle: true, faviconUrl: true } });
-  } catch {
-    // DB unreachable — use defaults
-  }
+  const data = await getCachedSystemSettings();
 
   const siteName = data?.siteName || "CoderNest";
   const title = data?.siteTitle ? `${siteName} | ${data.siteTitle}` : `${siteName} | B2B Tech Agency & Image Processing SaaS`;
@@ -45,14 +39,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  let data = null;
-  try {
-    data = await prisma.systemSettings.findUnique({ where: { id: 'global_settings' } });
-  } catch {
-    // DB unreachable — use defaults
-  }
+  const data = await getCachedSystemSettings();
   const primaryColor = data?.brandColor || '#3B82F6';
   const secondaryColor = data?.secondaryColor || '#00F2FE';
+
 
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning style={{ '--primary': primaryColor, '--secondary': secondaryColor } as React.CSSProperties}>
@@ -111,7 +101,9 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {/* AuthProvider wraps everything — provides auth state to all client components */}
           <AuthProvider>
-            <MetaPixel />
+            <Suspense fallback={null}>
+              <MetaPixel />
+            </Suspense>
             {children}
             <Toaster
               position="bottom-right"

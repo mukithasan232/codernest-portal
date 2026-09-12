@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveScrapedLead } from '@/actions/lead-collector.actions';
 import { triggerOnboardingWorkflow } from '@/lib/workflow';
+import { dispatchAdminAlert } from '@/lib/notifications.service';
 
 /**
  * POST /api/leads/capture
@@ -49,6 +50,18 @@ export async function POST(req: NextRequest) {
         source: result.lead.source,
         serviceRequested: requirements,
       }).catch((err) => console.error('[Lead Capture] Failed to trigger onboarding workflow:', err));
+
+      // Broadcast real-time multi-channel alert to verified admin channels (SMS, WhatsApp, Telegram)
+      dispatchAdminAlert({
+        title: '🔥 New Inbound Lead Captured',
+        message: `A new prospective client submitted inquiry via ${source || 'Lead Gate'}.`,
+        data: {
+          Name: name,
+          Email: email,
+          Source: source || 'Lead Gate',
+          Details: requirements,
+        },
+      }).catch((err) => console.error('[Lead Capture] Failed to dispatch admin alert:', err));
     }
 
     return NextResponse.json({

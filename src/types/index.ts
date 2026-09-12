@@ -192,3 +192,73 @@ export interface TeamMember {
   createdAt: string | Date;
   updatedAt: string | Date;
 }
+
+export interface PhotoService {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  iconName?: string | null;
+  imageUrl?: string | null;
+  features: string[];
+  order: number;
+  isActive: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+export type ServiceCategory = 'PHOTO_EDITING' | 'SOFTWARE_DEV' | 'CUSTOM';
+export type PricingModelType = 'UNIT_BASED' | 'FIXED_PACKAGE';
+
+export interface PricingPlan {
+  id: string;
+  category: ServiceCategory;
+  modelType: PricingModelType;
+  title: string;
+  name?: string | null;
+  priceDisplay: string;
+  unitLabel: string;
+  unit?: string | null;
+  badge?: string | null;
+  isPopular: boolean;
+  description?: string | null;
+  features: string[];
+  minQuantity?: number | null;
+  ctaText: string;
+  ctaAction: string;
+  ctaLink?: string | null;
+  order: number;
+  isActive: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+
+export interface BeforeAfterShowcase {
+  id: string;
+  title: string;
+  category: string;
+  beforeImage: string;
+  afterImage: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+export type ChannelPlatform = 'SMS' | 'WHATSAPP' | 'TELEGRAM';
+
+export interface AlertChannel {
+  id: string;
+  platform: ChannelPlatform;
+  identifier: string;
+  label?: string | null;
+  isVerified: boolean;
+  isActive: boolean;
+  otpHash?: string | null;
+  otpExpiresAt?: string | Date | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
+

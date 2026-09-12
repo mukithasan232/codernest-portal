@@ -1,8 +1,8 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AIChatbot from "@/components/ui/AIChatbot";
 import VisitorTracker from "@/components/analytics/VisitorTracker";
 import BehavioralTrigger from "@/components/analytics/BehavioralTrigger";
+import ClientChatbot from "@/components/ui/ClientChatbot";
 
 export default function MarketingLayout({
   children,
@@ -16,7 +16,7 @@ export default function MarketingLayout({
       <Navbar />
       <main className="flex-grow">{children}</main>
       <Footer />
-      <AIChatbot />
+      <ClientChatbot />
     </>
   );
 }

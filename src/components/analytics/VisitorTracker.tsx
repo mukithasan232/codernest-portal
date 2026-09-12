@@ -14,7 +14,7 @@ function generateUUID() {
 export default function VisitorTracker() {
   const pathname = usePathname();
   const pageViewIdRef = useRef<string | null>(null);
-  const timeSpentRef = useRef<number>(0);
+  const startTimeRef = useRef<number>(Date.now());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionIdRef = useRef<string | null>(null);
 
@@ -28,10 +28,10 @@ export default function VisitorTracker() {
     sessionIdRef.current = sessionId;
 
     // 2. Reset tracking variables for this new page view
-    timeSpentRef.current = 0;
+    startTimeRef.current = Date.now();
     pageViewIdRef.current = null;
 
-    // 3. Initialize the page view on the server
+    // 3. Initialize the page view on the server (deferred to idle time to protect LCP / mobile CPU)
     const initPageView = async () => {
       try {
         const res = await fetch('/api/track/pageview', {
@@ -47,58 +47,65 @@ export default function VisitorTracker() {
         if (data.pageViewId) {
           pageViewIdRef.current = data.pageViewId;
         }
-      } catch (err) {
-        console.error('Failed to init page view tracking:', err);
+      } catch {
+        // Non-blocking telemetry
       }
     };
 
-    initPageView();
+    let idleId: any = null;
+    let timerId: any = null;
 
-    // 4. Start local timer & heartbeat
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = (window as any).requestIdleCallback(initPageView, { timeout: 2000 });
+    } else {
+      timerId = setTimeout(initPageView, 1000);
+    }
+
+    // 4. Low-overhead 30s heartbeat (avoids 1s CPU wakeup loops on mobile)
     intervalRef.current = setInterval(() => {
-      timeSpentRef.current += 1; // Increment by 1 second
+      if (!pageViewIdRef.current) return;
+      const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
 
-      // Heartbeat: sync with server every 30 seconds (throttled from 10s to reduce DB load by 300%)
-      if (timeSpentRef.current % 30 === 0 && pageViewIdRef.current) {
-        fetch('/api/track/pageview', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update',
-            pageViewId: pageViewIdRef.current,
-            timeSpent: timeSpentRef.current,
-            url: pathname,
-          }),
-          // Optional: use keepalive so if user navigates during heartbeat it doesn't abort
-          keepalive: true,
-        }).then(res => res.json()).then(data => {
+      fetch('/api/track/pageview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          pageViewId: pageViewIdRef.current,
+          timeSpent,
+          url: pathname,
+        }),
+        keepalive: true,
+      })
+        .then((res) => res.json())
+        .then((data) => {
           if (data?.triggerChatbot) {
-            // Check session storage so we only trigger this once per session
             if (!sessionStorage.getItem('chatbot_triggered')) {
               sessionStorage.setItem('chatbot_triggered', 'true');
               window.dispatchEvent(new CustomEvent('forceOpenChatbot'));
             }
           }
-        }).catch(() => {});
-      }
-    }, 1000);
+        })
+        .catch(() => {});
+    }, 30000);
 
     // Cleanup on unmount (or path change)
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (idleId && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        (window as any).cancelIdleCallback(idleId);
       }
-      
-      // Attempt final update if we have a valid pageViewId
+      if (timerId) clearTimeout(timerId);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+
       if (pageViewIdRef.current) {
+        const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
         const payload = JSON.stringify({
           action: 'update',
           pageViewId: pageViewIdRef.current,
-          timeSpent: timeSpentRef.current,
+          timeSpent,
           url: pathname,
         });
 
-        // Use sendBeacon for more reliable delivery during page unload
         if (navigator.sendBeacon) {
           navigator.sendBeacon('/api/track/pageview', new Blob([payload], { type: 'application/json' }));
         } else {
@@ -113,14 +120,15 @@ export default function VisitorTracker() {
     };
   }, [pathname]);
 
-  // Use visibilitychange to catch tab closing/switching more reliably
+  // Use visibilitychange to catch tab closing/switching
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden' && pageViewIdRef.current) {
+        const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
         const payload = JSON.stringify({
           action: 'update',
           pageViewId: pageViewIdRef.current,
-          timeSpent: timeSpentRef.current,
+          timeSpent,
           url: pathname,
         });
         if (navigator.sendBeacon) {
@@ -135,5 +143,5 @@ export default function VisitorTracker() {
     };
   }, [pathname]);
 
-  return null; // Invisible component
+  return null;
 }

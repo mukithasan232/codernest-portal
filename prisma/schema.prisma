@@ -371,3 +371,97 @@ model EmailTrackingLog {
   campaign   Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   lead       Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
 }
+
+// ── Photo Editing Services & Pricing Models (ClippingBD Engine) ─────────────
+
+model PhotoService {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String   // e.g., "Clipping Path", "Multi Layer Clipping"
+  slug        String   @unique
+  description String
+  iconName    String?  // Lucide icon name or image URL
+  imageUrl    String?
+  features    String[] // Bullet points of features
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ServiceCategory {
+  PHOTO_EDITING
+  SOFTWARE_DEV
+  CUSTOM
+}
+
+enum PricingModelType {
+  UNIT_BASED    // Pay-per-image, Hourly rate, Day rate
+  FIXED_PACKAGE // Monthly retainer, Fixed milestone, Tiered bundle
+}
+
+model PricingPlan {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  category        ServiceCategory  @default(SOFTWARE_DEV)
+  modelType       PricingModelType @default(FIXED_PACKAGE)
+  
+  title           String           // e.g. "Clipping Path" or "Dedicated Node.js Contractor"
+  name            String?          // Backward compatible alias
+  priceDisplay    String           // e.g. "$0.20", "$40", "$5,000"
+  unitLabel       String           @default("/month") // e.g. "/per image", "/hour", "/month", "/project"
+  unit            String?          @default("/per image") // Backward compatible alias
+  
+  badge           String?          // e.g. "Most Popular", "Best Value"
+  isPopular       Boolean          @default(false)
+  
+  description     String?
+  features        String[]         // Bullet points
+  minQuantity     Int?             // For unit-based (e.g. min 50 images or min 10 hrs)
+  
+  ctaText         String           @default("Get Started")
+  ctaAction       String           @default("contact") // "checkout", "contact", "whatsapp"
+  ctaLink         String?          @default("#contact")
+  
+  order           Int              @default(0)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+
+model BeforeAfterShowcase {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String   // e.g., "Jewelry Clipping", "Apparel Retouching"
+  category    String   // e.g., "Clipping Path", "Color Correction"
+  beforeImage String   // Original photo URL
+  afterImage  String   // Edited/clipped photo URL
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ChannelPlatform {
+  SMS
+  WHATSAPP
+  TELEGRAM
+}
+
+model AlertChannel {
+  id           String          @id @default(auto()) @map("_id") @db.ObjectId
+  platform     ChannelPlatform
+  identifier   String          // Phone number (e.g., +8801...) or Telegram Chat ID
+  label        String?         // e.g., "Personal Mobile", "Ops WhatsApp"
+  
+  isVerified   Boolean         @default(false)
+  isActive     Boolean         @default(false)
+  
+  otpHash      String?         // Encrypted/Hashed 6-digit OTP
+  otpExpiresAt DateTime?
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([platform, identifier])
+}
+
+

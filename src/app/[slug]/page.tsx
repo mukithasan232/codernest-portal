@@ -2,6 +2,9 @@ import { getDynamicPageBySlug } from '@/lib/actions/pages.actions';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const res = await getDynamicPageBySlug(slug);

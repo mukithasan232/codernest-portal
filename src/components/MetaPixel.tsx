@@ -2,19 +2,24 @@
 
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 
-export default function MetaPixel() {
+function MetaPixelTracker({ pixelId }: { pixelId: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
   useEffect(() => {
     // Trigger a PageView on route change if pixel is loaded
-    if (pixelId && typeof window !== 'undefined' && (window as any).fbq) {
+    if (typeof window !== 'undefined' && (window as any).fbq) {
       (window as any).fbq('track', 'PageView');
     }
   }, [pathname, searchParams, pixelId]);
+
+  return null;
+}
+
+export default function MetaPixel() {
+  const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
   if (!pixelId) return null;
 
@@ -47,6 +52,9 @@ export default function MetaPixel() {
           alt=""
         />
       </noscript>
+      <Suspense fallback={null}>
+        <MetaPixelTracker pixelId={pixelId} />
+      </Suspense>
     </>
   );
 }

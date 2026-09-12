@@ -1,14 +1,39 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { Mail, Send, Users, FileText, Loader2, CheckCircle2, LayoutTemplate, Code2, Type, BarChart3, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import {
+  Mail,
+  Send,
+  Users,
+  FileText,
+  Loader2,
+  CheckCircle2,
+  LayoutTemplate,
+  Code2,
+  Type,
+  BarChart3,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  Paperclip,
+  Upload,
+  Image as ImageIcon,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sendEmailCampaignAction, getLeadsForCampaign, saveEmailTemplateAction, getEmailTemplatesAction, deleteEmailTemplateAction, updateEmailTemplateAction } from '@/lib/actions/email-campaign.actions';
 import { isDummyEmail } from '@/utils/email';
 import Editor from '@monaco-editor/react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 const PREDEFINED_TEMPLATES = [
   {
@@ -63,6 +88,55 @@ export default function EmailMarketingPage() {
   const [subject, setSubject] = useState('');
   const [audience, setAudience] = useState('');
   const [htmlContent, setHtmlContent] = useState(PREDEFINED_TEMPLATES[0].html);
+
+  // Attachments State
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachDefaultResume, setAttachDefaultResume] = useState(false);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAddFiles = (newFiles: FileList | File[]) => {
+    const fileArray = Array.from(newFiles);
+    const validExtensions = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg'];
+
+    let addedCount = 0;
+    const currentList = [...attachments];
+
+    for (const file of fileArray) {
+      if (currentList.length >= 5) {
+        toast.error('Maximum limit of 5 attachments reached.');
+        break;
+      }
+
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+      if (!validExtensions.includes(ext)) {
+        toast.error(`"${file.name}" is not supported (.pdf, .doc, .docx, .png, .jpg).`);
+        continue;
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`"${file.name}" exceeds the 10MB limit.`);
+        continue;
+      }
+
+      if (currentList.some((existing) => existing.name === file.name && existing.size === file.size)) {
+        toast.error(`"${file.name}" is already attached.`);
+        continue;
+      }
+
+      currentList.push(file);
+      addedCount++;
+    }
+
+    if (addedCount > 0) {
+      setAttachments(currentList);
+      toast.success(`Attached ${addedCount} file${addedCount > 1 ? 's' : ''}`);
+    }
+  };
+
+  const handleRemoveFile = (indexToRemove: number) => {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
 
   const hasDummyEmails = useMemo(() => {
     if (!audience) return false;
@@ -209,6 +283,12 @@ export default function EmailMarketingPage() {
       formData.set('body', htmlContent); // Inject current editor content
       formData.set('subject', subject);
 
+      // Append multi-file attachments
+      for (const file of attachments) {
+        formData.append('attachments', file);
+      }
+      formData.set('attachDefaultResume', attachDefaultResume ? 'true' : 'false');
+
       const result = await sendEmailCampaignAction(formData);
       
       if (result?.error) {
@@ -216,6 +296,7 @@ export default function EmailMarketingPage() {
       } else if (result?.success) {
         toast.success(result.message || 'Campaign queued successfully!');
         setLastSuccess(result.message || 'Campaign Sent');
+        setAttachments([]);
       }
     } catch (error) {
       toast.error('An unexpected error occurred.');
@@ -480,6 +561,153 @@ export default function EmailMarketingPage() {
             )}
             
           </div>
+        </div>
+
+        {/* ── Multi-File Attachment Component ─────────────────────────────────── */}
+        <div className="glass rounded-2xl border border-white/10 p-6 space-y-4 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">
+                <Paperclip className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  Campaign Attachments
+                  <span className="text-[11px] font-normal text-slate-400 font-mono">
+                    ({attachments.length + (attachDefaultResume ? 1 : 0)} / 5 files)
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Attach resumes, cover letters, portfolios, or pitch decks (.pdf, .doc, .docx, .png, .jpg &bull; Max 10MB each)
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Toggle Checkbox: Attach Default Resume */}
+            <label className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 cursor-pointer hover:bg-purple-500/15 transition select-none group">
+              <input
+                id="attach-default-resume-checkbox"
+                type="checkbox"
+                checked={attachDefaultResume}
+                onChange={(e) => setAttachDefaultResume(e.target.checked)}
+                className="w-4 h-4 rounded border-purple-400 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 bg-slate-900 cursor-pointer"
+              />
+              <span className="text-xs font-semibold text-purple-300 group-hover:text-purple-200 transition flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                Attach Default Resume (MD_Mukit_Hasan_Resume.pdf)
+              </span>
+            </label>
+          </div>
+
+          {/* Drag & Drop Dropzone */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDraggingFiles(true);
+            }}
+            onDragLeave={() => setIsDraggingFiles(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDraggingFiles(false);
+              if (e.dataTransfer.files) {
+                handleAddFiles(e.dataTransfer.files);
+              }
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all duration-200 ${
+              isDraggingFiles
+                ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/10'
+                : 'border-white/10 hover:border-white/20 bg-slate-900/30 hover:bg-slate-900/50'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              onChange={(e) => {
+                if (e.target.files) {
+                  handleAddFiles(e.target.files);
+                  e.target.value = '';
+                }
+              }}
+              className="hidden"
+            />
+            <div className="flex flex-col items-center justify-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+                <Upload className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-200">
+                  <span className="text-purple-400 hover:underline">Click to browse</span> or drag & drop files here
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Supports up to 5 files (PDF, DOC, DOCX, PNG, JPG &bull; Max 10MB each)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Badges List */}
+          {(attachments.length > 0 || attachDefaultResume) && (
+            <div className="space-y-2.5 pt-1">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Attached Files ({attachments.length + (attachDefaultResume ? 1 : 0)})
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                {/* Default Resume Badge if checked */}
+                {attachDefaultResume && (
+                  <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 text-white shadow-sm">
+                    <FileText className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                    <div className="min-w-0 text-left">
+                      <p className="text-xs font-bold truncate max-w-[220px]">MD_Mukit_Hasan_Resume.pdf</p>
+                      <p className="text-[10px] text-purple-300">Default Resume &bull; PDF</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAttachDefaultResume(false);
+                      }}
+                      className="text-purple-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition ml-1"
+                      title="Remove default resume"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Custom Uploaded Files */}
+                {attachments.map((file, idx) => {
+                  const isImage = file.type.startsWith('image/');
+                  return (
+                    <div
+                      key={`${file.name}-${idx}`}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/80 border border-white/10 text-white shadow-sm hover:border-white/20 transition"
+                    >
+                      {isImage ? (
+                        <ImageIcon className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                      ) : (
+                        <FileText className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                      )}
+                      <div className="min-w-0 text-left">
+                        <p className="text-xs font-semibold truncate max-w-[180px]">{file.name}</p>
+                        <p className="text-[10px] text-slate-400">{formatFileSize(file.size)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(idx)}
+                        className="text-slate-400 hover:text-red-400 p-1 rounded-lg hover:bg-white/10 transition ml-1"
+                        title="Remove attachment"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action Bar */}

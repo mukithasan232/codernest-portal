@@ -10,22 +10,46 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Target, Lightbulb, TrendingUp, Code2 } from 'lucide-react';
 import type { Metadata } from 'next';
 import LiveInteractiveViewer from '@/components/portfolio/LiveInteractiveViewer';
+import { unstable_cache } from 'next/cache';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-async function getCaseStudy(slug: string): Promise<CaseStudy | null> {
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
+
+export async function generateStaticParams() {
   try {
-    const study = await prisma.caseStudy.findUnique({
-      where: { slug }
+    const studies = await prisma.caseStudy.findMany({
+      select: { slug: true },
+      take: 50,
     });
-    
-    if (!study) return null;
-    return study as any as CaseStudy;
+    return studies.map((s) => ({ slug: s.slug }));
   } catch {
-    return null;
+    return [];
   }
+}
+
+const getCachedCaseStudyBySlug = (slug: string) =>
+  unstable_cache(
+    async () => {
+      try {
+        const study = await prisma.caseStudy.findUnique({
+          where: { slug },
+        });
+        if (!study) return null;
+        return study as any as CaseStudy;
+      } catch {
+        return null;
+      }
+    },
+    [`case-study-${slug}`],
+    { revalidate: 86400, tags: ['case-studies', `case-study-${slug}`] }
+  )();
+
+async function getCaseStudy(slug: string): Promise<CaseStudy | null> {
+  return getCachedCaseStudyBySlug(slug);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

@@ -9,9 +9,16 @@ interface BeforeAfterSliderProps {
   afterImage: string;
   altText?: string;
   className?: string;
+  priority?: boolean;
 }
 
-export default function BeforeAfterSlider({ beforeImage, afterImage, altText = "Before and After comparison", className = "" }: BeforeAfterSliderProps) {
+export default function BeforeAfterSlider({
+  beforeImage,
+  afterImage,
+  altText = "Before and After comparison",
+  className = "",
+  priority = false
+}: BeforeAfterSliderProps) {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,6 +53,13 @@ export default function BeforeAfterSlider({ beforeImage, afterImage, altText = "
     };
   }, [isDragging]);
 
+  const isExternal = (url: string) => url.startsWith('http://') || url.startsWith('https://');
+  const isUnoptimizedUrl = (url: string) => {
+    if (!isExternal(url)) return false;
+    const allowed = ['googleusercontent.com', 'r2.cloudflarestorage.com', 'supabase.co', 'images.unsplash.com'];
+    return !allowed.some(domain => url.includes(domain));
+  };
+
   return (
     <div
       ref={containerRef}
@@ -68,8 +82,11 @@ export default function BeforeAfterSlider({ beforeImage, afterImage, altText = "
           src={afterImage}
           alt={`After: ${altText}`}
           fill
+          priority={priority}
+          loading={priority ? 'eager' : 'lazy'}
+          unoptimized={isUnoptimizedUrl(afterImage)}
           className="object-cover pointer-events-none"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          sizes="(max-width: 768px) 100vw, 50vw"
         />
         <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
           After
@@ -85,8 +102,11 @@ export default function BeforeAfterSlider({ beforeImage, afterImage, altText = "
           src={beforeImage}
           alt={`Before: ${altText}`}
           fill
+          priority={priority}
+          loading={priority ? 'eager' : 'lazy'}
+          unoptimized={isUnoptimizedUrl(beforeImage)}
           className="object-cover pointer-events-none"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          sizes="(max-width: 768px) 100vw, 50vw"
         />
         <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
           Before

@@ -9,7 +9,7 @@ import {
   BarChart3, Users, FileText, LogOut, ShieldCheck,
   Megaphone, Briefcase, Image as ImageIcon, DollarSign,
   LayoutDashboard, Layers, Settings, UserCheck, Zap,
-  Activity, Mail, Globe, Target, Key
+  Activity, Mail, Globe, Target, Key, Scissors, Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminNavbar from '@/components/admin/AdminNavbar';
@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { href: '/admin/projects',     icon: Briefcase,       label: 'Projects' },
   { href: '/admin/clients',      icon: UserCheck,       label: 'Clients' },
   { href: '/admin/api-settings', icon: Key,             label: 'API Integrations' },
+  { href: '/admin/settings/alerts', icon: Bell,         label: 'Alert Channels' },
   { href: '/admin/image-orders', icon: ImageIcon,       label: 'Image Orders' },
   { href: '/admin/invoices',     icon: DollarSign,      label: 'Invoices' },
   { href: '/admin/team',         icon: Users,           label: 'Team Management' },
@@ -34,11 +35,13 @@ const NAV_ITEMS = [
 const CMS_ITEMS = [
   { href: '/admin/cms/blog',          icon: FileText, label: 'Blog CMS' },
   { href: '/admin/cms/case-studies',  icon: Layers,   label: 'Portfolio Manager' },
-  { href: '/admin/cms/pricing',       icon: DollarSign, label: 'Pricing' },
+  { href: '/admin/pricing',           icon: DollarSign, label: 'Pricing Plans' },
+  { href: '/admin/services',          icon: Scissors, label: 'Photo Services' },
   { href: '/admin/pages',             icon: LayoutDashboard, label: 'Page Builder' },
   { href: '/admin/media',             icon: ImageIcon, label: 'Media Library' },
   { href: '/admin/settings',          icon: Settings, label: 'Global Settings' },
 ];
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -211,7 +214,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main */}
-      <main className="flex-1 overflow-y-auto p-8 bg-slate-50 dark:bg-slate-950">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950">
         {children}
       </main>
     </div>

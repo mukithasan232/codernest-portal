@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
     }
 
-    const { to, subject, html, text, leadId, campaignId, type } = payload;
+    const { to, subject, html, text, leadId, campaignId, type, attachments } = payload;
 
     if (!to || !subject || (!html && !text)) {
       return NextResponse.json({ error: 'Missing required email fields (to, subject, html/text)' }, { status: 400 });
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       console.log(`To: ${to}`);
       console.log(`Subject: ${subject}`);
       console.log(`Type: ${type || 'general'}`);
+      console.log(`Attachments: ${attachments?.length || 0} files`);
       console.log(`Snippet: ${(html || text || '').substring(0, 120)}...`);
       console.log('-------------------------------------------\n');
 
@@ -85,6 +86,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const nodemailerAttachments = attachments && attachments.length > 0
+      ? attachments.map((att) => ({
+          filename: att.filename,
+          content: Buffer.from(att.content, 'base64'),
+          contentType: att.contentType,
+        }))
+      : undefined;
+
     // 5. Send Individual Message
     const info = await transporter.sendMail({
       from: `"${siteName}" <${smtpUser}>`,
@@ -92,6 +101,7 @@ export async function POST(req: NextRequest) {
       subject,
       html: html || undefined,
       text: text || undefined,
+      attachments: nodemailerAttachments,
     });
 
     // 6. Record Tracking Log & CRM Status Updates

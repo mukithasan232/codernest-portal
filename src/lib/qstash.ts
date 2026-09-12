@@ -14,6 +14,12 @@
 import { Client, Receiver } from '@upstash/qstash';
 import type { NextRequest } from 'next/server';
 
+export interface EmailAttachmentPayload {
+  filename: string;
+  content: string; // Base64 encoded file content
+  contentType?: string;
+}
+
 export interface EmailJobPayload {
   to: string;
   subject: string;
@@ -24,6 +30,7 @@ export interface EmailJobPayload {
   clientName?: string | null;
   companyName?: string | null;
   type?: 'campaign' | 'onboarding' | 'system';
+  attachments?: EmailAttachmentPayload[];
 }
 
 const token = process.env.QSTASH_TOKEN;

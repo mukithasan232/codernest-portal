@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import { getCachedTestimonials, getCachedCaseStudies, getCachedLatestBlogs } from '@/lib/cache/cached-queries';
 import { Code, Camera, Shield, ArrowRight, MapPin, ChevronRight, Calendar } from 'lucide-react'
 import { MotionDiv, MotionH1, MotionP, MotionSection } from '@/components/ui/motion'
 import LeadForm from '@/components/forms/LeadForm'
@@ -29,51 +30,18 @@ export const metadata: Metadata = {
   }
 };
 
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
+
 export default async function Page() {
-  // Fetch published testimonials — graceful fallback if DB is unreachable
-  let testimonials: any[] = [];
-  let caseStudies: any[] = [];
-  let latestBlogs: any[] = [];
-  let allPortfolioBrands: { name: string }[] = [];
+  const [testimonials, caseStudies, latestBlogs] = await Promise.all([
+    getCachedTestimonials(),
+    getCachedCaseStudies(),
+    getCachedLatestBlogs(3),
+  ]);
 
-  try {
-    const data = await prisma.testimonial.findMany({
-      where: { is_published: true },
-      orderBy: { createdAt: 'desc' }
-    });
-    testimonials = data as any[];
-  } catch {
-    // DB temporarily unreachable — show empty state
-  }
-  try {
-    const caseStudiesData = await prisma.caseStudy.findMany({
-      take: 3,
-      orderBy: { createdAt: 'desc' }
-    });
-    caseStudies = caseStudiesData as any[];
-    
-    // Fetch all for the ClientLogos marquee
-    const allBrands = await prisma.caseStudy.findMany({
-      select: { title: true },
-      take: 10,
-      orderBy: { createdAt: 'desc' }
-    });
-    allPortfolioBrands = allBrands.map(b => ({ name: b.title }));
-  } catch {
-    // DB temporarily unreachable — show empty state
-  }
+  const allPortfolioBrands = caseStudies.map(b => ({ name: b.title }));
 
-  try {
-    const blogsData = await prisma.blog.findMany({
-      where: { status: 'published' },
-      take: 3,
-      orderBy: { createdAt: 'desc' },
-      include: { author: true }
-    });
-    latestBlogs = blogsData as any[];
-  } catch {
-    // DB temporarily unreachable
-  }
 
 
   return (

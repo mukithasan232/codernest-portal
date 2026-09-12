@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Scissors, Camera, Sparkles, Image as ImageIcon, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import PricingPlans from '@/components/services/PricingPlans';
 
 type ServiceType = 'clipping' | 'ghost' | 'retouching';
 
@@ -162,6 +163,14 @@ export default function ImagePricingPage() {
             </div>
 
           </div>
+
+          {/* Database-Driven Dynamic Pricing Plans (ClippingBD Engine) */}
+          <div className="mt-20 pt-10 border-t border-zinc-900">
+            <PricingPlans
+              title="Standard Market Photo Retouching Rates"
+              subtitle="Clear unit-based rates and studio monthly retainers. Transparent, scalable, and guaranteed turnaround."
+            />
+          </div>
         </div>
       </main>
 
@@ -169,3 +178,4 @@ export default function ImagePricingPage() {
     </>
   );
 }
+

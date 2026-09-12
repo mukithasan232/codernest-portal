@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getCachedBlogBySlug } from "@/lib/cache/cached-queries";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft, Clock, Share2, Twitter, Linkedin } from "lucide-react";
 import Link from "next/link";
@@ -6,11 +7,25 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import BlogRenderer from "@/components/blog/BlogRenderer";
 
+// Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
+export const revalidate = 86400;
+
+export async function generateStaticParams() {
+    try {
+        const posts = await prisma.blog.findMany({
+            where: { status: 'published' },
+            select: { slug: true },
+            take: 50,
+        });
+        return posts.map((p) => ({ slug: p.slug }));
+    } catch {
+        return [];
+    }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug } = await params;
-    const post = await prisma.blog.findFirst({
-        where: { slug, status: 'published' }
-    });
+    const post = await getCachedBlogBySlug(slug);
 
     if (!post) return { title: 'Post Not Found' };
 
@@ -24,9 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     
-    const post = await prisma.blog.findFirst({
-        where: { slug, status: 'published' }
-    });
+    const post = await getCachedBlogBySlug(slug);
 
     if (!post) {
         return notFound();
