@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
 
+  serverActions: {
+    bodySizeLimit: '10mb',
+  },
+
   images: {
     formats: ['image/avif', 'image/webp'],
     // Allow Next.js <Image> to optimize images from these external sources.

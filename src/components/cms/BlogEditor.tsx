@@ -65,15 +65,21 @@ export default function BlogEditor({
       const formData = new FormData();
       formData.append('file', file);
       
-      const res = await uploadBlogImage(formData);
-      if (res.success && res.url) {
-        setLastUploadedMediaUrl(res.url);
-        toast.success('Image uploaded! Copy the URL below.');
-      } else {
-        toast.error(res.error || 'Failed to upload image');
+      try {
+        const res = await uploadBlogImage(formData);
+        if (res.success && res.url) {
+          setLastUploadedMediaUrl(res.url);
+          toast.success('Image uploaded! Copy the URL below.');
+        } else {
+          toast.error(res.error || 'Failed to upload image');
+        }
+      } catch (err: any) {
+        console.error('Upload error:', err);
+        toast.error(err.message || 'Error uploading image. File might be too large.');
+      } finally {
+        setIsUploadingMedia(false);
+        if (mediaInputRef.current) mediaInputRef.current.value = '';
       }
-      setIsUploadingMedia(false);
-      if (mediaInputRef.current) mediaInputRef.current.value = '';
     }
   };
 
