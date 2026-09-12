@@ -66,8 +66,14 @@ export default function BlogEditor({
       formData.append('file', file);
       
       try {
-        const res = await uploadBlogImage(formData);
-        if (res.success && res.url) {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const res = await response.json();
+        
+        if (response.ok && res.success && res.url) {
           setLastUploadedMediaUrl(res.url);
           toast.success('Image uploaded! Copy the URL below.');
         } else {
@@ -106,7 +112,30 @@ export default function BlogEditor({
     formData.append('keywords', keywords);
     
     if (coverImage) {
-      formData.append('cover_image', coverImage);
+      // Upload cover image directly via API route to bypass Server Action 1MB limit
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', coverImage);
+      
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+        const uploadRes = await response.json();
+        
+        if (response.ok && uploadRes.success && uploadRes.url) {
+          formData.append('cover_image_url', uploadRes.url);
+        } else {
+          toast.error(uploadRes.error || 'Failed to upload cover image');
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (err: any) {
+        console.error('Cover image upload error:', err);
+        toast.error('Error uploading cover image. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     try {

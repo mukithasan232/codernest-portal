@@ -27,10 +27,10 @@ export async function createBlog(formData: FormData) {
     return { success: false, error: 'Forbidden.' };
   }
 
-  let coverImageUrl = '';
+  let coverImageUrl = formData.get('cover_image_url') as string || '';
 
   // Local Image Upload Fallback
-  if (coverImage && coverImage.size > 0) {
+  if (!coverImageUrl && coverImage && coverImage.size > 0) {
     try {
       const fileExt = coverImage.name.split('.').pop();
       const fileName = `uploads/${session.user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -94,9 +94,9 @@ export async function updateBlog(id: string, formData: FormData) {
     return { success: false, error: 'Forbidden.' };
   }
 
-  let coverImageUrl = '';
+  let coverImageUrl = formData.get('cover_image_url') as string || '';
 
-  if (coverImage && coverImage.size > 0) {
+  if (!coverImageUrl && coverImage && coverImage.size > 0) {
     try {
       const fileExt = coverImage.name.split('.').pop();
       const fileName = `uploads/${session.user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
