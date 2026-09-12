@@ -5,6 +5,7 @@ import { getAnalyticsData } from '@/lib/actions/analytics.actions';
 import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import KanbanBoard from '@/components/admin/KanbanBoard';
 import RevenueCard from '@/components/admin/RevenueCard';
+import ExecutiveOverview from '@/components/admin/dashboard/ExecutiveOverview';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
@@ -113,6 +114,9 @@ export default async function AdminDashboard() {
           );
         })}
       </div>
+
+      {/* Executive Revenue, Spend & Monetization Dashboard */}
+      <ExecutiveOverview />
 
       {/* Quick Access */}
       <div>

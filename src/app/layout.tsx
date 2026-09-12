@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import MetaPixel from "@/components/MetaPixel";
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
+import GoogleAdSense from "@/components/ads/GoogleAdSense";
 import { getCachedSystemSettings } from "@/lib/cache/cached-queries";
 
 // Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
@@ -47,31 +49,10 @@ export default async function RootLayout({
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning style={{ '--primary': primaryColor, '--secondary': secondaryColor } as React.CSSProperties}>
       <head>
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4590020337376910"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
         {data?.customHeaderScripts && (
           <script dangerouslySetInnerHTML={{ __html: data.customHeaderScripts }} />
         )}
-        {data?.googleAnalyticsId && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${data.googleAnalyticsId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${data.googleAnalyticsId}', { page_path: window.location.pathname });
-              `}
-            </Script>
-          </>
-        )}
+        {/* GA4 is handled by <GoogleAnalytics /> in the body — no inline init needed here */}
 
 
       
@@ -101,6 +82,10 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {/* AuthProvider wraps everything — provides auth state to all client components */}
           <AuthProvider>
+            {/* GA4 universal route tracker */}
+            <GoogleAnalytics />
+            {/* Route-Aware AdSense tracker */}
+            <GoogleAdSense />
             <Suspense fallback={null}>
               <MetaPixel />
             </Suspense>

@@ -95,8 +95,7 @@
 .to-\[\#3B82F6\] { --tw-gradient-to: var(--primary) !important; }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200;
   font-feature-settings: "rlig" 1, "calt" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

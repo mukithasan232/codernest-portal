@@ -112,19 +112,19 @@ export default function KanbanBoard({
               onDragOver={e => onDragOver(e, col.id)}
               onDrop={e => onDrop(e, col.id)}
               onDragLeave={() => setDragOver(null)}
-              className={`w-64 flex flex-col gap-3 p-3 rounded-2xl border transition-all ${col.color} ${
-                isOver ? 'bg-white/5 scale-[1.01]' : 'bg-white/[0.02]'
+              className={`w-64 shrink-0 flex flex-col gap-3 p-3 rounded-2xl border transition-all ${col.color} ${
+                isOver ? 'bg-slate-100/90 dark:bg-slate-900/80 scale-[1.01]' : 'bg-slate-50/70 dark:bg-slate-900/50'
               }`}
             >
               {/* Column header */}
               <div className="flex items-center justify-between px-1 mb-1">
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${col.dot}`} />
-                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     {col.label}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-slate-500 bg-white/5 rounded-full px-2 py-0.5">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-500 bg-slate-200 dark:bg-white/5 rounded-full px-2 py-0.5">
                   {colLeads.length}
                 </span>
               </div>
@@ -145,7 +145,7 @@ export default function KanbanBoard({
                   />
                 ))}
                 {colLeads.length === 0 && (
-                  <div className="flex items-center justify-center h-16 rounded-xl border border-dashed border-white/10 text-xs text-slate-600">
+                  <div className="flex items-center justify-center h-16 rounded-xl border border-dashed border-slate-300 dark:border-white/10 text-xs text-slate-500 dark:text-slate-600">
                     Drop here
                   </div>
                 )}
@@ -172,16 +172,16 @@ function LeadCard({
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`glass rounded-xl border border-white/10 p-3 space-y-2 cursor-grab active:cursor-grabbing transition-all ${
-        isDragging ? 'opacity-40 scale-95' : 'hover:border-white/20'
+      className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2 cursor-grab active:cursor-grabbing shadow-sm transition-all ${
+        isDragging ? 'opacity-40 scale-95' : 'hover:border-blue-500/50 dark:hover:border-blue-500/50'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xs flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs flex-shrink-0">
             {lead.name[0]?.toUpperCase()}
           </div>
-          <p className="text-sm font-bold text-white truncate">{lead.name}</p>
+          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{lead.name}</p>
         </div>
         <div className="flex items-center gap-1">
           <GripVertical className="w-3.5 h-3.5 text-slate-600" />
@@ -192,40 +192,39 @@ function LeadCard({
       </div>
 
       {lead.company && (
-        <p className="text-xs text-slate-500 font-medium">{lead.company}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{lead.company}</p>
       )}
 
-      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
         <Mail className="w-3 h-3 flex-shrink-0" />
         <span className="truncate">{lead.email}</span>
       </div>
 
       {lead.budget && (
-        <span className="inline-block text-[10px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
+        <span className="inline-block text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
           {lead.budget}
         </span>
       )}
 
       {lead.hasNewReply && (
-        <div className="mt-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-1.5 cursor-default">
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 uppercase tracking-wide">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              New Reply
-            </span>
-            {onAcknowledge && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); onAcknowledge(); }} 
-                className="text-[9px] text-emerald-300 hover:text-white hover:bg-emerald-500/30 px-1.5 py-0.5 rounded transition"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-          {lead.lastReplySnippet && (
-            <p className="text-xs text-slate-300 italic line-clamp-2 leading-relaxed">
-              "{lead.lastReplySnippet}"
+        <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex flex-col gap-2">
+          <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg p-2 relative group">
+            <span className="absolute top-0 left-0 w-full h-full rounded-lg bg-emerald-400/10 animate-pulse pointer-events-none" />
+            <div className="flex items-start gap-1.5 mb-1 relative z-10">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0 mt-1" />
+              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">New Reply</span>
+            </div>
+            <p className="text-xs text-emerald-800 dark:text-emerald-200/90 italic truncate relative z-10 font-medium">
+              "{lead.lastReplySnippet || 'View message...'}"
             </p>
+          </div>
+          {onAcknowledge && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onAcknowledge(); }}
+              className="w-full text-center py-1.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-[10px] font-bold text-slate-500 dark:text-slate-400 rounded-md transition"
+            >
+              Mark Read
+            </button>
           )}
         </div>
       )}

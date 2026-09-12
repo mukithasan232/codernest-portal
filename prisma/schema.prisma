@@ -472,4 +472,41 @@ model AlertChannel {
   @@unique([platform, identifier])
 }
 
+// ── Executive Financial Dashboard ────────────────────────────────────────────
 
+enum TransactionType {
+  SOFTWARE_CONTRACT
+  PHOTO_EDITING
+  ADSENSE_PAYOUT
+  CUSTOM
+}
+
+enum ExpenseCategory {
+  GOOGLE_ADS
+  META_ADS
+  INFRASTRUCTURE
+  OUTREACH_TOOLS
+}
+
+model RevenueRecord {
+  id         String          @id @default(cuid()) @map("_id")
+  title      String
+  clientName String?
+  amount     Float
+  type       TransactionType @default(SOFTWARE_CONTRACT)
+  status     String          @default("PAID") // "PAID" | "PENDING" | "REFUNDED"
+  receivedAt DateTime        @default(now())
+  notes      String?
+  createdAt  DateTime        @default(now())
+}
+
+model MarketingExpense {
+  id          String          @id @default(cuid()) @map("_id")
+  campaign    String
+  category    ExpenseCategory @default(GOOGLE_ADS)
+  amountSpent Float
+  clicks      Int?            @default(0)
+  impressions Int?            @default(0)
+  date        DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+}

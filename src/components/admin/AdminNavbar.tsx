@@ -4,9 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Menu, X, Bell, Search, Globe, LogOut, User, Settings as SettingsIcon } from 'lucide-react';
+import { Menu, X, Bell, Search, Globe, LogOut, User, Settings as SettingsIcon, Sun, Moon } from 'lucide-react';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
+import { useTheme } from 'next-themes';
 
 export default function AdminNavbar({ mobileMenuOpen, setMobileMenuOpen }: { mobileMenuOpen?: boolean, setMobileMenuOpen?: (v: boolean) => void }) {
   const pathname = usePathname();
@@ -14,6 +15,11 @@ export default function AdminNavbar({ mobileMenuOpen, setMobileMenuOpen }: { mob
   // const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // Lifted to layout
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -69,6 +75,17 @@ export default function AdminNavbar({ mobileMenuOpen, setMobileMenuOpen }: { mob
         >
           <Globe className="w-5 h-5" /> <span className="hidden sm:inline">View Site</span>
         </Link>
+
+        {/* Theme Toggle */}
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors duration-200 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 focus:outline-none"
+            title="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+        )}
 
         {/* Profile Dropdown */}
         <div className="relative border-l border-slate-200 dark:border-white/10 pl-3 md:pl-5" ref={dropdownRef}>

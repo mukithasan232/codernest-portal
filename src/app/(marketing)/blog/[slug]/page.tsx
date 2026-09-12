@@ -10,6 +10,8 @@ import BlogRenderer from "@/components/blog/BlogRenderer";
 // Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
 export const revalidate = 86400;
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://codernest.cloud";
+
 export async function generateStaticParams() {
     try {
         const posts = await prisma.blog.findMany({
@@ -29,10 +31,41 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
     if (!post) return { title: 'Post Not Found' };
 
+    const title = post.metaTitle || post.title;
+    const description = post.metaDesc || `Read ${post.title} on CoderNest`;
+    const canonicalUrl = `${SITE_URL}/blog/${slug}`;
+    const coverImage = post.cover_image || `${SITE_URL}/opengraph-image.jpg`;
+
     return {
-        title: post.metaTitle || post.title,
-        description: post.metaDesc || `Read ${post.title} on CoderNest`,
-        keywords: post.keywords ? post.keywords.split(',').map(k => k.trim()) : undefined,
+        title: `${title} | CoderNest`,
+        description,
+        keywords: post.keywords ? post.keywords.split(',').map((k) => k.trim()) : undefined,
+        alternates: {
+            canonical: canonicalUrl,
+        },
+        openGraph: {
+            title,
+            description,
+            url: canonicalUrl,
+            siteName: 'CoderNest',
+            type: 'article',
+            publishedTime: new Date(post.createdAt).toISOString(),
+            modifiedTime: post.updatedAt ? new Date(post.updatedAt).toISOString() : undefined,
+            images: [
+                {
+                    url: coverImage,
+                    width: 1200,
+                    height: 630,
+                    alt: title,
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: [coverImage],
+        },
     };
 }
 
@@ -45,8 +78,47 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         return notFound();
     }
 
+    const canonicalUrl = `${SITE_URL}/blog/${slug}`;
+    const coverImage = post.cover_image || `${SITE_URL}/opengraph-image.jpg`;
+
+    // Article JSON-LD structured data for Google organic indexing
+    const articleJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: post.metaTitle || post.title,
+        description: post.metaDesc || post.title,
+        image: coverImage,
+        url: canonicalUrl,
+        datePublished: new Date(post.createdAt).toISOString(),
+        dateModified: post.updatedAt ? new Date(post.updatedAt).toISOString() : new Date(post.createdAt).toISOString(),
+        author: {
+            "@type": "Organization",
+            name: "CoderNest",
+            url: SITE_URL,
+        },
+        publisher: {
+            "@type": "Organization",
+            name: "CoderNest",
+            url: SITE_URL,
+            logo: {
+                "@type": "ImageObject",
+                url: `${SITE_URL}/opengraph-image.jpg`,
+            },
+        },
+        mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": canonicalUrl,
+        },
+    };
+
     return (
         <article className="pt-40 pb-24">
+            {/* Article JSON-LD: enables Google rich results and organic article indexing */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+            />
+
             <div className="container mx-auto px-4 md:px-6">
                 <div className="max-w-3xl mx-auto space-y-12">
                     <Link href="/blog" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
@@ -65,7 +137,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
                     <div className="aspect-[21/9] rounded-[2.5rem] overflow-hidden border border-white/5 relative">
                         <img 
-                            src={post.cover_image || "https://images.unsplash.com/photo-1498050108023-c5249f4df085"} 
+                            src={coverImage} 
                             alt={post.title} 
                             className="w-full h-full object-cover" 
                         />
@@ -98,3 +170,4 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </article>
     );
 }
+
