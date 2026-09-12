@@ -84,14 +84,7 @@ export async function createCmsEntry(collectionName: string, payload: any) {
       default:
         return { success: false, error: 'Invalid collection' };
     }
-    revalidatePath('/admin/cms');
-    revalidatePath('/admin/services');
-    revalidatePath('/admin/pricing');
-    revalidatePath('/');
-    revalidatePath('/portfolio');
-    revalidatePath('/pricing');
-    revalidatePath('/pricing/image-editing');
-    revalidatePath('/services/image-editing');
+    revalidatePath('/', 'layout');
     return { success: true, data: result };
   } catch (error: unknown) {
     console.error(`Create Error in ${collectionName}:`, error);
@@ -136,14 +129,7 @@ export async function updateCmsEntry(collectionName: string, id: string, payload
       default:
         return { success: false, error: 'Invalid collection' };
     }
-    revalidatePath('/admin/cms');
-    revalidatePath('/admin/services');
-    revalidatePath('/admin/pricing');
-    revalidatePath('/');
-    revalidatePath('/portfolio');
-    revalidatePath('/pricing');
-    revalidatePath('/pricing/image-editing');
-    revalidatePath('/services/image-editing');
+    revalidatePath('/', 'layout');
     return { success: true, data: result };
   } catch (error: unknown) {
     console.error(`Update Error in ${collectionName}:`, error);
@@ -186,14 +172,7 @@ export async function deleteCmsEntry(collectionName: string, id: string) {
       default:
         return { success: false, error: 'Invalid collection' };
     }
-    revalidatePath('/admin/cms');
-    revalidatePath('/admin/services');
-    revalidatePath('/admin/pricing');
-    revalidatePath('/');
-    revalidatePath('/portfolio');
-    revalidatePath('/pricing');
-    revalidatePath('/pricing/image-editing');
-    revalidatePath('/services/image-editing');
+    revalidatePath('/', 'layout');
     return { success: true, data: result };
   } catch (error: unknown) {
     console.error(`Delete Error in ${collectionName}:`, error);
@@ -217,8 +196,7 @@ export async function updatePricingOrder(items: { id: string, displayOrder: numb
       })
     );
     await prisma.$transaction(transactions);
-    revalidatePath('/admin/cms');
-    revalidatePath('/pricing');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: unknown) {
     console.error('Update Pricing Order Error:', error);
@@ -242,10 +220,7 @@ export async function updatePricingPlansOrder(items: { id: string, order: number
       })
     );
     await prisma.$transaction(transactions);
-    revalidatePath('/admin/pricing');
-    revalidatePath('/pricing');
-    revalidatePath('/pricing/image-editing');
-    revalidatePath('/services/image-editing');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: unknown) {
     console.error('Update Pricing Plans Order Error:', error);
@@ -269,8 +244,7 @@ export async function updatePhotoServicesOrder(items: { id: string, order: numbe
       })
     );
     await prisma.$transaction(transactions);
-    revalidatePath('/admin/services');
-    revalidatePath('/services/image-editing');
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: unknown) {
     console.error('Update Photo Services Order Error:', error);

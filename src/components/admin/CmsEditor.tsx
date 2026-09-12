@@ -9,7 +9,6 @@ import { useState } from 'react';
 import { Save, Trash2, X, Plus, Loader2, Upload, Copy, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createCmsEntry, updateCmsEntry, deleteCmsEntry } from '@/lib/actions/cms.actions';
-import { uploadBlogImage } from '@/lib/actions/blog.actions';
 import { useRef } from 'react';
 import TiptapEditor from './TiptapEditor';
 
@@ -78,13 +77,22 @@ export default function CmsEditor<T = any>({
       const file = e.target.files[0];
       const formData = new FormData();
       formData.append('file', file);
-      
-      const res = await uploadBlogImage(formData);
-      if (res.success && res.url) {
-        setLastUploadedMediaUrl(res.url);
-        toast.success('Image uploaded! Copy the URL below.');
-      } else {
-        toast.error(res.error || 'Failed to upload image');
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const res = await response.json();
+        
+        if (response.ok && res.success && res.url) {
+          setLastUploadedMediaUrl(res.url);
+          toast.success('Image uploaded! Copy the URL below.');
+        } else {
+          toast.error(res.error || 'Failed to upload image');
+        }
+      } catch (err: any) {
+        console.error('Upload Error:', err);
+        toast.error(err.message || 'Error uploading image. File might be too large.');
       }
       setIsUploadingMedia(false);
       if (mediaInputRef.current) mediaInputRef.current.value = '';
