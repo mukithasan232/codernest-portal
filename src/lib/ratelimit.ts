@@ -28,6 +28,9 @@ const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 const isUpstashConfigured = Boolean(
   upstashUrl &&
   upstashToken &&
+  upstashUrl.length > 5 &&
+  upstashUrl !== '""' &&
+  upstashUrl !== "''" &&
   !upstashUrl.includes('example') &&
   !upstashUrl.includes('placeholder')
 );
