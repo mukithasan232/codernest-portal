@@ -67,7 +67,7 @@ export default function TermsPage() {
 
           <h2>7. Contact Information</h2>
           <p>
-            For any questions or concerns regarding these Terms and Conditions, please contact us via our <Link href="/contact" className="text-blue-600 dark:text-blue-400 hover:underline">Contact Page</Link>.
+            For any questions or concerns regarding these Terms and Conditions, please contact us via our <Link href="/contact" className="text-blue-600 dark:text-blue-400 hover:underline">Contact Page</Link> or email us directly at <a href="mailto:admin@codernest.cloud" className="text-blue-600 dark:text-blue-400 hover:underline">admin@codernest.cloud</a>.
           </p>
         </div>
       </div>

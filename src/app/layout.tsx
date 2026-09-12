@@ -10,7 +10,6 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import MetaPixel from "@/components/MetaPixel";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
-import GoogleAdSense from "@/components/ads/GoogleAdSense";
 import { getCachedSystemSettings } from "@/lib/cache/cached-queries";
 
 // Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
@@ -84,8 +83,6 @@ export default async function RootLayout({
           <AuthProvider>
             {/* GA4 universal route tracker */}
             <GoogleAnalytics />
-            {/* Route-Aware AdSense tracker */}
-            <GoogleAdSense />
             <Suspense fallback={null}>
               <MetaPixel />
             </Suspense>

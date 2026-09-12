@@ -3,6 +3,7 @@ import Footer from "@/components/layout/Footer";
 import VisitorTracker from "@/components/analytics/VisitorTracker";
 import BehavioralTrigger from "@/components/analytics/BehavioralTrigger";
 import ClientChatbot from "@/components/ui/ClientChatbot";
+import GoogleAdSense from "@/components/ads/GoogleAdSense";
 
 export default function MarketingLayout({
   children,
@@ -11,6 +12,7 @@ export default function MarketingLayout({
 }) {
   return (
     <>
+      <GoogleAdSense />
       <VisitorTracker />
       <BehavioralTrigger />
       <Navbar />

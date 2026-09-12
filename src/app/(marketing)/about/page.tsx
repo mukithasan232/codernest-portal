@@ -60,8 +60,11 @@ export default async function AboutPage() {
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
             Building the <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00F2FE] to-[#3B82F6]">Digital Future</span>
           </h1>
+          <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+            CoderNest is an elite B2B software engineering and digital media production agency. We focus on delivering high-performance scalable web applications, robust e-commerce solutions, and premium digital branding.
+          </p>
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 leading-relaxed mb-8">
-            CoderNest is an elite B2B software agency focused on delivering high-performance scalable web applications, expert web infrastructure management, robust e-commerce solutions, and premium digital branding for ambitious brands worldwide.
+            Led by our founder and Lead Engineer, MD Mukit Hasan, we are physically headquartered in Bangladesh while servicing a global enterprise client base across the US and EU markets.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[

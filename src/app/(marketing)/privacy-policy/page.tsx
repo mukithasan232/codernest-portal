@@ -52,19 +52,29 @@ export default function PrivacyPolicyPage() {
             <li>Where we need to comply with a legal obligation.</li>
           </ul>
 
-          <h2>4. Data Security</h2>
+          <h2>4. Third-Party Advertising and Cookies</h2>
+          <p>
+            We use third-party advertising companies, including Google, to serve ads when you visit our website. These companies may use information (not including your name, address, email address, or telephone number) about your visits to this and other websites in order to provide advertisements about goods and services of interest to you.
+          </p>
+          <ul>
+            <li>Third party vendors, including Google, use cookies to serve ads based on a user's prior visits to our website or other websites.</li>
+            <li>Google's use of advertising cookies enables it and its partners to serve ads to our users based on their visit to our sites and/or other sites on the Internet.</li>
+            <li>Users may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">Ads Settings</a>. Alternatively, you can opt out of a third-party vendor's use of cookies for personalized advertising by visiting <a href="https://www.aboutads.info" className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">www.aboutads.info</a>.</li>
+          </ul>
+
+          <h2>5. Data Security</h2>
           <p>
             We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used, or accessed in an unauthorized way, altered, or disclosed. In addition, we limit access to your personal data to those employees, agents, contractors, and other third parties who have a business need to know.
           </p>
 
-          <h2>5. Your Legal Rights</h2>
+          <h2>6. Your Legal Rights</h2>
           <p>
             Under certain circumstances, you have rights under data protection laws in relation to your personal data, including the right to request access, correction, erasure, restriction, transfer, to object to processing, to portability of data and (where the lawful ground of processing is consent) to withdraw consent.
           </p>
 
-          <h2>6. Contact Us</h2>
+          <h2>7. Contact Us</h2>
           <p>
-            If you have any questions about this privacy policy or our privacy practices, please contact us via our <Link href="/contact" className="text-blue-600 dark:text-blue-400 hover:underline">Contact Page</Link>.
+            If you have any questions about this privacy policy or our privacy practices, please contact us via our <Link href="/contact" className="text-blue-600 dark:text-blue-400 hover:underline">Contact Page</Link> or email us directly at <a href="mailto:admin@codernest.cloud" className="text-blue-600 dark:text-blue-400 hover:underline">admin@codernest.cloud</a>.
           </p>
         </div>
       </div>

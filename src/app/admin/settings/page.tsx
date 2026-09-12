@@ -2,7 +2,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { redirect } from 'next/navigation';
 import { getGlobalSettings } from '@/lib/actions/settings.actions';
+import { getAllSocialLinksAdmin } from '@/lib/actions/social-links.actions';
 import SettingsForm from '@/components/admin/SettingsForm';
+import SocialLinksManager from '@/components/admin/settings/SocialLinksManager';
 import { prisma } from '@/lib/prisma';
 
 import Link from 'next/link';
@@ -22,6 +24,7 @@ export default async function GlobalSettingsPage() {
   }
 
   const { data: initialSettings } = await getGlobalSettings();
+  const { data: socialLinks } = await getAllSocialLinksAdmin();
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -54,6 +57,9 @@ export default async function GlobalSettingsPage() {
       </div>
 
       <SettingsForm initialSettings={initialSettings || {}} />
+
+      {/* Social & Platform Links Manager */}
+      <SocialLinksManager initialLinks={socialLinks || []} />
     </div>
   );
 }

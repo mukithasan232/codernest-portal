@@ -52,17 +52,29 @@ export default function ContactClient({ settings }: { settings: any }) {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Email Us</h4>
-                    <p className="text-slate-600 dark:text-slate-400">{email}</p>
+                    <p className="text-slate-600 dark:text-slate-400">admin@codernest.cloud</p>
                   </div>
                 </div>
                 
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-500/10 flex items-center justify-center shrink-0">
+                    <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Call Us</h4>
+                    <p className="text-slate-600 dark:text-slate-400">+880 1302522870</p>
+                  </div>
+                </div>
+
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-cyan-100 dark:bg-cyan-500/10 flex items-center justify-center shrink-0">
                     <MapPin className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Headquarters</h4>
-                    <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{address}</p>
+                    <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap">Bangladesh{'\n'}Serving US & EU Global Markets</p>
                   </div>
                 </div>
               </div>

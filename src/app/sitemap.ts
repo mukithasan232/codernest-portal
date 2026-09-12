@@ -15,10 +15,11 @@
 
 import type { MetadataRoute } from 'next';
 import { sitemapCities } from '@/lib/data/targetCities';
+import { prisma } from '@/lib/prisma';
 
-const BASE_URL = 'https://www.codernest.cloud/';
+const BASE_URL = 'https://www.codernest.cloud';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   // ── Core marketing pages ──────────────────────────────────────────────────
@@ -71,10 +72,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.75,
     },
+    {
+      url: `${BASE_URL}/privacy-policy`,
+      lastModified: now,
+      changeFrequency: 'yearly',
+      priority: 0.5,
+    },
+    {
+      url: `${BASE_URL}/terms-and-conditions`,
+      lastModified: now,
+      changeFrequency: 'yearly',
+      priority: 0.5,
+    },
   ];
 
   // ── pSEO city pages (Phase 1: first 3 cities only) ───────────────────────
-  // To expand: increase SITEMAP_CITY_COUNT in src/lib/data/targetCities.ts
   const cityRoutes: MetadataRoute.Sitemap = sitemapCities.map((city) => ({
     url: `${BASE_URL}/agency/${city.slug}`,
     lastModified: now,
@@ -82,5 +94,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  return [...coreRoutes, ...cityRoutes];
+  // ── Dynamic Blog Posts ──────────────────────────────────────────────────
+  let blogRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const blogs = await prisma.blog.findMany({
+      where: { status: "published" },
+      select: { slug: true, updatedAt: true },
+    });
+    blogRoutes = blogs.map((blog) => ({
+      url: `${BASE_URL}/blog/${blog.slug}`,
+      lastModified: blog.updatedAt || now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch blogs for sitemap:", error);
+  }
+
+  return [...coreRoutes, ...cityRoutes, ...blogRoutes];
 }

@@ -510,3 +510,26 @@ model MarketingExpense {
   date        DateTime        @default(now())
   createdAt   DateTime        @default(now())
 }
+
+enum PlatformType {
+  GITHUB
+  LINKEDIN
+  TWITTER_X
+  UPWORK
+  FIVERR
+  YOUTUBE
+  FACEBOOK
+  DISCORD
+  CUSTOM
+}
+
+model SocialLink {
+  id        String       @id @default(cuid()) @map("_id")
+  platform  PlatformType @default(CUSTOM)
+  label     String       
+  url       String       
+  order     Int          @default(0)
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}

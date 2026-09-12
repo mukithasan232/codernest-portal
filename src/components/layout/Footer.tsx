@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { Rocket, Github, Twitter, Linkedin, Mail } from "lucide-react";
+import { Rocket, Mail } from "lucide-react";
 import { prisma } from '@/lib/prisma';
+import PlatformIcon from "@/components/common/PlatformIcon";
+import { getPublicSocialLinks } from "@/lib/actions/social-links.actions";
 
 const footerLinks = {
     company: [
@@ -18,7 +20,8 @@ const footerLinks = {
     legal: [
         { name: "Privacy Policy", href: "/privacy-policy" },
         { name: "Terms of Service", href: "/terms-and-conditions" },
-        { name: "Cookie Policy", href: "/privacy-policy" },
+        { name: "About", href: "/about" },
+        { name: "Contact", href: "/contact" },
     ],
 };
 
@@ -32,6 +35,16 @@ export default async function Footer() {
 
     const siteName = settings?.siteName || "CoderNest";
     const primaryEmail = settings?.primaryEmail || "hello@codernest.agency";
+
+    let socialLinks: any[] = [];
+    try {
+        const res = await getPublicSocialLinks();
+        if (res.success && res.data) {
+            socialLinks = res.data;
+        }
+    } catch (e) {
+        console.error("Failed to load social links in footer", e);
+    }
 
     return (
         <footer className="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-white/5 pt-20 pb-10 transition-colors duration-300">
@@ -56,16 +69,34 @@ export default async function Footer() {
                         <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed max-w-xs">
                             We build modern, scalable digital products for forward-thinking companies. Transforming ideas into powerful realities.
                         </p>
-                        <div className="flex gap-4">
-                            <Link href="#" className="p-2 bg-slate-200 dark:bg-white/5 rounded-lg hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-600/20 dark:hover:text-blue-500 transition-all text-slate-600 dark:text-slate-400">
-                                <Twitter className="w-5 h-5" />
-                            </Link>
-                            <Link href="#" className="p-2 bg-slate-200 dark:bg-white/5 rounded-lg hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-600/20 dark:hover:text-blue-500 transition-all text-slate-600 dark:text-slate-400">
-                                <Github className="w-5 h-5" />
-                            </Link>
-                            <Link href="#" className="p-2 bg-slate-200 dark:bg-white/5 rounded-lg hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-600/20 dark:hover:text-blue-500 transition-all text-slate-600 dark:text-slate-400">
-                                <Linkedin className="w-5 h-5" />
-                            </Link>
+                        <div className="flex gap-3 flex-wrap">
+                            {socialLinks.length > 0 ? (
+                                socialLinks.map((link) => (
+                                    <a
+                                        key={link.id}
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label={link.label || link.platform}
+                                        className="p-2.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all border border-transparent dark:border-white/5"
+                                        title={link.label}
+                                    >
+                                        <PlatformIcon platform={link.platform} className="w-5 h-5 transition-colors duration-200" />
+                                    </a>
+                                ))
+                            ) : (
+                                <>
+                                    <a href="https://twitter.com/codernest" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all border border-transparent dark:border-white/5">
+                                        <PlatformIcon platform="TWITTER_X" className="w-5 h-5 transition-colors duration-200" />
+                                    </a>
+                                    <a href="https://github.com/codernest" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all border border-transparent dark:border-white/5">
+                                        <PlatformIcon platform="GITHUB" className="w-5 h-5 transition-colors duration-200" />
+                                    </a>
+                                    <a href="https://linkedin.com/company/codernest" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-all border border-transparent dark:border-white/5">
+                                        <PlatformIcon platform="LINKEDIN" className="w-5 h-5 transition-colors duration-200" />
+                                    </a>
+                                </>
+                            )}
                         </div>
                     </div>
 
