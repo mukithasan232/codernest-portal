@@ -15,12 +15,18 @@ export async function uploadUserImage(formData: FormData) {
     const fileExt = file.name.split('.').pop() || 'png';
     const fileName = `uploads/user-images/${session.user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     
-    const blob = await put(fileName, file, { access: 'public' });
+    const blob = await put(fileName, file, { 
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
     
     const publicUrl = blob.url;
     return { success: true, publicUrl };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Upload Error:', error);
+    if (error?.message?.includes('private store')) {
+      return { success: false, error: 'Vercel Blob Error: Your store is Private. Please go to Vercel Dashboard -> Storage -> Settings and make it Public.' };
+    }
     return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

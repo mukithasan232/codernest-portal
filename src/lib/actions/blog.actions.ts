@@ -35,11 +35,17 @@ export async function createBlog(formData: FormData) {
       const fileExt = coverImage.name.split('.').pop();
       const fileName = `uploads/${session.user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
-      const blob = await put(fileName, coverImage, { access: 'public' });
+      const blob = await put(fileName, coverImage, { 
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN
+      });
       coverImageUrl = blob.url;
-    } catch (uploadError) {
+    } catch (uploadError: any) {
       console.error('Upload Error:', uploadError);
-      return { success: false, error: 'Failed to upload cover image.' };
+      return { success: false, error: uploadError?.message?.includes('private store') 
+        ? 'Vercel Blob Error: Your store is Private. Please go to Vercel Dashboard -> Storage -> Settings and make it Public.' 
+        : 'Failed to upload cover image.' 
+      };
     }
   }
 
@@ -95,10 +101,17 @@ export async function updateBlog(id: string, formData: FormData) {
       const fileExt = coverImage.name.split('.').pop();
       const fileName = `uploads/${session.user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
-      const blob = await put(fileName, coverImage, { access: 'public' });
+      const blob = await put(fileName, coverImage, { 
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN
+      });
       coverImageUrl = blob.url;
-    } catch (uploadError) {
+    } catch (uploadError: any) {
       console.error('Upload Error:', uploadError);
+      return { success: false, error: uploadError?.message?.includes('private store') 
+        ? 'Vercel Blob Error: Your store is Private. Please go to Vercel Dashboard -> Storage -> Settings and make it Public.' 
+        : 'Failed to upload cover image.' 
+      };
     }
   }
 
@@ -172,10 +185,16 @@ export async function uploadBlogImage(formData: FormData) {
     const fileExt = file.name.split('.').pop();
     const fileName = `uploads/${session.user.id}/inline-images/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     
-    const blob = await put(fileName, file, { access: 'public' });
+    const blob = await put(fileName, file, { 
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
     
     return { success: true, url: blob.url };
-  } catch (error: unknown) {
+  } catch (error: any) {
+    if (error?.message?.includes('private store')) {
+      return { success: false, error: 'Vercel Blob Error: Your store is Private. Please go to Vercel Dashboard -> Storage -> Settings and make it Public.' };
+    }
     return { success: false, error: error instanceof Error ? error.message : "An unknown error occurred" };
   }
 }

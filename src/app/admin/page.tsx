@@ -6,6 +6,7 @@ import AnalyticsChart from '@/components/admin/AnalyticsChart';
 import KanbanBoard from '@/components/admin/KanbanBoard';
 import RevenueCard from '@/components/admin/RevenueCard';
 import ExecutiveOverview from '@/components/admin/dashboard/ExecutiveOverview';
+import MonthlyReportButton from '@/components/admin/MonthlyReportButton';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import {
@@ -59,6 +60,7 @@ export default async function AdminDashboard() {
           <Link href="/admin/image-orders" className="px-4 py-2 bg-blue-600 rounded-xl text-sm font-bold text-white hover:bg-blue-500 transition flex items-center gap-2 shadow-sm">
             <ImageIcon className="w-4 h-4" /> Image Orders
           </Link>
+          <MonthlyReportButton />
         </div>
       </div>
 

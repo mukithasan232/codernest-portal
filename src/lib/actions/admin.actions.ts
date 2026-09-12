@@ -116,7 +116,10 @@ export async function uploadProcessedImage(orderId: string, clientId: string, fo
     const fileExt = file.name.split('.').pop();
     const fileName = `uploads/processed/${clientId}/${orderId}_${Date.now()}.${fileExt}`;
     
-    const blob = await put(fileName, file, { access: 'public' });
+    const blob = await put(fileName, file, { 
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
     
     const processedUrl = blob.url;
 

@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     const filename = `uploads/media/${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
     
-    const blob = await put(filename, file, { access: 'public' });
+    const blob = await put(filename, file, { 
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
     
     const url = blob.url;
     

@@ -94,10 +94,16 @@ export async function uploadAndProcessImage(formData: FormData) {
       .toBuffer();
 
     // 3. Write Original to Blob
-    const originalBlob = await put(originalFileName, originalBuffer, { access: 'public' });
+    const originalBlob = await put(originalFileName, originalBuffer, { 
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
 
     // 4. Write Processed to Blob
-    const processedBlob = await put(processedFileName, processedBuffer, { access: 'public' });
+    const processedBlob = await put(processedFileName, processedBuffer, { 
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
 
     // 5. Save to Database
     await prisma.portfolioImage.create({

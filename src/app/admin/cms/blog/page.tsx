@@ -18,7 +18,7 @@ const BLOG_FIELDS: CmsField[] = [
   { key: 'slug',      label: 'URL Slug',         type: 'text',     required: true,  placeholder: 'my-post-slug' },
   { key: 'excerpt',   label: 'Excerpt',          type: 'textarea', placeholder: 'Brief summary shown in listings…' },
   { key: 'content',   label: 'Content (Raw HTML & Tailwind)', type: 'html', required: true, placeholder: '<div>...</div>' },
-  { key: 'imageUrl',  label: 'Cover Image URL',  type: 'text',     placeholder: 'https://…' },
+  { key: 'cover_image',  label: 'Cover Image URL',  type: 'text',     placeholder: 'https://…' },
   { key: 'tags',      label: 'Tags',             type: 'tags',     placeholder: 'Add tag…' },
   { key: 'status',    label: 'Status',           type: 'select',   options: ['draft', 'published'] },
   { key: 'metaTitle', label: 'SEO Title',        type: 'text',     placeholder: 'Meta Title' },
