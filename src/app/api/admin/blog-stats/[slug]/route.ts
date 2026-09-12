@@ -70,13 +70,26 @@ export async function GET(
     let timeSpentCount = 0;
     const locationCounts: Record<string, number> = {};
 
+    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    const getCountryName = (loc: string | null | undefined) => {
+      if (!loc || loc === 'Unknown' || loc === 'Unknown Country' || loc === 'Unknown Region') return 'Unknown Region';
+      if (loc.length === 2) {
+        try {
+          return regionNames.of(loc.toUpperCase()) || loc;
+        } catch {
+          return loc;
+        }
+      }
+      return loc;
+    };
+
     recentPageViews.forEach(pv => {
       if (pv.timeSpent > 0) {
         totalTimeSpent += pv.timeSpent;
         timeSpentCount++;
       }
       
-      const loc = pv.visitor?.location || 'Unknown';
+      const loc = getCountryName(pv.visitor?.location);
       locationCounts[loc] = (locationCounts[loc] || 0) + 1;
     });
 
@@ -93,7 +106,7 @@ export async function GET(
       id: pv.id,
       timestamp: pv.createdAt.toISOString(),
       isBot: pv.visitor?.isBot || false,
-      location: pv.visitor?.location || 'Unknown'
+      location: getCountryName(pv.visitor?.location)
     }));
 
     return NextResponse.json({

@@ -77,16 +77,31 @@ export function maskIp(ip?: string | null): string {
 
 /**
  * Clean & decode URI encoded location strings (e.g. "San%20Juan, AR" -> "San Juan, AR")
+ * And format 2-letter country codes into full display names.
  */
 export function formatLocation(location?: string | null): string {
   if (!location || location === 'Unknown' || location === 'Unknown Region' || location === 'Unknown Country') {
     return 'Unknown Location';
   }
+  
+  let cleanLoc = location;
   try {
-    return decodeURIComponent(location);
+    cleanLoc = decodeURIComponent(location);
   } catch {
-    return location;
+    // Ignore URI error
   }
+
+  // Convert 2-letter ISO country code to full name
+  if (cleanLoc.length === 2) {
+    try {
+      const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+      return regionNames.of(cleanLoc.toUpperCase()) || cleanLoc;
+    } catch {
+      return cleanLoc;
+    }
+  }
+
+  return cleanLoc;
 }
 
 /**
