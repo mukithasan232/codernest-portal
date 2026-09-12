@@ -60,10 +60,10 @@ export default async function BlogPage() {
                                     <h2 className="text-3xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-500 transition-colors leading-tight">
                                         {post.title}
                                     </h2>
-                                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+                                    <div className="text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
                                         {/* Since content is HTML, we might need a utility to strip tags, but line-clamp will handle text overflow visually */}
                                         <span dangerouslySetInnerHTML={{ __html: post.content.substring(0, 200) }} />...
-                                    </p>
+                                    </div>
                                     <div className="flex items-center gap-2 text-blue-500 font-bold group-hover:gap-4 transition-all pt-2">
                                         Read Article <ArrowRight className="w-5 h-5" />
                                     </div>
