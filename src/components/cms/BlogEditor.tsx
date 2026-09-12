@@ -310,7 +310,7 @@ export default function BlogEditor({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.svg,.ico,.webp"
                 onChange={handleImageChange}
                 className="hidden"
               />
@@ -332,7 +332,7 @@ export default function BlogEditor({
             <input
               ref={mediaInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.svg,.ico,.webp"
               onChange={handleMediaUpload}
               className="hidden"
             />

@@ -1,14 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { useRef } from 'react';
 import { updateGlobalSettings } from '@/lib/actions/settings.actions';
-import { Save, Image as ImageIcon, PaintBucket, Building, Mail, Link as LinkIcon, Code, Send } from 'lucide-react';
+import { Save, Image as ImageIcon, PaintBucket, Building, Mail, Link as LinkIcon, Code, Send, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SettingsForm({ initialSettings }: { initialSettings: any }) {
   const [loading, setLoading] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
   const [activeTab, setActiveTab] = useState('branding');
+  
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingFavicon, setIsUploadingFavicon] = useState(false);
+  
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     siteName: initialSettings?.siteName || 'CoderNest',
     siteTitle: initialSettings?.siteTitle || 'Elite B2B software agency',
@@ -35,6 +42,42 @@ export default function SettingsForm({ initialSettings }: { initialSettings: any
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'faviconUrl') => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const data = new FormData();
+      data.append('file', file);
+      
+      if (field === 'logoUrl') setIsUploadingLogo(true);
+      else setIsUploadingFavicon(true);
+      
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: data,
+        });
+        const res = await response.json();
+        
+        if (response.ok && res.success && res.url) {
+          handleChange(field, res.url);
+          toast.success(`${field === 'logoUrl' ? 'Logo' : 'Favicon'} uploaded successfully!`);
+        } else {
+          toast.error(res.error || 'Failed to upload image');
+        }
+      } catch (err: any) {
+        toast.error('Network error during upload');
+      } finally {
+        if (field === 'logoUrl') {
+          setIsUploadingLogo(false);
+          if (logoInputRef.current) logoInputRef.current.value = '';
+        } else {
+          setIsUploadingFavicon(false);
+          if (faviconInputRef.current) faviconInputRef.current.value = '';
+        }
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -147,25 +190,58 @@ export default function SettingsForm({ initialSettings }: { initialSettings: any
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-blue-500" /> Logo URL
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-2"><ImageIcon className="w-4 h-4 text-blue-500" /> Logo URL</span>
+                  <button 
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={isUploadingLogo}
+                    className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1"
+                  >
+                    <Upload className="w-3 h-3" /> {isUploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                  </button>
                 </label>
                 <input 
                   type="text" 
                   value={formData.logoUrl} 
                   onChange={e => handleChange('logoUrl', e.target.value)} 
                   className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://..."
+                  placeholder="https://... (.svg, .png, .jpg)"
+                />
+                <input 
+                  type="file" 
+                  ref={logoInputRef}
+                  accept="image/*,.svg,.ico,.webp"
+                  className="hidden"
+                  onChange={e => handleFileUpload(e, 'logoUrl')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Favicon URL</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                  <span>Favicon URL</span>
+                  <button 
+                    type="button"
+                    onClick={() => faviconInputRef.current?.click()}
+                    disabled={isUploadingFavicon}
+                    className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1"
+                  >
+                    <Upload className="w-3 h-3" /> {isUploadingFavicon ? 'Uploading...' : 'Upload Favicon'}
+                  </button>
+                </label>
                 <input 
                   type="text" 
                   value={formData.faviconUrl} 
                   onChange={e => handleChange('faviconUrl', e.target.value)} 
                   className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://... (.ico, .png, .svg)"
+                />
+                <input 
+                  type="file" 
+                  ref={faviconInputRef}
+                  accept="image/*,.svg,.ico,.webp"
+                  className="hidden"
+                  onChange={e => handleFileUpload(e, 'faviconUrl')}
                 />
               </div>
 
