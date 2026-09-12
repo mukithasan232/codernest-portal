@@ -79,13 +79,13 @@ export async function resolveWhatsAppCredentials(): Promise<{ token: string | nu
   }
 
   try {
-    const settings = await prisma.systemSettings.findUnique({
+    const settings = await (prisma.systemSettings as any).findUnique({
       where: { id: 'global_settings' },
       select: { whatsappAccessToken: true, whatsappPhoneId: true },
     });
     return {
-      token: settings?.whatsappAccessToken?.trim() || null,
-      phoneNumberId: settings?.whatsappPhoneId?.trim() || null,
+      token: (settings?.whatsappAccessToken as string | null | undefined)?.trim() || null,
+      phoneNumberId: (settings?.whatsappPhoneId as string | null | undefined)?.trim() || null,
     };
   } catch {
     return { token: null, phoneNumberId: null };

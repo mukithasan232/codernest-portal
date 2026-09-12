@@ -509,7 +509,7 @@ export async function getGatewaySettings() {
   try {
     await requireSuperAdmin();
 
-    const settings = await prisma.systemSettings.findUnique({
+    const settings = await (prisma.systemSettings as any).findUnique({
       where: { id: 'global_settings' },
       select: {
         telegramBotToken: true,
@@ -554,7 +554,7 @@ export async function saveGatewaySettings(data: {
   try {
     await requireSuperAdmin();
 
-    await prisma.systemSettings.upsert({
+    await (prisma.systemSettings as any).upsert({
       where: { id: 'global_settings' },
       update: {
         telegramBotToken: data.telegramBotToken?.trim() || null,

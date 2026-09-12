@@ -23,11 +23,11 @@ export async function resolveTelegramBotToken(): Promise<string | null> {
   }
 
   try {
-    const settings = await prisma.systemSettings.findUnique({
+    const settings = await (prisma.systemSettings as any).findUnique({
       where: { id: 'global_settings' },
       select: { telegramBotToken: true },
     });
-    return settings?.telegramBotToken?.trim() || null;
+    return (settings?.telegramBotToken as string | null | undefined)?.trim() || null;
   } catch {
     return null;
   }
