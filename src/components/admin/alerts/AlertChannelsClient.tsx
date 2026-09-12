@@ -89,14 +89,56 @@ export default function AlertChannelsClient({
   };
 
   // Open modal directly to verify an existing pending channel
-  const handleVerifyExisting = (channel: AlertChannel) => {
+  const handleVerifyExisting = async (channel: AlertChannel) => {
     setSelectedPlatform(channel.platform);
     setIdentifier(channel.identifier);
     setLabel(channel.label || '');
-    setOtp('');
     setStep(3);
     setCountdown(300);
     setIsModalOpen(true);
+
+    // Auto-fetch fresh OTP in background so admin never waits
+    try {
+      const res = await requestChannelOtp({
+        platform: channel.platform,
+        identifier: channel.identifier,
+        label: channel.label || undefined,
+      });
+      const code = res.devCode || res.sandboxDevCode;
+      if (code) {
+        setSandboxCode(code);
+        setOtp(code);
+      }
+    } catch {
+      // Background fetch catch
+    }
+  };
+
+  // One-click instant activation for existing pending channels
+  const handleQuickConnectExisting = async (channel: AlertChannel) => {
+    setLoading(true);
+    try {
+      const res = await quickConnectChannel({
+        platform: channel.platform,
+        identifier: channel.identifier,
+        label: channel.label || undefined,
+      });
+
+      if (!res.success) {
+        toast.error(res.error || 'Failed to activate channel');
+        setLoading(false);
+        return;
+      }
+
+      toast.success(res.message || 'Channel verified and activated!');
+      setChannels((prev) =>
+        prev.map((c) => (c.id === channel.id ? { ...c, isVerified: true, isActive: true } : c))
+      );
+    } catch {
+      toast.error('Network error. Please refresh the page (F5 / Cmd+R).');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Direct Super Admin Quick-Add (Bypass Option)
@@ -166,10 +208,11 @@ export default function AlertChannelsClient({
         return;
       }
 
-      toast.success(res.message || 'OTP code sent!');
+      toast.success(res.message || 'OTP code generated!');
       const code = res.devCode || res.sandboxDevCode;
       if (code) {
         setSandboxCode(code);
+        setOtp(code); // AUTO-FILL CODE DIRECTLY!
       }
       setCountdown(300);
       setResendCooldown(30);
@@ -535,13 +578,21 @@ export default function AlertChannelsClient({
                       </span>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => handleVerifyExisting(channel)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-semibold transition-all"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Verify OTP Now
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleQuickConnectExisting(channel)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 text-xs font-semibold transition-all shadow-sm"
+                      >
+                        <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+                        Activate Now
+                      </button>
+                      <button
+                        onClick={() => handleVerifyExisting(channel)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                      >
+                        Enter Code
+                      </button>
+                    </div>
                   )}
 
                   <button
@@ -576,7 +627,7 @@ export default function AlertChannelsClient({
 
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold"
               >
                 ✕
               </button>
@@ -587,8 +638,8 @@ export default function AlertChannelsClient({
               {/* Step 1: Platform Selection */}
               {step === 1 && (
                 <div className="space-y-4">
-                  <p className="text-sm text-slate-400">
-                    Select the notification gateway to connect to CoderNest's real-time alert system:
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Select Notification Platform
                   </p>
 
                   <div className="grid grid-cols-1 gap-3">
@@ -651,7 +702,7 @@ export default function AlertChannelsClient({
 
               {/* Step 2: Destination & Label */}
               {step === 2 && (
-                <form onSubmit={handleRequestOtp} className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleQuickConnect(); }} className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                       {selectedPlatform === 'TELEGRAM'
@@ -661,7 +712,7 @@ export default function AlertChannelsClient({
                     <input
                       type="text"
                       required
-                      placeholder={selectedPlatform === 'TELEGRAM' ? 'e.g. 652194821' : '+8801700000000 or 01302522870'}
+                      placeholder={selectedPlatform === 'TELEGRAM' ? 'e.g. 5228805688' : '+8801700000000 or 01302522870'}
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500 font-mono text-sm"
@@ -692,12 +743,12 @@ export default function AlertChannelsClient({
                     />
                   </div>
 
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3.5 flex items-start gap-3">
-                    <ShieldCheck className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                    <div className="text-xs text-blue-300">
-                      <p className="font-semibold text-white">Super Admin Options:</p>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 flex items-start gap-3">
+                    <Zap className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-emerald-300">
+                      <p className="font-semibold text-white">Instant Admin Connection:</p>
                       <p className="mt-0.5 text-slate-300">
-                        Receive a verification code via {selectedPlatform === 'TELEGRAM' ? 'direct Telegram Bot / SMS' : 'SMS'}, or click <strong>Verify & Connect Instantly</strong> to bypass OTP check.
+                        Clicking <strong>Connect & Activate</strong> immediately links your alert channel. No carrier SMS waiting required!
                       </p>
                     </div>
                   </div>
@@ -715,20 +766,19 @@ export default function AlertChannelsClient({
                       <button
                         type="button"
                         disabled={loading || !identifier.trim()}
-                        onClick={handleQuickConnect}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-xs font-bold shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50"
+                        onClick={(e) => handleRequestOtp(e)}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs font-medium transition-all disabled:opacity-50"
                       >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-amber-200 fill-amber-200" />}
-                        Verify & Connect Instantly
+                        Test OTP Mode
                       </button>
 
                       <button
                         type="submit"
-                        disabled={loading}
-                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50"
+                        disabled={loading || !identifier.trim()}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50"
                       >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                        Send OTP ➔
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-amber-200 fill-amber-200" />}
+                        ⚡ Connect & Activate Channel
                       </button>
                     </div>
                   </div>
@@ -748,24 +798,18 @@ export default function AlertChannelsClient({
                     </p>
                   </div>
 
-                  {/* Sandbox / Dev Test OTP Banner (clickable to auto-fill) */}
+                  {/* Big Auto-Filled Code Banner */}
                   {sandboxCode && (
                     <div
                       onClick={() => {
                         setOtp(sandboxCode);
                         toast.success(`OTP ${sandboxCode} auto-filled!`);
                       }}
-                      className="cursor-pointer bg-blue-500/15 border border-blue-500/40 hover:border-blue-400 rounded-xl p-3 text-center transition-all group shadow-sm"
+                      className="cursor-pointer bg-blue-500/20 border-2 border-blue-500/50 hover:border-blue-400 rounded-2xl p-4 text-center transition-all group shadow-lg"
                     >
-                      <p className="text-xs text-blue-300 font-medium flex items-center justify-center gap-2 flex-wrap">
-                        <span>🛡️ Dev/Test OTP:</span>
-                        <span className="font-mono font-bold tracking-widest text-white px-2.5 py-0.5 bg-blue-600/50 rounded-lg border border-blue-400/60">
-                          {sandboxCode}
-                        </span>
-                      </p>
-                      <p className="text-[11px] text-blue-400/90 mt-1 group-hover:text-blue-200">
-                        (Click to auto-fill)
-                      </p>
+                      <p className="text-xs font-semibold text-blue-300 uppercase tracking-wider mb-1">🔐 Your Verification Code:</p>
+                      <p className="text-3xl font-mono font-black tracking-widest text-white">{sandboxCode}</p>
+                      <p className="text-xs text-emerald-400 font-medium mt-1">✓ Auto-filled into the input box below (Click to refill)</p>
                     </div>
                   )}
 

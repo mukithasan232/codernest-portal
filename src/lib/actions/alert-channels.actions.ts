@@ -233,10 +233,8 @@ export async function quickConnectChannel({
         };
       }
     } else if (platform === 'TELEGRAM') {
-      const digitsOnly = cleanIdentifier.replace(/\D/g, '');
-      if (digitsOnly.length >= 8 && digitsOnly.length <= 15) {
-        cleanIdentifier = normalizePhoneNumber(cleanIdentifier);
-      }
+      // Remove any leading plus sign if mistakenly entered for a Telegram chat ID
+      cleanIdentifier = cleanIdentifier.replace(/^\+/, '').trim();
     }
 
     // Upsert directly with isVerified: true, isActive: true
