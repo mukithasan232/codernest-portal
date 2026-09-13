@@ -4,10 +4,12 @@ import { resolveIpIdentity, isGenericOrInvalidCompany, maskIp, formatVisitorFall
 
 export { resolveIpIdentity, isGenericOrInvalidCompany, maskIp, formatVisitorFallback };
 
-export async function resolveVisitorIdentity(ip: string): Promise<{ companyName: string | null; isIdentified: boolean }> {
+export async function resolveVisitorIdentity(ip: string): Promise<{ companyName: string | null; isIdentified: boolean; domain: string | null; companyData: any | null }> {
   const result = await resolveIpIdentity(ip);
   return {
     companyName: result.companyName,
     isIdentified: result.isIdentified,
+    domain: result.domain,
+    companyData: result.companyData,
   };
 }

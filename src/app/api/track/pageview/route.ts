@@ -79,10 +79,13 @@ export async function POST(req: NextRequest) {
       if (!visitor.isIdentified && ipAddress !== 'Unknown') {
         resolveVisitorIdentity(ipAddress).then(async (identity) => {
           if (identity.isIdentified) {
+            // Prisma Json type needs to be handled properly. Just passing it works for MongoDB.
             await prisma.visitor.update({
               where: { id: visitor.id },
               data: {
                 companyName: identity.companyName,
+                domain: identity.domain,
+                companyData: identity.companyData ? (identity.companyData as any) : undefined,
                 isIdentified: true,
               },
               select: { id: true },

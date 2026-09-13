@@ -20,6 +20,8 @@ import {
 
 export interface IpResolutionResult {
   companyName: string | null;
+  domain: string | null;
+  companyData: any | null;
   isIdentified: boolean;
   ispName: string | null;
   isIsp: boolean;
@@ -51,6 +53,8 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
   if (!ip || ip === '::1' || ip === '127.0.0.1' || ip === 'Unknown' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
     return {
       companyName: null,
+      domain: null,
+      companyData: null,
       isIdentified: false,
       ispName: null,
       isIsp: false,
@@ -62,7 +66,44 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
   }
 
   try {
-    // Fetch enriched data from ip-api with hosting, proxy, reverse, and ASN fields
+    // 1. Try IPInfo Enterprise if Token is available
+    const ipinfoToken = process.env.IPINFO_TOKEN;
+    if (ipinfoToken) {
+      const res = await fetch(`https://ipinfo.io/${ip}?token=${ipinfoToken}`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        
+        // IPInfo usually returns data.company if they have the company endpoint access
+        // Example: data.company = { name: 'Google LLC', domain: 'google.com', type: 'business' }
+        const isHosting = data.privacy?.hosting || false;
+        const isIspProvider = data.company?.type === 'isp';
+        
+        // We consider it identified if type is 'business' and there is a domain
+        const isBusiness = data.company?.type === 'business' || (data.company?.domain && !isIspProvider && !isHosting);
+        
+        const org = data.company?.name || data.org || null;
+        const domain = data.company?.domain || null;
+        
+        if (isBusiness && org && domain && !isGenericOrInvalidCompany(org)) {
+           return {
+             companyName: org,
+             domain: domain,
+             companyData: data,
+             isIdentified: true,
+             ispName: null,
+             isIsp: false,
+             isCloudHosting: false,
+             city: data.city || null,
+             country: data.country || null,
+             maskedIp: masked,
+           };
+        }
+      }
+    }
+
+    // 2. Fallback to IP-API
     const res = await fetch(
       `http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,city,isp,org,as,asname,reverse,mobile,proxy,hosting,query`,
       {
@@ -71,30 +112,12 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
     );
 
     if (!res.ok) {
-      return {
-        companyName: null,
-        isIdentified: false,
-        ispName: null,
-        isIsp: false,
-        isCloudHosting: false,
-        city: null,
-        country: null,
-        maskedIp: masked,
-      };
+      throw new Error('IP-API response not ok');
     }
 
     const data = await res.json();
     if (data.status !== 'success') {
-      return {
-        companyName: null,
-        isIdentified: false,
-        ispName: null,
-        isIsp: false,
-        isCloudHosting: false,
-        city: null,
-        country: null,
-        maskedIp: masked,
-      };
+      throw new Error('IP-API returned fail status');
     }
 
     const org = (data.org || '').trim();
@@ -119,10 +142,11 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
       org.toLowerCase().includes(p) || isp.toLowerCase().includes(p)
     );
 
-    // If it's a Cloud provider or ISP, identify as such but NEVER as a corporate visitor company
     if (isCloud) {
       return {
         companyName: null,
+        domain: null,
+        companyData: data,
         isIdentified: false,
         ispName: org || isp || 'Cloud Provider',
         isIsp: false,
@@ -136,6 +160,8 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
     if (isIspProvider || isSchoolOrInst) {
       return {
         companyName: null,
+        domain: null,
+        companyData: data,
         isIdentified: false,
         ispName: isp || org || 'Internet Service Provider',
         isIsp: true,
@@ -148,14 +174,16 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
 
     // Check Reverse DNS from ip-api
     const reverseHost = (data.reverse || '').toLowerCase();
-
-    // If reverse DNS exists and is a genuine corporate domain (not dynamic pool)
+    let domainName = null;
+    
     if (reverseHost && !isGenericReverseDns(reverseHost)) {
       const hostParts = reverseHost.split('.');
       if (hostParts.length >= 2) {
-        const domainName = hostParts.slice(-2).join('.');
+        domainName = hostParts.slice(-2).join('.');
         return {
           companyName: org && !isGenericOrInvalidCompany(org) ? org : domainName,
+          domain: domainName,
+          companyData: data,
           isIdentified: true,
           ispName: isp,
           isIsp: false,
@@ -167,17 +195,18 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
       }
     }
 
-    // Strict validation on org name: must not match any filter and should have corporate indicator
+    // Strict validation on org name
     if (org && !isGenericOrInvalidCompany(org)) {
       const corporateIndicators = ['inc', 'corp', 'corporation', 'llc', 'ltd', 'limited', 'gmbh', 'sa', 'ag', 'plc', 'co.'];
       const hasCorporateIndicator = corporateIndicators.some(ind =>
         new RegExp(`\\b${ind}\\b`, 'i').test(org)
       );
 
-      // Only accept if it has a corporate business marker or clean non-telecom organization
       if (hasCorporateIndicator) {
         return {
           companyName: org,
+          domain: domainName,
+          companyData: data,
           isIdentified: true,
           ispName: isp,
           isIsp: false,
@@ -189,9 +218,10 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
       }
     }
 
-    // Default: Fallback as Anonymous Visitor
     return {
       companyName: null,
+      domain: null,
+      companyData: data,
       isIdentified: false,
       ispName: isp || org || null,
       isIsp: isIspProvider,
@@ -204,6 +234,8 @@ export async function resolveIpIdentity(ip: string): Promise<IpResolutionResult>
     console.error(`[IP Resolver] Error resolving ${ip}:`, error);
     return {
       companyName: null,
+      domain: null,
+      companyData: null,
       isIdentified: false,
       ispName: null,
       isIsp: false,

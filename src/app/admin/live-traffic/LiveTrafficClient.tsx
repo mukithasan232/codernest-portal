@@ -63,7 +63,10 @@ export default function LiveTrafficClient({ initialVisitors }: LiveTrafficClient
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-bold text-orange-300">
-                  {hotProspects.length} Verified High-Intent Prospect{hotProspects.length > 1 ? 's' : ''} Detected
+                  {hotProspects.length === 1 && hotProspects[0].companyName && !isGenericOrInvalidCompany(hotProspects[0].companyName) 
+                    ? `Verified ${hotProspects[0].companyName} Prospect Detected`
+                    : `${hotProspects.length} Verified High-Intent Prospect${hotProspects.length > 1 ? 's' : ''} Detected`
+                  }
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500 text-white uppercase tracking-wider">
                   LIVE

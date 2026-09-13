@@ -17,7 +17,8 @@ import {
   Wifi,
   Cloud,
   User,
-  ExternalLink
+  ExternalLink,
+  Search
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { 
@@ -47,6 +48,8 @@ export interface VisitorItem {
   score?: number;
   totalTime?: number;
   pageViews?: PageViewItem[];
+  companyData?: any;
+  domain?: string | null;
 }
 
 interface LiveTrafficTableProps {
@@ -112,6 +115,12 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
   const [leadName, setLeadName] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Reveal Contacts state
+  const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
+  const [discoveredContacts, setDiscoveredContacts] = useState<any[]>([]);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [selectedDomainForContacts, setSelectedDomainForContacts] = useState<string | null>(null);
 
   // A visitor is CRM-worthy only if they spent ≥ 10 seconds OR visited ≥ 2 pages
   const isLeadWorthy = (visitor: VisitorItem): boolean => {
@@ -161,6 +170,25 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
       toast.error("Failed to add lead to CRM.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRevealContacts = async (domain: string) => {
+    setSelectedDomainForContacts(domain);
+    setDiscoveredContacts([]);
+    setIsContactsModalOpen(true);
+    setIsDiscovering(true);
+
+    try {
+      const res = await fetch(`/api/leads/reveal-contacts?domain=${domain}`);
+      if (!res.ok) throw new Error("Failed to fetch contacts");
+      const data = await res.json();
+      setDiscoveredContacts(data.contacts || []);
+    } catch (error) {
+      console.error("Reveal Contacts Error:", error);
+      toast.error("Failed to discover contacts.");
+    } finally {
+      setIsDiscovering(false);
     }
   };
 
@@ -237,7 +265,12 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                         <div className="space-y-1">
                           {verifiedCompany ? (
                             <div className="font-bold text-white flex items-center gap-1.5">
-                              <Building2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                              {visitor.domain ? (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img src={`https://logo.clearbit.com/${visitor.domain}`} alt="logo" className="w-4 h-4 rounded object-contain flex-shrink-0 bg-white" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                              ) : (
+                                <Building2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                              )}
                               <span className="truncate max-w-[220px] sm:max-w-xs">{verifiedCompany}</span>
                               <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
                                 Verified B2B
@@ -327,7 +360,18 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                     </td>
 
                     {/* CRM Action */}
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right space-x-2">
+                      {visitor.domain && verifiedCompany && (
+                         <button
+                           type="button"
+                           onClick={() => handleRevealContacts(visitor.domain!)}
+                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-all border border-slate-700"
+                           title="Reveal Contacts (Apollo/Hunter)"
+                         >
+                           <Search className="w-3.5 h-3.5 text-purple-400" />
+                           Reveal
+                         </button>
+                      )}
                       {leadWorthy ? (
                         <button
                           type="button"
@@ -419,6 +463,87 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reveal Contacts Modal */}
+      {isContactsModalOpen && selectedDomainForContacts && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative">
+            <button
+              onClick={() => setIsContactsModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+                <Search className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">Discovered Contacts</h3>
+                <p className="text-sm text-slate-400 mt-0.5">
+                  Showing contacts for <span className="text-purple-400 font-semibold">{selectedDomainForContacts}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+              {isDiscovering ? (
+                <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                  <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm text-slate-400 font-medium">Scanning Apollo/Hunter databases...</p>
+                </div>
+              ) : discoveredContacts.length > 0 ? (
+                discoveredContacts.map(contact => (
+                  <div key={contact.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-950 border border-slate-800">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{contact.name}</h4>
+                      <p className="text-xs text-slate-400 mt-0.5">{contact.title} • {contact.department}</p>
+                      <p className="text-sm text-blue-400 mt-1.5 font-medium">{contact.email}</p>
+                    </div>
+                    <div className="text-right flex flex-col items-end justify-center">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full mb-2">
+                        {contact.confidence}% Match
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLeadName(`${contact.name} (${selectedDomainForContacts})`);
+                          setLeadEmail(contact.email);
+                          setIsContactsModalOpen(false);
+                          // We mock a visitor object here to reuse the capture modal
+                          const dummyVisitor = visitors.find(v => v.domain === selectedDomainForContacts);
+                          if (dummyVisitor) {
+                            openCrmModal(dummyVisitor);
+                          }
+                        }}
+                        className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors border border-slate-700"
+                      >
+                        Add Contact
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-10 text-slate-500">
+                  <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>No contacts found for this domain.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsContactsModalOpen(false)}
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

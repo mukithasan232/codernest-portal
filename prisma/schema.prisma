@@ -332,6 +332,8 @@ model Visitor {
   ipAddress String?
   location  String?
   companyName String?
+  domain      String?
+  companyData Json?
   isIdentified Boolean @default(false)
   isBot        Boolean @default(false)
   createdAt DateTime   @default(now())
