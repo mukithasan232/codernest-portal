@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       });
     } else if (audience === 'clients') {
       const clients = await prisma.user.findMany({
-        where: { role: 'CLIENT', email: { not: null } },
+        where: { role: 'USER', email: { not: null } },
         select: { id: true, name: true, email: true },
       });
       targetLeads = clients

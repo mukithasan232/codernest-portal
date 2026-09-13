@@ -7,7 +7,7 @@ import { logMarketingExpense, type LogExpenseInput } from '@/lib/actions/dashboa
 export const dynamic = 'force-dynamic';
 
 function isAdmin(role: string) {
-  return role === 'SUPER_ADMIN' || role === 'EDITOR';
+  return role === 'SUPER_ADMIN' || role === 'EMPLOYEE';
 }
 
 export async function GET() {

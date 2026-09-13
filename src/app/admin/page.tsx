@@ -27,7 +27,7 @@ const QUICK_LINKS = [
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
   
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
     redirect('/');
   }
 

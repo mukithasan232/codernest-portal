@@ -9,7 +9,7 @@ export async function getCmsEntries(collectionName: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized' };
 
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 
@@ -52,7 +52,7 @@ export async function createCmsEntry(collectionName: string, payload: any) {
   if (!session?.user) return { success: false, error: 'Unauthorized' };
   
   // ensure admin
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 
@@ -96,7 +96,7 @@ export async function updateCmsEntry(collectionName: string, id: string, payload
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized' };
 
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 
@@ -141,7 +141,7 @@ export async function deleteCmsEntry(collectionName: string, id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized' };
 
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 
@@ -184,7 +184,7 @@ export async function updatePricingOrder(items: { id: string, displayOrder: numb
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized' };
 
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 
@@ -208,7 +208,7 @@ export async function updatePricingPlansOrder(items: { id: string, order: number
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized' };
 
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 
@@ -232,7 +232,7 @@ export async function updatePhotoServicesOrder(items: { id: string, order: numbe
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized' };
 
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 

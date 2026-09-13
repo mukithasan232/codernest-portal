@@ -7,7 +7,7 @@ import AnalyticsDashboardClient from './AnalyticsDashboardClient';
 export default async function EmailAnalyticsPage() {
   const session = await getServerSession(authOptions);
   
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
     redirect('/auth/signin');
   }
 

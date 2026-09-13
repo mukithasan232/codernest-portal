@@ -63,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/');
   }
 
-  const isEditor = appUser?.role === 'EDITOR';
+  const isEditor = appUser?.role === 'EMPLOYEE';
   
   // Filter CMS items for EDITOR (hide Pricing and Settings)
   const allowedCmsItems = isEditor 

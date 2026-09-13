@@ -62,12 +62,12 @@ export async function proxy(req: NextRequest) {
 
   // ─── 2. AUTHENTICATION & ROLE-BASED ACCESS CONTROL ─────────────────────────────
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  const userRole = token?.role ? (token.role as string).toUpperCase() : "CLIENT";
+  const userRole = token?.role ? (token.role as string).toUpperCase() : "USER";
 
   // Ignore Auth Routes for unauthenticated users, but redirect authenticated ones
   if (path.startsWith('/auth')) {
     if (token) {
-      if (userRole === 'SUPER_ADMIN' || userRole === 'EDITOR') {
+      if (userRole === 'SUPER_ADMIN' || userRole === 'EMPLOYEE') {
         return applySecurityHeaders(NextResponse.redirect(new URL('/admin', req.url)));
       } else {
         return applySecurityHeaders(NextResponse.redirect(new URL('/dashboard', req.url)));
@@ -83,14 +83,14 @@ export async function proxy(req: NextRequest) {
 
   // Client users trying to access admin routes
   if (path.startsWith('/admin')) {
-    if (userRole === 'CLIENT') {
+    if (userRole === 'USER') {
       return applySecurityHeaders(NextResponse.redirect(new URL('/dashboard', req.url)));
     }
   }
 
   // Admin users trying to access client dashboard
   if (path.startsWith('/dashboard')) {
-    if (userRole === 'SUPER_ADMIN' || userRole === 'EDITOR') {
+    if (userRole === 'SUPER_ADMIN' || userRole === 'EMPLOYEE') {
       return applySecurityHeaders(NextResponse.redirect(new URL('/admin', req.url)));
     }
   }

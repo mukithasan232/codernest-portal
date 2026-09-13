@@ -1,11 +1,11 @@
-export type UserRole = 'SUPER_ADMIN' | 'EDITOR' | 'CLIENT';
+export type Role = 'SUPER_ADMIN' | 'EMPLOYEE' | 'USER';
 
 export interface User {
   id: string;
   email: string;
   name?: string | null;
   image?: string | null;
-  role: UserRole | string;
+  role: Role | string;
   freeCredits: number;
   createdAt: string | Date;
 }

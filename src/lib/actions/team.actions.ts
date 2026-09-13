@@ -8,7 +8,7 @@ import { TeamMember } from '@/types';
 
 async function verifyAdmin() {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
     throw new Error('Unauthorized');
   }
 }

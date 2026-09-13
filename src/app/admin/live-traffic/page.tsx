@@ -17,7 +17,7 @@ export const revalidate = 0;
 export default async function LiveTrafficPage() {
   const session = await getServerSession(authOptions);
   
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
     redirect('/auth/login');
   }
 

@@ -22,7 +22,7 @@ export async function getEmailTemplates() {
 export async function saveEmailTemplate(id: string | null, name: string, subject: string, htmlBody: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized.' };
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden.' };
   }
 
@@ -48,7 +48,7 @@ export async function saveEmailTemplate(id: string | null, name: string, subject
 export async function deleteEmailTemplate(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized.' };
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden.' };
   }
 
@@ -67,7 +67,7 @@ export async function deleteEmailTemplate(id: string) {
 export async function testSmtpConnection(smtpConfig: any) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized.' };
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden.' };
   }
 
@@ -105,7 +105,7 @@ export async function testSmtpConnection(smtpConfig: any) {
 export async function uploadProcessedImage(orderId: string, clientId: string, formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized.' };
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden.' };
   }
 
@@ -151,7 +151,7 @@ export async function createInvoice(data: {
   paypalLink?: string;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
     return { success: false, error: 'Unauthorized.' };
   }
 
@@ -183,7 +183,7 @@ export async function createInvoice(data: {
 
 export async function markInvoicePaid(id: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) return { success: false, error: 'Unauthorized.' };
 
   try {
     await prisma.invoice.update({
@@ -200,7 +200,7 @@ export async function markInvoicePaid(id: string) {
 
 export async function saveBlogPost(data: any) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) return { success: false, error: 'Unauthorized.' };
 
   try {
     await prisma.blog.create({
@@ -223,7 +223,7 @@ export async function saveBlogPost(data: any) {
 
 export async function updateProjectStatus(id: string, status: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) return { success: false, error: 'Unauthorized.' };
 
   try {
     await prisma.project.update({
@@ -240,7 +240,7 @@ export async function updateProjectStatus(id: string, status: string) {
 
 export async function updateProjectMilestones(id: string, milestones: any) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) return { success: false, error: 'Unauthorized.' };
 
   try {
     await prisma.project.update({
@@ -257,7 +257,7 @@ export async function updateProjectMilestones(id: string, milestones: any) {
 
 export async function updateProjectLiveLink(id: string, live_link: string) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) return { success: false, error: 'Unauthorized.' };
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) return { success: false, error: 'Unauthorized.' };
 
   try {
     await prisma.project.update({

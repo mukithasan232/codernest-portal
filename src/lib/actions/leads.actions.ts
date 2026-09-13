@@ -32,7 +32,7 @@ export async function bulkImportLeads(
   if (!session?.user) {
     return { success: false, error: 'Unauthorized.' };
   }
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden.' };
   }
 

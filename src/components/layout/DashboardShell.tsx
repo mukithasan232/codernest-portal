@@ -33,7 +33,7 @@ export function DashboardShell({
   const router = useRouter();
   const { logOut, appUser } = useAuth();
   
-  const isAdmin = appUser?.role === 'SUPER_ADMIN' || appUser?.role === 'EDITOR';
+  const isAdmin = appUser?.role === 'SUPER_ADMIN' || appUser?.role === 'EMPLOYEE';
 
   const sidebarLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },

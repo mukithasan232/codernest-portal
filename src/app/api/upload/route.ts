@@ -7,7 +7,7 @@ import { put } from '@vercel/blob';
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

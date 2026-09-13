@@ -24,7 +24,7 @@ const addClientSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  role: z.literal('CLIENT'),
+  role: z.literal('USER'),
 });
 
 type AddClientFormValues = z.infer<typeof addClientSchema>;
@@ -58,7 +58,7 @@ export default function ClientManagementPage() {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<AddClientFormValues>({
     resolver: zodResolver(addClientSchema),
-    defaultValues: { name: '', email: '', password: '', role: 'CLIENT' }
+    defaultValues: { name: '', email: '', password: '', role: 'USER' }
   });
 
   useEffect(() => {
@@ -301,7 +301,7 @@ export default function ClientManagementPage() {
               </div>
 
               {/* Hidden role field */}
-              <input type="hidden" {...register('role')} value="CLIENT" />
+              <input type="hidden" {...register('role')} value="USER" />
 
               <div className="pt-2 flex justify-end gap-3">
                 <button

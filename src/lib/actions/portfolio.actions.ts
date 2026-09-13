@@ -22,7 +22,7 @@ export async function getPortfolioImages() {
 export async function deletePortfolioImage(id: string, originalUrl: string, processedUrl: string | null) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized.' };
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden.' };
   }
 
@@ -57,7 +57,7 @@ export async function deletePortfolioImage(id: string, originalUrl: string, proc
 export async function uploadAndProcessImage(formData: FormData) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized.' };
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden.' };
   }
 

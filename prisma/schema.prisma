@@ -43,7 +43,7 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          UserRole  @default(CLIENT)
+  role          Role      @default(USER)
   freeCredits   Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -63,10 +63,10 @@ model VerificationToken {
 
 // Application Models
 
-enum UserRole {
+enum Role {
   SUPER_ADMIN
-  EDITOR
-  CLIENT
+  EMPLOYEE
+  USER
 }
 
 model Blog {

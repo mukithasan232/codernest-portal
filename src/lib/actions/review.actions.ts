@@ -13,7 +13,7 @@ export async function getAllReviews() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return { success: false, data: null, error: 'Unauthorized.' };
-    if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
       return { success: false, data: null, error: 'Forbidden.' };
     }
 
@@ -35,7 +35,7 @@ export async function createReview(formData: FormData) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return { success: false, error: 'Unauthorized.' };
-    if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
       return { success: false, error: 'Forbidden.' };
     }
 
@@ -72,7 +72,7 @@ export async function updateReview(id: string, formData: FormData) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return { success: false, error: 'Unauthorized.' };
-    if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
       return { success: false, error: 'Forbidden.' };
     }
 
@@ -105,7 +105,7 @@ export async function deleteReview(id: string) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) return { success: false, error: 'Unauthorized.' };
-    if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+    if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
       return { success: false, error: 'Forbidden.' };
     }
 

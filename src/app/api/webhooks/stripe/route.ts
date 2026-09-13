@@ -167,7 +167,7 @@ export async function POST(req: Request) {
           await prisma.user.update({
             where: { id: user.id },
             data: {
-              role: 'CLIENT',
+              role: 'USER',
               updatedAt: new Date(),
             },
           }).catch((err) => console.error('[Stripe Webhook] Failed to update user role:', err));

@@ -79,7 +79,7 @@ export default function Navbar() {
                                 appUser ? (
                                     <div className="flex items-center gap-3">
                                         <Link
-                                            href={(appUser.role === 'SUPER_ADMIN' || appUser.role === 'EDITOR') ? '/admin' : '/dashboard'}
+                                            href={(appUser.role === 'SUPER_ADMIN' || appUser.role === 'EMPLOYEE') ? '/admin' : '/dashboard'}
                                             className="px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors"
                                         >
                                             Dashboard
@@ -137,7 +137,7 @@ export default function Navbar() {
                         appUser ? (
                             <div className="space-y-3 pt-2">
                                 <Link
-                                    href={(appUser.role === 'SUPER_ADMIN' || appUser.role === 'EDITOR') ? '/admin' : '/dashboard'}
+                                    href={(appUser.role === 'SUPER_ADMIN' || appUser.role === 'EMPLOYEE') ? '/admin' : '/dashboard'}
                                     className="block w-full py-3 rounded-xl bg-blue-600 text-white text-center font-bold"
                                     onClick={() => setIsOpen(false)}
                                 >

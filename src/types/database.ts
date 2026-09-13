@@ -1,9 +1,9 @@
-export type UserRole = 'SUPER_ADMIN' | 'EDITOR' | 'CLIENT';
+export type Role = 'SUPER_ADMIN' | 'EMPLOYEE' | 'USER';
 
 export interface UserProfile {
     id: string;
     email: string;
-    role: UserRole;
+    role: Role;
     created_at: string;
 }
 

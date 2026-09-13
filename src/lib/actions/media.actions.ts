@@ -9,7 +9,7 @@ export async function getMedia() {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized' };
   
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 
@@ -28,7 +28,7 @@ export async function deleteMedia(id: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { success: false, error: 'Unauthorized' };
 
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     return { success: false, error: 'Forbidden' };
   }
 

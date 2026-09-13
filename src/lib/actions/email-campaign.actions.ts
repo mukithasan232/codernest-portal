@@ -19,7 +19,7 @@ export interface CampaignAttachmentInput {
 export async function getLeadsForCampaign() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
       return { success: false, data: [] };
     }
 
@@ -39,7 +39,7 @@ export async function sendEmailCampaignAction(formData: FormData) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
       return { error: 'Unauthorized' };
     }
 
@@ -350,7 +350,7 @@ export async function sendEmailCampaignAction(formData: FormData) {
 export async function saveEmailTemplateAction(data: { name: string, subject: string, html_body: string }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
       return { error: 'Unauthorized' };
     }
 
@@ -376,7 +376,7 @@ export async function saveEmailTemplateAction(data: { name: string, subject: str
 export async function getEmailTemplatesAction() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
       return { success: false, data: [] };
     }
 
@@ -394,7 +394,7 @@ export async function getEmailTemplatesAction() {
 export async function deleteEmailTemplateAction(id: string) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
       return { error: 'Unauthorized' };
     }
     if (!id) return { error: 'Template ID is required.' };
@@ -413,7 +413,7 @@ export async function updateEmailTemplateAction(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR')) {
+    if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
       return { error: 'Unauthorized' };
     }
     if (!id) return { error: 'Template ID is required.' };

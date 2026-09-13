@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { UserRole } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 export async function getTeamMembers() {
   try {
@@ -14,7 +14,7 @@ export async function getTeamMembers() {
     }
 
     const users = await prisma.user.findMany({
-      where: { role: { in: ['SUPER_ADMIN', 'EDITOR'] } },
+      where: { role: { in: ['SUPER_ADMIN', 'EMPLOYEE'] } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -39,7 +39,7 @@ export async function getClients() {
     }
 
     const clients = await prisma.user.findMany({
-      where: { role: 'CLIENT' },
+      where: { role: 'USER' },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -56,7 +56,7 @@ export async function getClients() {
   }
 }
 
-export async function inviteTeamMember(data: { email: string, name: string, role: UserRole, password?: string }) {
+export async function inviteTeamMember(data: { email: string, name: string, role: Role, password?: string }) {
   try {
     const session = await getServerSession(authOptions);
     if (session?.user?.role !== 'SUPER_ADMIN') {

@@ -12,7 +12,7 @@ export default async function AdminProjectsPage() {
     redirect('/auth/login');
   }
 
-  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EDITOR') {
+  if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE') {
     redirect('/');
   }
 

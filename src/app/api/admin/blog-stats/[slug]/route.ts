@@ -11,7 +11,7 @@ export async function GET(
     const session = await getServerSession(authOptions);
     
     // Basic auth check for admin routes
-    if (!session || !['SUPER_ADMIN', 'EDITOR'].includes(session.user.role)) {
+    if (!session || !['SUPER_ADMIN', 'EMPLOYEE'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
