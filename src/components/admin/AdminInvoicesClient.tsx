@@ -80,9 +80,9 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
     clientName: '',
     clientEmail: '',
     amount: '',
-    currency: 'USD',
+    currency: 'BDT',
     description: '',
-    paymentMethod: 'Stripe Card Payment',
+    paymentMethod: 'bKash',
     sendEmail: false,
   });
   const [customLoading, setCustomLoading] = useState(false);
@@ -169,9 +169,9 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
         clientName: '',
         clientEmail: '',
         amount: '',
-        currency: 'USD',
+        currency: 'BDT',
         description: '',
-        paymentMethod: 'Stripe Card Payment',
+        paymentMethod: 'bKash',
         sendEmail: false,
       });
     } catch (err: unknown) {
@@ -699,7 +699,7 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                    Amount (USD) *
+                    Amount (BDT) *
                   </label>
                   <input
                     required
@@ -718,10 +718,12 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
                     onChange={(e) => setCustomForm((prev) => ({ ...prev, paymentMethod: e.target.value }))}
                     className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none"
                   >
-                    <option value="Stripe Card Payment">Stripe Card</option>
-                    <option value="Bank Wire / ACH">Bank Wire / ACH</option>
-                    <option value="PayPal Business">PayPal</option>
-                    <option value="Escrow.com">Escrow.com</option>
+                    <option value="bKash">bKash</option>
+                    <option value="Nagad">Nagad</option>
+                    <option value="Rocket">Rocket</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Stripe Card">Stripe Card</option>
+                    <option value="Cash / Manual">Cash / Manual</option>
                   </select>
                 </div>
               </div>

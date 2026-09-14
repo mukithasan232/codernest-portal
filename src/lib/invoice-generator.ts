@@ -34,7 +34,7 @@ export interface InvoiceTemplateData {
  * Generates an accessible, responsive, printable HTML invoice template
  */
 export function generateInvoiceHtml(data: InvoiceTemplateData): string {
-  const currencySymbol = data.currency.toUpperCase() === 'USD' ? '$' : `${data.currency.toUpperCase()} `;
+  const currencySymbol = data.currency.toUpperCase() === 'USD' ? '$' : data.currency.toUpperCase() === 'BDT' ? '৳' : `${data.currency.toUpperCase()} `;
   const formattedDate = new Date(data.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
