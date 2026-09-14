@@ -79,6 +79,9 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
   const [customForm, setCustomForm] = useState({
     clientName: '',
     clientEmail: '',
+    clientPhone: '',
+    clientAddress: '',
+    clientType: 'Local',
     amount: '',
     currency: 'BDT',
     description: '',
@@ -168,6 +171,9 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
       setCustomForm({
         clientName: '',
         clientEmail: '',
+        clientPhone: '',
+        clientAddress: '',
+        clientType: 'Local',
         amount: '',
         currency: 'BDT',
         description: '',
@@ -683,20 +689,72 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
             </p>
 
             <form onSubmit={handleCreateCustom} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Client Email *
-                </label>
-                <input
-                  required
-                  type="email"
-                  value={customForm.clientEmail}
-                  onChange={(e) => setCustomForm((prev) => ({ ...prev, clientEmail: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Client Name *
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    value={customForm.clientName}
+                    onChange={(e) => setCustomForm((prev) => ({ ...prev, clientName: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Client Email *
+                  </label>
+                  <input
+                    required
+                    type="email"
+                    value={customForm.clientEmail}
+                    onChange={(e) => setCustomForm((prev) => ({ ...prev, clientEmail: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={customForm.clientPhone}
+                    onChange={(e) => setCustomForm((prev) => ({ ...prev, clientPhone: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Location / Address
+                  </label>
+                  <input
+                    type="text"
+                    value={customForm.clientAddress}
+                    onChange={(e) => setCustomForm((prev) => ({ ...prev, clientAddress: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Client Type
+                  </label>
+                  <select
+                    value={customForm.clientType}
+                    onChange={(e) => setCustomForm((prev) => ({ ...prev, clientType: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none"
+                  >
+                    <option value="Local">Local (Bangladesh)</option>
+                    <option value="International">International</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
                     Amount (BDT) *
@@ -709,6 +767,8 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
                     Payment Method
@@ -726,19 +786,18 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
                     <option value="Cash / Manual">Cash / Manual</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  Service Description
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Next.js App Router Architecture"
-                  value={customForm.description}
-                  onChange={(e) => setCustomForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Service Description
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Next.js App Router Architecture"
+                    value={customForm.description}
+                    onChange={(e) => setCustomForm((prev) => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-2 mt-2">

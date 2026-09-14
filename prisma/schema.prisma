@@ -278,6 +278,9 @@ model Invoice {
   clientId          String?  @db.ObjectId
   clientName        String?
   clientEmail       String?
+  clientPhone       String?
+  clientAddress     String?
+  clientType        String?  @default("Local")
   amount            Int
   currency          String   @default("USD")
   status            String   @default("draft")

@@ -18,6 +18,9 @@ export interface InvoiceTemplateData {
   invoiceNumber: string;
   clientName: string;
   clientEmail: string;
+  clientPhone?: string | null;
+  clientAddress?: string | null;
+  clientType?: string | null;
   companyName?: string | null;
   items: InvoiceLineItem[];
   amount: number;
@@ -220,9 +223,11 @@ export function generateInvoiceHtml(data: InvoiceTemplateData): string {
     <div class="details-grid">
       <div class="meta-box">
         <h4>Billed To:</h4>
-        <p style="font-weight: 700; color: #0f172a;">${data.clientName || 'Valued Client'}</p>
+        <p style="font-weight: 700; color: #0f172a;">${data.clientName || 'Valued Client'} ${data.clientType === 'International' ? '<span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #e0e7ff; color: #3730a3; margin-left: 8px; vertical-align: middle;">International</span>' : ''}</p>
         ${data.companyName ? `<p style="color: #475569;">${data.companyName}</p>` : ''}
         <p style="color: #64748b; font-size: 14px;">${data.clientEmail}</p>
+        ${data.clientPhone ? `<p style="color: #64748b; font-size: 14px;">${data.clientPhone}</p>` : ''}
+        ${data.clientAddress ? `<p style="color: #64748b; font-size: 14px; max-width: 250px;">${data.clientAddress}</p>` : ''}
       </div>
       <div class="meta-box" style="text-align: right;">
         <h4>Payment Info:</h4>
