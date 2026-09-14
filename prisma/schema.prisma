@@ -332,7 +332,9 @@ model Visitor {
   ipAddress String?
   location  String?
   companyName String?
+  companyDomain String?
   domain      String?
+  isISP       Boolean @default(false)
   companyData Json?
   isIdentified Boolean @default(false)
   isBot        Boolean @default(false)

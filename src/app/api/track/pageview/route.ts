@@ -84,7 +84,8 @@ export async function POST(req: NextRequest) {
               where: { id: visitor.id },
               data: {
                 companyName: identity.companyName,
-                domain: identity.domain,
+                companyDomain: identity.companyDomain,
+                isISP: identity.isISP,
                 companyData: identity.companyData ? (identity.companyData as any) : undefined,
                 isIdentified: true,
               },

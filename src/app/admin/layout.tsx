@@ -14,32 +14,61 @@ import {
 import toast from 'react-hot-toast';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 
-const NAV_ITEMS = [
-  { href: '/admin',              icon: BarChart3,       label: 'Overview' },
-  { href: '/admin/live-traffic', icon: Activity,        label: 'Live Traffic' },
-  { href: '/admin/crm',          icon: Megaphone,       label: 'CRM & Pipeline' },
-  { href: '/admin/leads',        icon: Users,           label: 'All Leads' },
-  { href: '/admin/leads-harvester', icon: Globe,        label: 'Lead Harvester' },
-  { href: '/admin/job-hunter',   icon: Target,          label: 'Job Hunter' },
-  { href: '/admin/email-marketing', icon: Mail,         label: 'Email Campaigns' },
-  { href: '/admin/automation',   icon: Zap,             label: 'Automation' },
-  { href: '/admin/projects',     icon: Briefcase,       label: 'Projects' },
-  { href: '/admin/clients',      icon: UserCheck,       label: 'Clients' },
-  { href: '/admin/api-settings', icon: Key,             label: 'API Integrations' },
-  { href: '/admin/settings/alerts', icon: Bell,         label: 'Alert Channels' },
-  { href: '/admin/image-orders', icon: ImageIcon,       label: 'Image Orders' },
-  { href: '/admin/invoices',     icon: DollarSign,      label: 'Invoices' },
-  { href: '/admin/team',         icon: Users,           label: 'Team Management' },
-];
-
-const CMS_ITEMS = [
-  { href: '/admin/cms/blog',          icon: FileText, label: 'Blog CMS' },
-  { href: '/admin/cms/case-studies',  icon: Layers,   label: 'Portfolio Manager' },
-  { href: '/admin/pricing',           icon: DollarSign, label: 'Pricing Plans' },
-  { href: '/admin/services',          icon: Scissors, label: 'Photo Services' },
-  { href: '/admin/pages',             icon: LayoutDashboard, label: 'Page Builder' },
-  { href: '/admin/media',             icon: ImageIcon, label: 'Media Library' },
-  { href: '/admin/settings',          icon: Settings, label: 'Global Settings' },
+const SIDEBAR_GROUPS = [
+  {
+    title: 'Main Menu',
+    hideTitle: true,
+    items: [
+      { href: '/admin',              icon: BarChart3,       label: 'Overview' },
+      { href: '/admin/live-traffic', icon: Activity,        label: 'Live Traffic' },
+    ]
+  },
+  {
+    title: 'CRM & Sales',
+    items: [
+      { href: '/admin/crm',          icon: Megaphone,       label: 'CRM & Pipeline' },
+      { href: '/admin/leads',        icon: Users,           label: 'All Leads' },
+      { href: '/admin/leads-harvester', icon: Globe,        label: 'Lead Harvester' },
+      { href: '/admin/clients',      icon: UserCheck,       label: 'Clients' },
+    ]
+  },
+  {
+    title: 'Marketing & Growth',
+    items: [
+      { href: '/admin/email-marketing', icon: Mail,         label: 'Email Campaigns' },
+      { href: '/admin/automation',   icon: Zap,             label: 'Automation' },
+      { href: '/admin/job-hunter',   icon: Target,          label: 'Job Hunter' },
+    ]
+  },
+  {
+    title: 'Operations',
+    items: [
+      { href: '/admin/projects',     icon: Briefcase,       label: 'Projects' },
+      { href: '/admin/image-orders', icon: ImageIcon,       label: 'Image Orders' },
+      { href: '/admin/invoices',     icon: DollarSign,      label: 'Invoices' },
+    ]
+  },
+  {
+    title: 'Content (CMS)',
+    items: [
+      { href: '/admin/cms/blog',          icon: FileText, label: 'Blog CMS' },
+      { href: '/admin/cms/case-studies',  icon: Layers,   label: 'Portfolio Manager' },
+      { href: '/admin/services',          icon: Scissors, label: 'Photo Services' },
+      { href: '/admin/pricing',           icon: DollarSign, label: 'Pricing Plans' },
+      { href: '/admin/pages',             icon: LayoutDashboard, label: 'Page Builder' },
+      { href: '/admin/media',             icon: ImageIcon, label: 'Media Library' },
+      { href: '/admin/team',              icon: Users,     label: 'Team Profiles' },
+    ]
+  },
+  {
+    title: 'System & Settings',
+    items: [
+      { href: '/admin/users',             icon: ShieldCheck, label: 'User Management' },
+      { href: '/admin/api-settings',      icon: Key,         label: 'API Integrations' },
+      { href: '/admin/settings/alerts',   icon: Bell,        label: 'Alert Channels' },
+      { href: '/admin/settings',          icon: Settings,    label: 'Global Settings' },
+    ]
+  }
 ];
 
 
@@ -65,10 +94,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const isEditor = appUser?.role === 'EMPLOYEE';
   
-  // Filter CMS items for EDITOR (hide Pricing and Settings)
-  const allowedCmsItems = isEditor 
-    ? CMS_ITEMS.filter(item => !['Pricing', 'Global Settings'].includes(item.label))
-    : CMS_ITEMS;
+  // Filter items for EDITOR (hide everything except Content CMS minus Pricing)
+  const allowedGroups = SIDEBAR_GROUPS.map(group => {
+    if (!isEditor) return group;
+    if (group.title === 'Content (CMS)') {
+      return {
+        ...group,
+        items: group.items.filter(item => item.label !== 'Pricing Plans')
+      };
+    }
+    return null;
+  }).filter(Boolean) as typeof SIDEBAR_GROUPS;
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden pt-[73px]">
@@ -85,49 +121,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Mobile Drawer */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-white/5 transform transition-transform duration-300 ease-in-out md:hidden flex flex-col pt-[73px] ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-5 flex-1 overflow-y-auto">
-          {/* Main nav (Hidden for Editors) */}
-          {!isEditor && (
-            <nav className="space-y-1 mb-6">
-              {NAV_ITEMS.map(({ href, icon: Icon, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
-                    isActive(href)
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          )}
-
-          {/* CMS section */}
-          <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
-              <LayoutDashboard className="w-3.5 h-3.5 text-slate-500 dark:text-slate-600" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-600">Content CMS</span>
+          {/* Grouped Nav */}
+          {allowedGroups.map((group, idx) => (
+            <div key={group.title} className={idx > 0 ? "mt-6" : ""}>
+              {!group.hideTitle && (
+                <h3 className="px-3 mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  {group.title}
+                </h3>
+              )}
+              <nav className="space-y-1">
+                {group.items.map(({ href, icon: Icon, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
+                      isActive(href)
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    {label}
+                  </Link>
+                ))}
+              </nav>
             </div>
-            <nav className="space-y-1">
-              {allowedCmsItems.map(({ href, icon: Icon, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
-                    isActive(href)
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          ))}
         </div>
 
         {/* Bottom */}
@@ -153,49 +172,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-widest">Admin Panel</span>
           </div>
 
-          {/* Main nav (Hidden for Editors) */}
-          {!isEditor && (
-            <nav className="space-y-1 mb-6">
-              {NAV_ITEMS.map(({ href, icon: Icon, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
-                    isActive(href)
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          )}
-
-          {/* CMS section */}
-          <div>
-            <div className="flex items-center gap-2 px-3 mb-2">
-              <LayoutDashboard className="w-3.5 h-3.5 text-slate-500 dark:text-slate-600" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-600">Content CMS</span>
+          {/* Grouped Nav */}
+          {allowedGroups.map((group, idx) => (
+            <div key={group.title} className={idx > 0 ? "mt-6" : ""}>
+              {!group.hideTitle && (
+                <h3 className="px-3 mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  {group.title}
+                </h3>
+              )}
+              <nav className="space-y-1">
+                {group.items.map(({ href, icon: Icon, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
+                      isActive(href)
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    {label}
+                  </Link>
+                ))}
+              </nav>
             </div>
-            <nav className="space-y-1">
-              {allowedCmsItems.map(({ href, icon: Icon, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all ${
-                    isActive(href)
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          ))}
         </div>
 
         {/* Bottom */}

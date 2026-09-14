@@ -19,6 +19,7 @@ import {
   Building,
   Sparkles,
   ShieldCheck,
+  Trash,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -82,6 +83,7 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
     currency: 'USD',
     description: '',
     paymentMethod: 'Stripe Card Payment',
+    sendEmail: false,
   });
   const [customLoading, setCustomLoading] = useState(false);
 
@@ -151,12 +153,18 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
 
     setCustomLoading(true);
     try {
-      const res = await createInvoice(customForm);
-      if (!res.success) throw new Error(res.error);
+      const res = await fetch('/api/admin/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customForm),
+      });
 
-      toast.success('Invoice created successfully!');
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to create invoice.');
+
+      toast.success(customForm.sendEmail ? 'Invoice created and email sent!' : 'Invoice created successfully!');
       setShowCustomModal(false);
-      setInvoices([res.invoice as Invoice, ...invoices]);
+      setInvoices([data.invoice as Invoice, ...invoices]);
       setCustomForm({
         clientName: '',
         clientEmail: '',
@@ -164,6 +172,7 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
         currency: 'USD',
         description: '',
         paymentMethod: 'Stripe Card Payment',
+        sendEmail: false,
       });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to create invoice.');
@@ -180,6 +189,27 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
       toast.success('Invoice marked as paid!');
     } else {
       toast.error('Failed to update invoice status.');
+    }
+  }
+
+  // Delete Invoice
+  async function handleDeleteInvoice(id: string) {
+    if (!window.confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/admin/invoices/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete invoice');
+      }
+      
+      setInvoices(invoices.filter((i) => i.id !== id));
+      toast.success('Invoice deleted successfully');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete invoice');
     }
   }
 
@@ -435,6 +465,14 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
                               Mark Paid
                             </button>
                           )}
+
+                          <button
+                            title="Delete Invoice"
+                            onClick={() => handleDeleteInvoice(inv.id)}
+                            className="p-1.5 text-red-400 hover:text-red-500 transition rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40"
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -699,6 +737,19 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
                   onChange={(e) => setCustomForm((prev) => ({ ...prev, description: e.target.value }))}
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  id="sendEmail"
+                  checked={customForm.sendEmail}
+                  onChange={(e) => setCustomForm((prev) => ({ ...prev, sendEmail: e.target.checked }))}
+                  className="w-4 h-4 text-blue-600 bg-slate-50 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
+                />
+                <label htmlFor="sendEmail" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Automatically email invoice to client
+                </label>
               </div>
 
               <button
