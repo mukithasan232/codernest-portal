@@ -102,6 +102,13 @@ function ScoreBadge({ score, highIntent }: { score: number; highIntent: boolean 
       </div>
     );
   }
+  if (score === 0) {
+    return (
+      <div className="inline-flex px-3 py-1 rounded-full text-xs font-bold bg-transparent border border-gray-700/50 text-gray-500">
+        0 PTS
+      </div>
+    );
+  }
   return (
     <div className="inline-flex px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-400">
       {score} PTS
@@ -329,16 +336,18 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                         <Globe className="w-3 h-3 text-slate-500" />
                         <span className="font-semibold">{visitor.pageViews?.length ?? 0}</span> pages
                       </div>
-                      <div className="flex flex-col gap-0.5">
+                      <div className="flex flex-col gap-0.5 max-w-[180px]">
                         {recentPages.map((page, i) => (
-                          <span key={i} className="text-[10px] text-slate-500 font-mono truncate max-w-[160px]">
+                          <span key={i} className="text-[10px] text-slate-500 font-mono truncate w-full block">
                             {page}
                           </span>
                         ))}
                         {(visitor.pageViews?.length ?? 0) > 3 && (
-                          <span className="text-[10px] text-slate-600">
-                            +{(visitor.pageViews?.length ?? 0) - 3} more
-                          </span>
+                          <div className="mt-1">
+                            <span className="bg-gray-800 text-gray-400 rounded-full px-2 py-0.5 text-[10px] inline-block">
+                              +{(visitor.pageViews?.length ?? 0) - 3} more
+                            </span>
+                          </div>
                         )}
                       </div>
                     </td>

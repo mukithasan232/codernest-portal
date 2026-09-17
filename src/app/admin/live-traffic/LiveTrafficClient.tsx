@@ -72,14 +72,14 @@ export default function LiveTrafficClient({ initialVisitors }: LiveTrafficClient
                   LIVE
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-row overflow-x-auto whitespace-nowrap hide-scrollbar gap-2 mt-2 pb-1">
                 {hotProspects.map(v => {
                   const hasCompany = v.companyName && !isGenericOrInvalidCompany(v.companyName);
                   const displayName = hasCompany ? v.companyName : formatVisitorFallback(v.location, v.ipAddress);
                   return (
                     <div
                       key={v.id}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-orange-500/20 border border-orange-500/40 rounded-lg text-orange-200"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-1 bg-orange-500/20 border border-orange-500/40 rounded-lg text-orange-200"
                     >
                       <Zap className="w-3 h-3 text-orange-400" />
                       <span>{displayName}</span>

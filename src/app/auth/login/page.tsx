@@ -84,34 +84,6 @@ function LoginContent() {
         </div>
 
         <div className="bg-white border-slate-200 dark:bg-white/5 dark:border-white/10 backdrop-blur-md rounded-3xl border p-8 space-y-6 shadow-xl dark:shadow-none">
-          {/* Demo Login */}
-          <button
-            id="demo-login-btn"
-            onClick={async () => {
-              setLoading(true);
-              try {
-                const res = await signIn('credentials', {
-                  redirect: false,
-                  email: 'demo@codernest.cloud',
-                  password: 'demo123',
-                });
-                if (res?.error) throw new Error(res.error);
-                toast.success('Welcome to the Demo!');
-                router.push(redirectToParam || '/dashboard');
-                router.refresh();
-              } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : 'Demo Login failed';
-                toast.error(msg);
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading || googleLoading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50"
-          >
-            ✨ Explore Live Demo
-          </button>
-
           {/* Google OAuth */}
           <button
             id="google-signin-btn"
@@ -187,6 +159,45 @@ function LoginContent() {
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-white/10" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-[#080d1a] px-3 text-slate-500">or</span>
+            </div>
+          </div>
+
+          {/* Demo Login */}
+          <button
+            id="demo-login-btn"
+            onClick={async () => {
+              setEmail('demo@codernest.cloud');
+              setPassword('demo123');
+              setLoading(true);
+              try {
+                const res = await signIn('credentials', {
+                  redirect: false,
+                  email: 'demo@codernest.cloud',
+                  password: 'demo123',
+                });
+                if (res?.error) throw new Error(res.error);
+                toast.success('Welcome to the Demo!');
+                router.push(redirectToParam || '/dashboard');
+                router.refresh();
+              } catch (err: unknown) {
+                const msg = err instanceof Error ? err.message : 'Demo Login failed';
+                toast.error(msg);
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading || googleLoading}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50"
+          >
+            ✨ Explore Live Demo (Read-Only)
+          </button>
         </div>
 
         <p className="text-center text-sm text-slate-500 mt-6">
