@@ -67,7 +67,7 @@ export async function proxy(req: NextRequest) {
   // Ignore Auth Routes for unauthenticated users, but redirect authenticated ones
   if (path.startsWith('/auth')) {
     if (token) {
-      if (userRole === 'SUPER_ADMIN' || userRole === 'EMPLOYEE') {
+      if (userRole === 'SUPER_ADMIN' || userRole === 'EMPLOYEE' || userRole === 'DEMO_VIEWER') {
         return applySecurityHeaders(NextResponse.redirect(new URL('/admin', req.url)));
       } else {
         return applySecurityHeaders(NextResponse.redirect(new URL('/dashboard', req.url)));
@@ -90,9 +90,17 @@ export async function proxy(req: NextRequest) {
 
   // Admin users trying to access client dashboard
   if (path.startsWith('/dashboard')) {
-    if (userRole === 'SUPER_ADMIN' || userRole === 'EMPLOYEE') {
+    if (userRole === 'SUPER_ADMIN' || userRole === 'EMPLOYEE' || userRole === 'DEMO_VIEWER') {
       return applySecurityHeaders(NextResponse.redirect(new URL('/admin', req.url)));
     }
+  }
+  
+  // ─── 3. DEMO VIEWER PROTECTION ──────────────────────────────────────────────
+  if (userRole === 'DEMO_VIEWER' && path.startsWith('/api/admin') && req.method !== 'GET') {
+    return new NextResponse(
+      JSON.stringify({ error: 'Demo Mode: Modifications are disabled.' }),
+      { status: 403, headers: { 'Content-Type': 'application/json', ...SECURITY_HEADERS } }
+    );
   }
   
   return applySecurityHeaders(NextResponse.next());

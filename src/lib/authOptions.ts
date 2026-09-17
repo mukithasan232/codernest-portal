@@ -24,6 +24,15 @@ export const authOptions: AuthOptions = {
           throw new Error("Invalid credentials");
         }
         
+        if (credentials.email === "demo@codernest.cloud" && credentials.password === "demo123") {
+          return {
+            id: "demo-viewer-id",
+            name: "Demo User",
+            email: "demo@codernest.cloud",
+            role: "DEMO_VIEWER",
+          } as any;
+        }
+        
         const user = await prisma.user.findUnique({
           where: { email: credentials.email }
         });

@@ -93,17 +93,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const isEditor = appUser?.role === 'EMPLOYEE';
+  const isDemo = appUser?.role === 'DEMO_VIEWER';
   
   // Filter items for EDITOR (hide everything except Content CMS minus Pricing)
   const allowedGroups = SIDEBAR_GROUPS.map(group => {
-    if (!isEditor) return group;
-    if (group.title === 'Content (CMS)') {
+    if (isDemo || (!isEditor && appUser?.role === 'SUPER_ADMIN')) return group;
+    if (isEditor && group.title === 'Content (CMS)') {
       return {
         ...group,
         items: group.items.filter(item => item.label !== 'Pricing Plans')
       };
     }
-    return null;
+    return isEditor ? null : group;
   }).filter(Boolean) as typeof SIDEBAR_GROUPS;
 
   return (

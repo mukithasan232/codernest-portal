@@ -27,18 +27,37 @@ const QUICK_LINKS = [
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
   
-  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE')) {
+  if (!session?.user || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'EMPLOYEE' && session.user.role !== 'DEMO_VIEWER')) {
     redirect('/');
   }
 
-  const [totalLeads, totalUsers, pendingOrders, openProjects, analyticsResult, newRepliesCount] = await Promise.all([
-    prisma.lead.count(),
-    prisma.user.count(),
-    prisma.imageOrder.count(),
-    prisma.project.count(),
-    getAnalyticsData(),
-    prisma.lead.count({ where: { hasNewReply: true } }),
-  ]);
+  let totalLeads, totalUsers, pendingOrders, openProjects, analyticsResult, newRepliesCount;
+
+  if (session.user.role === 'DEMO_VIEWER') {
+    totalLeads = 1247;
+    totalUsers = 852;
+    pendingOrders = 14;
+    openProjects = 32;
+    newRepliesCount = 5;
+    analyticsResult = {
+      success: true,
+      data: Array.from({ length: 7 }).map((_, i) => ({
+        date: new Date(Date.now() - (6 - i) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        pageviews: Math.floor(Math.random() * 500) + 1500,
+        activeUsers: Math.floor(Math.random() * 200) + 600,
+      })),
+      totals: { pageviews: 12500, activeUsers: 4500 }
+    } as any;
+  } else {
+    [totalLeads, totalUsers, pendingOrders, openProjects, analyticsResult, newRepliesCount] = await Promise.all([
+      prisma.lead.count(),
+      prisma.user.count(),
+      prisma.imageOrder.count(),
+      prisma.project.count(),
+      getAnalyticsData(),
+      prisma.lead.count({ where: { hasNewReply: true } }),
+    ]);
+  }
 
   const statCards = [
     { label: 'Total Leads',    value: totalLeads,    icon: Mail,       color: 'text-blue-600 dark:text-blue-400',   bg: 'bg-blue-50 dark:bg-blue-400/10' },

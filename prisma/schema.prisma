@@ -67,6 +67,7 @@ enum Role {
   SUPER_ADMIN
   EMPLOYEE
   USER
+  DEMO_VIEWER
 }
 
 model Blog {

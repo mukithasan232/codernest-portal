@@ -7,7 +7,6 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import BlogRenderer from "@/components/blog/BlogRenderer";
 import ShareButtons from "@/components/blog/ShareButtons";
-import AdsterraBanner from "@/components/ads/AdsterraBanner";
 
 // Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
 export const revalidate = 86400;
@@ -147,17 +146,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                         />
                     </div>
 
-                    {/* Top Ad Banner (Classic Full Banner 468x60) */}
-                    <div className="flex justify-center w-full">
-                        <AdsterraBanner adKey="96f3a923f142d7dd5cb3677cc4080afa" width={468} height={60} />
-                    </div>
 
                     <BlogRenderer html={post.content} />
 
-                    {/* Bottom Ad Banner (Leaderboard 728x90) */}
-                    <div className="flex justify-center w-full pt-8">
-                        <AdsterraBanner adKey="c0368e111c1a059ae4bd7da0421bf3e2" width={728} height={90} />
-                    </div>
 
                     <div className="pt-12 border-t border-white/5 flex items-center justify-between">
                         <div className="flex items-center gap-4">
