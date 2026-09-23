@@ -104,6 +104,13 @@ export default async function RootLayout({
         )}
         <Analytics />
         <SpeedInsights />
+        <Script
+          id="impact-publisher-tag"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(i,m,p,a,c,t){c.ire_o=p;c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};t=a.createElement(m);var z=a.getElementsByTagName(m)[0];t.async=1;t.src=i;z.parentNode.insertBefore(t,z)})('https://utt.impactcdn.com/P-A6729363-1e63-4def-934f-f6455e6ec8301.js','script','impactStat',document,window);impactStat('trackImpression');`
+          }}
+        />
       </body>
     </html>
   );

@@ -541,3 +541,17 @@ model SocialLink {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 }
+
+model BrandPromotion {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  targetUrl   String?
+  trackingUrl String?
+  slug        String   @unique
+  category    String   @default("Recommended")
+  adCodeHtml  String?
+  clicks      Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
