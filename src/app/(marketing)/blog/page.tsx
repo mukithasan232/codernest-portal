@@ -2,6 +2,7 @@ import { getCachedAllBlogs } from "@/lib/cache/cached-queries";
 import { formatDate } from "@/lib/utils";
 import { ArrowRight, Search } from "lucide-react";
 import Link from "next/link";
+import { PromotionAd } from "@/components/marketing/PromotionAd";
 
 export const metadata = {
     title: "Blog | CoderNest",
@@ -75,6 +76,10 @@ export default async function BlogPage() {
                             No published articles found.
                         </div>
                     )}
+                </div>
+
+                <div className="max-w-6xl mx-auto mt-20">
+                    <PromotionAd />
                 </div>
             </div>
         </div>

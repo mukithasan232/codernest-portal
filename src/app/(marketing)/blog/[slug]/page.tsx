@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import BlogRenderer from "@/components/blog/BlogRenderer";
 import ShareButtons from "@/components/blog/ShareButtons";
+import { PromotionAd } from "@/components/marketing/PromotionAd";
 
 // Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
 export const revalidate = 86400;
@@ -159,6 +160,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                             </div>
                         </div>
                         <ShareButtons title={post.title} />
+                    </div>
+                    
+                    <div className="mt-16">
+                        <PromotionAd />
                     </div>
                 </div>
             </div>

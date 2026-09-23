@@ -37,6 +37,7 @@ const SIDEBAR_GROUPS = [
     items: [
       { href: '/admin/email-marketing', icon: Mail,         label: 'Email Campaigns' },
       { href: '/admin/automation',   icon: Zap,             label: 'Automation' },
+      { href: '/admin/promotions',   icon: Zap,             label: 'Promotions' },
       { href: '/admin/job-hunter',   icon: Target,          label: 'Job Hunter' },
     ]
   },
