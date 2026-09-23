@@ -51,7 +51,7 @@ export default async function RootLayout({
         {data?.customHeaderScripts && (
           <script dangerouslySetInnerHTML={{ __html: data.customHeaderScripts }} />
         )}
-        <meta name="impact-site-verification" content="25cd8034-8d91-4d43-ac56-e4b692ee4474" value="25cd8034-8d91-4d43-ac56-e4b692ee4474" />
+        <meta name="impact-site-verification" content="25cd8034-8d91-4d43-ac56-e4b692ee4474" />
         {/* GA4 is handled by <GoogleAnalytics /> in the body — no inline init needed here */}
 
 
@@ -105,13 +105,12 @@ export default async function RootLayout({
         )}
         <Analytics />
         <SpeedInsights />
-        <Script
-          id="impact-publisher-tag"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `(function(i,m,p,a,c,t){c.ire_o=p;c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};t=a.createElement(m);var z=a.getElementsByTagName(m)[0];t.async=1;t.src=i;z.parentNode.insertBefore(t,z)})('https://utt.impactcdn.com/P-A6729363-1e63-4def-934f-f6455e6ec8301.js','script','impactStat',document,window);impactStat('trackImpression');`
-          }}
-        />
+        {data?.googleAdsScript && (
+          <div dangerouslySetInnerHTML={{ __html: data.googleAdsScript }} />
+        )}
+        {data?.impactTagScript && (
+          <div dangerouslySetInnerHTML={{ __html: data.impactTagScript }} />
+        )}
       </body>
     </html>
   );

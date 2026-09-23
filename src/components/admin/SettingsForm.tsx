@@ -38,6 +38,8 @@ export default function SettingsForm({ initialSettings }: { initialSettings: any
     facebookPixelId: initialSettings?.facebookPixelId || '',
     customHeaderScripts: initialSettings?.customHeaderScripts || '',
     customFooterScripts: initialSettings?.customFooterScripts || '',
+    googleAdsScript: initialSettings?.googleAdsScript || '',
+    impactTagScript: initialSettings?.impactTagScript || '',
   });
 
   const handleChange = (field: string, value: string) => {
@@ -469,6 +471,32 @@ export default function SettingsForm({ initialSettings }: { initialSettings: any
                 onChange={e => handleChange('customFooterScripts', e.target.value)} 
                 className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white font-mono text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="<script>...</script>"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                <Code className="w-4 h-4 text-blue-500" /> Google Ads Script
+              </label>
+              <textarea 
+                rows={4}
+                value={formData.googleAdsScript} 
+                onChange={e => handleChange('googleAdsScript', e.target.value)} 
+                className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white font-mono text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="<script async src='https://pagead2.googlesyndication.com...'></script>"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                <Code className="w-4 h-4 text-blue-500" /> Impact Publisher Tag
+              </label>
+              <textarea 
+                rows={4}
+                value={formData.impactTagScript} 
+                onChange={e => handleChange('impactTagScript', e.target.value)} 
+                className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white font-mono text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="<script>...impactStat...</script>"
               />
             </div>
           </div>

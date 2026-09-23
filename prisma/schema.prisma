@@ -206,6 +206,8 @@ model SystemSettings {
   facebookPixelId     String?
   customHeaderScripts String?
   customFooterScripts String?
+  googleAdsScript     String?
+  impactTagScript     String?
   
   // Alert Gateway Credentials
   telegramBotToken    String?
