@@ -51,6 +51,7 @@ export default async function RootLayout({
         {data?.customHeaderScripts && (
           <script dangerouslySetInnerHTML={{ __html: data.customHeaderScripts }} />
         )}
+        <meta name="impact-site-verification" content="25cd8034-8d91-4d43-ac56-e4b692ee4474" value="25cd8034-8d91-4d43-ac56-e4b692ee4474" />
         {/* GA4 is handled by <GoogleAnalytics /> in the body — no inline init needed here */}
 
 
