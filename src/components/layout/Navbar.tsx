@@ -17,6 +17,7 @@ const navLinks = [
     { name: "Estimator", href: "/estimator" },
     { name: "Blog", href: "/blog" },
     { name: "Tools", href: "/tools/image-editor" },
+    { name: "Job Hunter", href: "/admin/job-hunter" },
     { name: "Contact", href: "/contact" },
 ];
 
