@@ -53,8 +53,14 @@ export default async function RootLayout({
         )}
         <meta name="impact-site-verification" content="25cd8034-8d91-4d43-ac56-e4b692ee4474" />
         {/* GA4 is handled by <GoogleAnalytics /> in the body — no inline init needed here */}
-
-
+        {/* Google AdSense Auto Ads */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4590020337376910"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+        
       
         <Script
           id="organization-json-ld"
