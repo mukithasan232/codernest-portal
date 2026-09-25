@@ -234,6 +234,15 @@ export async function sendEmailCampaignAction(formData: FormData) {
 
       const queueResult = await enqueueBulkEmails(emailJobs, { delayStepSeconds: 1 });
 
+      // Synchronously create tracking logs so UI updates immediately
+      await prisma.emailTrackingLog.createMany({
+        data: targetLeads.filter(l => l.id).map(lead => ({
+          campaignId: campaign.id,
+          leadId: lead.id as string,
+          status: 'SENT'
+        }))
+      });
+
       const attachNote = attachments.length > 0 ? ` and ${attachments.length} attachment(s)` : '';
       return {
         success: true,

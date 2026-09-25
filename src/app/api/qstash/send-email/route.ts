@@ -56,13 +56,14 @@ export async function POST(req: NextRequest) {
       console.log('-------------------------------------------\n');
 
       if (campaignId && leadId) {
-        await prisma.emailTrackingLog.create({
-          data: {
-            campaignId,
-            leadId,
-            status: 'SENT',
-          },
-        }).catch(err => console.error('[QStash Worker] Failed to log tracking:', err));
+        const existingLog = await prisma.emailTrackingLog.findFirst({
+          where: { campaignId, leadId }
+        });
+        if (!existingLog) {
+          await prisma.emailTrackingLog.create({
+            data: { campaignId, leadId, status: 'SENT' },
+          }).catch(err => console.error('[QStash Worker] Failed to log tracking:', err));
+        }
       }
 
       return NextResponse.json({
@@ -106,13 +107,14 @@ export async function POST(req: NextRequest) {
 
     // 6. Record Tracking Log & CRM Status Updates
     if (campaignId && leadId) {
-      await prisma.emailTrackingLog.create({
-        data: {
-          campaignId,
-          leadId,
-          status: 'SENT',
-        },
-      }).catch(err => console.error('[QStash Worker] Failed to save tracking log:', err));
+      const existingLog = await prisma.emailTrackingLog.findFirst({
+        where: { campaignId, leadId }
+      });
+      if (!existingLog) {
+        await prisma.emailTrackingLog.create({
+          data: { campaignId, leadId, status: 'SENT' },
+        }).catch(err => console.error('[QStash Worker] Failed to save tracking log:', err));
+      }
     }
 
     if (leadId && type === 'onboarding') {
