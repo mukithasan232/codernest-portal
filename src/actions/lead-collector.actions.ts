@@ -27,9 +27,14 @@ export async function saveScrapedLead(rawLeadData: RawLeadData) {
     });
 
     if (existing) {
+      const company = typeof rawLeadData.company === 'string' ? rawLeadData.company : undefined;
       await prisma.lead.update({
         where: { id: existing.id },
-        data: { updatedAt: new Date() } // Update activity timestamp
+        data: {
+          updatedAt: new Date(),
+          ...(company ? { company } : {}),
+          ...(leadData.requirements ? { message: leadData.requirements } : {}),
+        },
       });
       return { 
         success: true, 
@@ -43,6 +48,7 @@ export async function saveScrapedLead(rawLeadData: RawLeadData) {
       data: {
         name: leadData.name,
         email: leadData.email,
+        company: typeof rawLeadData.company === 'string' ? rawLeadData.company : undefined,
         source: leadData.source,
         message: leadData.requirements,
         budget: leadData.budget || undefined,

@@ -94,19 +94,19 @@ export default function LiveTrafficClient({ initialVisitors }: LiveTrafficClient
       )}
 
       {/* ── Tabs ─────────────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-2 p-1 bg-white/5 border border-white/10 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-2 p-1 bg-card border border-border rounded-xl w-fit">
         <button
           type="button"
           onClick={() => setActiveTab('human')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
             activeTab === 'human'
-              ? 'bg-blue-600 text-white shadow-lg'
-              : 'text-slate-400 hover:text-white hover:bg-white/5'
+              ? 'bg-primary text-primary-foreground shadow-lg'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
           <Activity className="w-4 h-4" />
           All Visitors
-          <span className="ml-1 text-xs bg-white/10 rounded-full px-2 py-0.5">{visitors.length}</span>
+          <span className="ml-1 text-xs bg-muted/50 rounded-full px-2 py-0.5">{visitors.length}</span>
         </button>
 
         <button
@@ -115,7 +115,7 @@ export default function LiveTrafficClient({ initialVisitors }: LiveTrafficClient
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
             activeTab === 'hot'
               ? 'bg-orange-500 text-white shadow-lg'
-              : 'text-slate-400 hover:text-orange-400 hover:bg-orange-500/10'
+              : 'text-muted-foreground hover:text-orange-400 hover:bg-orange-500/10'
           }`}
         >
           <Flame className="w-4 h-4" />
@@ -133,12 +133,12 @@ export default function LiveTrafficClient({ initialVisitors }: LiveTrafficClient
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
             activeTab === 'identified'
               ? 'bg-purple-600 text-white shadow-lg'
-              : 'text-slate-400 hover:text-purple-400 hover:bg-purple-500/10'
+              : 'text-muted-foreground hover:text-purple-400 hover:bg-purple-500/10'
           }`}
         >
           <Building2 className="w-4 h-4" />
           Identified Companies
-          <span className="ml-1 text-xs bg-white/10 rounded-full px-2 py-0.5">
+          <span className="ml-1 text-xs bg-muted/50 rounded-full px-2 py-0.5">
             {identifiedCompaniesCount}
           </span>
         </button>

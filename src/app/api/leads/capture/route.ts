@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { saveScrapedLead } from '@/actions/lead-collector.actions';
 import { triggerOnboardingWorkflow } from '@/lib/workflow';
 import { dispatchAdminAlert } from '@/lib/notifications.service';
+import { sendTrackedLeadCaptureEmail } from '@/lib/lead-capture-email';
 
 /**
  * POST /api/leads/capture
@@ -50,6 +51,16 @@ export async function POST(req: NextRequest) {
         source: result.lead.source,
         serviceRequested: requirements,
       }).catch((err) => console.error('[Lead Capture] Failed to trigger onboarding workflow:', err));
+
+      // Trigger Email with tracking pixel
+      sendTrackedLeadCaptureEmail({
+        leadId: result.lead.id,
+        name: result.lead.name,
+        email: result.lead.email,
+        company: body.company,
+        location: body.location,
+        visitedPages: body.visitedPages,
+      }).catch((err) => console.error('[Lead Capture] Failed to send tracked email:', err));
 
       // Broadcast real-time multi-channel alert to verified admin channels (SMS, WhatsApp, Telegram)
       dispatchAdminAlert({

@@ -165,6 +165,8 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
           company: hasValidCompany ? selectedVisitor.companyName : "",
           source: "Live Traffic Identification",
           requirements: `Browsed ${selectedVisitor.pageViews?.length ?? 0} pages, spent ${selectedVisitor.totalTime ?? 0}s on site. Score: ${selectedVisitor.score ?? 0}. Location: ${formatLocation(selectedVisitor.location)}`,
+          location: selectedVisitor.location,
+          visitedPages: selectedVisitor.pageViews?.map(pv => pv.url) || [],
         }),
       });
 
@@ -201,10 +203,10 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
 
   return (
     <>
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-medium">
+            <thead className="bg-muted border-b border-border text-muted-foreground font-medium">
               <tr>
                 <th className="px-6 py-4">Visitor Identity</th>
                 <th className="px-6 py-4">Location</th>
@@ -214,10 +216,10 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80">
+            <tbody className="divide-y divide-border">
               {visitors.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                     <MonitorSmartphone className="w-10 h-10 mx-auto mb-3 opacity-30" />
                     No traffic matching this criteria.
                   </td>
@@ -271,7 +273,7 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                         />
                         <div className="space-y-1">
                           {verifiedCompany ? (
-                            <div className="font-bold text-white flex items-center gap-1.5">
+                            <div className="font-bold text-foreground flex items-center gap-1.5">
                               {visitor.domain ? (
                                 /* eslint-disable-next-line @next/next/no-img-element */
                                 <img src={`https://logo.clearbit.com/${visitor.domain}`} alt="logo" className="w-4 h-4 rounded object-contain flex-shrink-0 bg-white" onError={(e) => (e.currentTarget.style.display = 'none')} />
@@ -285,11 +287,11 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                             </div>
                           ) : (
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+                              <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                                 <User className="w-3.5 h-3.5" />
                               </div>
                               <div>
-                                <span className="font-semibold text-slate-200 text-xs">
+                                <span className="font-semibold text-foreground text-xs">
                                   {cleanLocation !== "Unknown Location" ? `Visitor from ${cleanLocation}` : `Visitor (${masked})`}
                                 </span>
                               </div>
@@ -297,7 +299,7 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                           )}
 
                           {/* Secondary tag line: Masked IP & ISP/Cloud tag */}
-                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400 font-mono">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground font-mono">
                             <span>IP: {masked}</span>
 
                             {isCloud && (
@@ -307,8 +309,8 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                             )}
 
                             {!isCloud && isIspTag && rawCompany && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[10px]">
-                                <Wifi className="w-2.5 h-2.5 text-slate-400" /> ISP: {rawCompany.replace(/communications?|technologies?|ltd|limited/gi, '').trim()}
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border text-[10px]">
+                                <Wifi className="w-2.5 h-2.5 text-muted-foreground" /> ISP: {rawCompany.replace(/communications?|technologies?|ltd|limited/gi, '').trim()}
                               </span>
                             )}
 
@@ -324,27 +326,27 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
 
                     {/* Location */}
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-slate-300 text-xs">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                        <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                         <span>{cleanLocation}</span>
                       </div>
                     </td>
 
                     {/* Pages */}
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-slate-300 text-xs mb-1">
-                        <Globe className="w-3 h-3 text-slate-500" />
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
+                        <Globe className="w-3 h-3 text-muted-foreground" />
                         <span className="font-semibold">{visitor.pageViews?.length ?? 0}</span> pages
                       </div>
                       <div className="flex flex-col gap-0.5 max-w-[180px]">
                         {recentPages.map((page, i) => (
-                          <span key={i} className="text-[10px] text-slate-500 font-mono truncate w-full block">
+                          <span key={i} className="text-[10px] text-muted-foreground font-mono truncate w-full block">
                             {page}
                           </span>
                         ))}
                         {(visitor.pageViews?.length ?? 0) > 3 && (
                           <div className="mt-1">
-                            <span className="bg-gray-800 text-gray-400 rounded-full px-2 py-0.5 text-[10px] inline-block">
+                            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] inline-block">
                               +{(visitor.pageViews?.length ?? 0) - 3} more
                             </span>
                           </div>
@@ -354,11 +356,11 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
 
                     {/* Time on Site */}
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 text-slate-300 text-xs font-semibold">
+                      <div className="flex items-center gap-1.5 text-foreground text-xs font-semibold">
                         <Clock className="w-3.5 h-3.5 text-blue-400" />
                         {formatDuration(totalTime)}
                       </div>
-                      <div className="text-slate-500 text-[10px] mt-1" suppressHydrationWarning>
+                      <div className="text-muted-foreground text-[10px] mt-1" suppressHydrationWarning>
                         Last active: {timeAgo(visitor.updatedAt)}
                       </div>
                     </td>
@@ -374,7 +376,7 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                          <button
                            type="button"
                            onClick={() => handleRevealContacts(visitor.domain!)}
-                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-all border border-slate-700"
+                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-semibold rounded-lg transition-all border border-border"
                            title="Reveal Contacts (Apollo/Hunter)"
                          >
                            <Search className="w-3.5 h-3.5 text-purple-400" />
@@ -395,7 +397,7 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                           {highIntent ? "Capture Lead" : "Add to CRM"}
                         </button>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-slate-600 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground px-2 py-1 rounded-lg bg-muted border border-border">
                           <AlertTriangle className="w-3 h-3" />
                           Low engagement
                         </span>
@@ -411,25 +413,25 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
 
       {/* CRM Lead Modal */}
       {isModalOpen && selectedVisitor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="bg-popover border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="mb-4">
-              <h3 className="text-lg font-bold text-white">Capture Visitor to CRM</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="text-lg font-bold text-foreground">Capture Visitor to CRM</h3>
+              <p className="text-xs text-muted-foreground mt-1">
                 IP: {maskIp(selectedVisitor.ipAddress)} • Location: {formatLocation(selectedVisitor.location)}
               </p>
             </div>
 
             <form onSubmit={handleAddToCrm} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                   Lead Name / Identity *
                 </label>
                 <input
@@ -437,29 +439,29 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                   required
                   value={leadName}
                   onChange={(e) => setLeadName(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white text-sm"
+                  className="w-full px-4 py-2 bg-background border border-border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-foreground text-sm"
                   placeholder="e.g. Visitor from Naogaon, BD"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                   Lead Email (Optional)
                 </label>
                 <input
                   type="email"
                   value={leadEmail}
                   onChange={(e) => setLeadEmail(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white text-sm"
+                  className="w-full px-4 py-2 bg-background border border-border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-foreground text-sm"
                   placeholder="name@company.com (leave blank for proxy)"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-3 border-t border-slate-800">
+              <div className="pt-2 flex justify-end gap-3 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-slate-400 hover:text-white text-xs font-semibold rounded-xl"
+                  className="px-4 py-2 text-muted-foreground hover:text-foreground text-xs font-semibold rounded-xl"
                 >
                   Cancel
                 </button>
@@ -478,11 +480,11 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
 
       {/* Reveal Contacts Modal */}
       {isContactsModalOpen && selectedDomainForContacts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="bg-popover border border-border rounded-2xl p-6 w-full max-w-2xl shadow-2xl relative">
             <button
               onClick={() => setIsContactsModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
             >
               <X className="w-5 h-5" />
             </button>
@@ -492,8 +494,8 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                 <Search className="w-5 h-5 text-purple-400" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">Discovered Contacts</h3>
-                <p className="text-sm text-slate-400 mt-0.5">
+                <h3 className="text-xl font-bold text-foreground">Discovered Contacts</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
                   Showing contacts for <span className="text-purple-400 font-semibold">{selectedDomainForContacts}</span>
                 </p>
               </div>
@@ -503,14 +505,14 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
               {isDiscovering ? (
                 <div className="flex flex-col items-center justify-center py-10 space-y-3">
                   <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm text-slate-400 font-medium">Scanning Apollo/Hunter databases...</p>
+                  <p className="text-sm text-muted-foreground font-medium">Scanning Apollo/Hunter databases...</p>
                 </div>
               ) : discoveredContacts.length > 0 ? (
                 discoveredContacts.map(contact => (
-                  <div key={contact.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <div key={contact.id} className="flex items-center justify-between p-4 rounded-xl bg-background border border-border">
                     <div>
-                      <h4 className="text-sm font-bold text-white">{contact.name}</h4>
-                      <p className="text-xs text-slate-400 mt-0.5">{contact.title} • {contact.department}</p>
+                      <h4 className="text-sm font-bold text-foreground">{contact.name}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">{contact.title} • {contact.department}</p>
                       <p className="text-sm text-blue-400 mt-1.5 font-medium">{contact.email}</p>
                     </div>
                     <div className="text-right flex flex-col items-end justify-center">
@@ -529,7 +531,7 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                             openCrmModal(dummyVisitor);
                           }
                         }}
-                        className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors border border-slate-700"
+                        className="text-xs font-semibold text-foreground bg-secondary hover:bg-secondary/80 px-3 py-1.5 rounded-lg transition-colors border border-border"
                       >
                         Add Contact
                       </button>
@@ -537,18 +539,18 @@ export default function LiveTrafficTable({ visitors }: LiveTrafficTableProps) {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-10 text-slate-500">
+                <div className="text-center py-10 text-muted-foreground">
                   <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p>No contacts found for this domain.</p>
                 </div>
               )}
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+            <div className="mt-6 pt-4 border-t border-border flex justify-end">
               <button
                 type="button"
                 onClick={() => setIsContactsModalOpen(false)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all"
+                className="px-5 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-bold rounded-xl transition-all"
               >
                 Close
               </button>
