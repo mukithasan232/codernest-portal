@@ -25,8 +25,6 @@ import {
 import toast from 'react-hot-toast';
 import { sendEmailCampaignAction, getLeadsForCampaign, saveEmailTemplateAction, getEmailTemplatesAction, deleteEmailTemplateAction, updateEmailTemplateAction } from '@/lib/actions/email-campaign.actions';
 import { isDummyEmail } from '@/utils/email';
-import dynamic from 'next/dynamic';
-const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false, loading: () => <div className="p-4 text-slate-400">Loading Editor...</div> });
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
@@ -516,18 +514,16 @@ export default function EmailMarketingPage() {
 
             {activeTab === 'html' && (
               <div className="flex h-full">
-                <div className="w-1/2 border-r border-white/10 h-full relative">
-                  <Editor
-                    height="100%"
-                    defaultLanguage="html"
-                    theme="vs-dark"
+                <div className="w-1/2 border-r border-white/10 h-full relative bg-[#1e1e1e]">
+                  <div className="absolute top-0 left-0 right-0 bg-[#2d2d2d] text-slate-400 text-[10px] py-1.5 px-4 font-semibold tracking-widest flex justify-between z-10 border-b border-white/5 uppercase">
+                    <span>HTML SOURCE CODE</span>
+                  </div>
+                  <textarea
                     value={htmlContent}
-                    onChange={(val) => setHtmlContent(val || '')}
-                    options={{
-                      minimap: { enabled: false },
-                      wordWrap: 'on',
-                      padding: { top: 16 }
-                    }}
+                    onChange={(e) => setHtmlContent(e.target.value)}
+                    className="w-full h-full bg-transparent text-emerald-300 font-mono text-[13px] p-5 pt-10 focus:outline-none resize-none leading-relaxed tracking-wide custom-scrollbar"
+                    spellCheck="false"
+                    placeholder="<!-- Write or paste your custom HTML here -->"
                   />
                 </div>
                 <div className="w-1/2 h-full bg-slate-200 relative overflow-hidden">
