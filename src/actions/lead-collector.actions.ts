@@ -83,6 +83,12 @@ export async function saveScrapedLead(rawLeadData: RawLeadData) {
 export async function getRecentLeads(limit: number = 5) {
   try {
     const leads = await prisma.lead.findMany({
+      where: {
+        NOT: [
+          { email: { endsWith: '@codernest.lead' } },
+          { email: { contains: 'prospect_' } }
+        ]
+      },
       orderBy: { updatedAt: 'desc' },
       take: limit,
     });

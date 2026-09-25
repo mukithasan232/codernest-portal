@@ -68,6 +68,12 @@ export async function getLeads() {
 
   try {
     const leads = await prisma.lead.findMany({
+      where: {
+        NOT: [
+          { email: { endsWith: '@codernest.lead' } },
+          { email: { contains: 'prospect_' } }
+        ]
+      },
       orderBy: { createdAt: 'desc' },
     });
     // Serialize object ids if needed, but since it's Next 14/15 RSC, plain objects work if we don't pass dates/functions. Wait, dates are passed.
