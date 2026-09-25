@@ -25,7 +25,8 @@ import {
 import toast from 'react-hot-toast';
 import { sendEmailCampaignAction, getLeadsForCampaign, saveEmailTemplateAction, getEmailTemplatesAction, deleteEmailTemplateAction, updateEmailTemplateAction } from '@/lib/actions/email-campaign.actions';
 import { isDummyEmail } from '@/utils/email';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
+const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false, loading: () => <div className="p-4 text-slate-400">Loading Editor...</div> });
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 
