@@ -1,6 +1,7 @@
 import React from 'react';
 import { ExternalLink, Sparkles } from 'lucide-react';
 import { Metadata } from 'next';
+import { sanitizeCustomMarkup } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Our Partners & Recommended Tools | CoderNest',
@@ -66,10 +67,10 @@ export default async function PartnersPage() {
                 </div>
 
                 <div className="mt-8 relative z-10 w-full flex items-center justify-center min-h-[60px]">
-                  {promo.adCodeHtml ? (
+                  {sanitizeCustomMarkup(promo.adCodeHtml) ? (
                     <div 
                       className="w-full flex justify-center [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg"
-                      dangerouslySetInnerHTML={{ __html: promo.adCodeHtml }} 
+                      dangerouslySetInnerHTML={{ __html: sanitizeCustomMarkup(promo.adCodeHtml) ?? '' }} 
                     />
                   ) : (
                     <a 

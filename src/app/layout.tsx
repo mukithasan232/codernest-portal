@@ -11,6 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import MetaPixel from "@/components/MetaPixel";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import { getCachedSystemSettings } from "@/lib/cache/cached-queries";
+import { sanitizeCustomMarkup } from "@/lib/utils";
 
 // Incremental Static Regeneration (ISR) - Cache on global Edge CDN for 24h (stale-while-revalidate)
 export const revalidate = 86400;
@@ -43,25 +44,20 @@ export default async function RootLayout({
   const data = await getCachedSystemSettings();
   const primaryColor = data?.brandColor || '#3B82F6';
   const secondaryColor = data?.secondaryColor || '#00F2FE';
+  const customHeaderScripts = sanitizeCustomMarkup(data?.customHeaderScripts);
+  const customFooterScripts = sanitizeCustomMarkup(data?.customFooterScripts);
+  const googleAdsScript = sanitizeCustomMarkup(data?.googleAdsScript);
+  const impactTagScript = sanitizeCustomMarkup(data?.impactTagScript);
 
 
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning style={{ '--primary': primaryColor, '--secondary': secondaryColor } as React.CSSProperties}>
       <head>
-        {data?.customHeaderScripts && (
-          <script dangerouslySetInnerHTML={{ __html: data.customHeaderScripts }} />
+        {customHeaderScripts && (
+          <script dangerouslySetInnerHTML={{ __html: customHeaderScripts }} />
         )}
         <meta name="impact-site-verification" content="25cd8034-8d91-4d43-ac56-e4b692ee4474" />
         {/* GA4 is handled by <GoogleAnalytics /> in the body — no inline init needed here */}
-        {/* Google AdSense Auto Ads */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4590020337376910"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-        
-      
         <Script
           id="organization-json-ld"
           type="application/ld+json"
@@ -106,16 +102,16 @@ export default async function RootLayout({
             />
           </AuthProvider>
         </ThemeProvider>
-        {data?.customFooterScripts && (
-          <script dangerouslySetInnerHTML={{ __html: data.customFooterScripts }} />
+        {customFooterScripts && (
+          <script dangerouslySetInnerHTML={{ __html: customFooterScripts }} />
         )}
         <Analytics />
         <SpeedInsights />
-        {data?.googleAdsScript && (
-          <div dangerouslySetInnerHTML={{ __html: data.googleAdsScript }} />
+        {googleAdsScript && (
+          <div dangerouslySetInnerHTML={{ __html: googleAdsScript }} />
         )}
-        {data?.impactTagScript && (
-          <div dangerouslySetInnerHTML={{ __html: data.impactTagScript }} />
+        {impactTagScript && (
+          <div dangerouslySetInnerHTML={{ __html: impactTagScript }} />
         )}
       </body>
     </html>

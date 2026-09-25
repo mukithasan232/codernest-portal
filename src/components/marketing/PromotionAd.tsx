@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { sanitizeCustomMarkup } from "@/lib/utils";
 
 interface BrandPromotion {
   id: string;
@@ -46,10 +47,10 @@ export function PromotionAd() {
         Sponsored
       </div>
       
-      {promo.adCodeHtml ? (
+      {sanitizeCustomMarkup(promo.adCodeHtml) ? (
         <div 
           className="w-full flex items-center justify-center p-4 min-h-[250px]"
-          dangerouslySetInnerHTML={{ __html: promo.adCodeHtml }}
+          dangerouslySetInnerHTML={{ __html: sanitizeCustomMarkup(promo.adCodeHtml) ?? '' }}
         />
       ) : (
         <Link 
