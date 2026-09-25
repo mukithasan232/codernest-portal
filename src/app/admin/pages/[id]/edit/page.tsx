@@ -7,8 +7,6 @@ import { uploadBlogImage } from '@/lib/actions/blog.actions'; // Reuse media upl
 import { Save, ArrowLeft, Loader2, Code2, Play, Upload, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import Editor from '@monaco-editor/react';
-
 export default function PageBuilder() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
@@ -252,26 +250,17 @@ export default function PageBuilder() {
               </div>
             ) : (
               <div className="absolute inset-0 pt-4 rounded-xl overflow-hidden border border-slate-200 dark:border-white/5 bg-[#1e1e1e]">
-                <Editor
-                  height="100%"
-                  theme="vs-dark"
-                  language={activeTab === 'html' ? 'html' : activeTab === 'css' ? 'css' : 'javascript'}
+                <textarea
+                  className="w-full h-full bg-transparent text-emerald-300 font-mono text-[13px] p-5 focus:outline-none resize-none leading-relaxed tracking-wide custom-scrollbar"
+                  spellCheck="false"
                   value={activeTab === 'html' ? htmlContent : activeTab === 'css' ? cssContent : jsContent}
-                  onChange={(value) => {
-                    const val = value || '';
+                  onChange={(e) => {
+                    const val = e.target.value;
                     if (activeTab === 'html') setHtmlContent(val);
                     if (activeTab === 'css') setCssContent(val);
                     if (activeTab === 'js') setJsContent(val);
                   }}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    wordWrap: 'on',
-                    padding: { top: 16, bottom: 16 },
-                    scrollBeyondLastLine: false,
-                    smoothScrolling: true,
-                    cursorBlinking: 'smooth',
-                  }}
+                  placeholder={`Write your ${activeTab.toUpperCase()} code here...`}
                 />
               </div>
             )}
