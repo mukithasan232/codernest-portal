@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
       description,
       paymentMethod,
       sendEmail,
+      totalProjectAmount,
+      advanceAmount,
+      extraAddAmount,
+      deliveryTime,
     } = body;
 
     if (!clientEmail || !amount) {
@@ -51,6 +55,10 @@ export async function POST(req: NextRequest) {
         invoiceNumber,
         description: description || 'Custom Agency Project Invoice',
         paymentMethod: paymentMethod || 'Stripe Card Payment',
+        totalProjectAmount: totalProjectAmount ? parseFloat(totalProjectAmount) : null,
+        advanceAmount: advanceAmount ? parseFloat(advanceAmount) : 0,
+        extraAddAmount: extraAddAmount ? parseFloat(extraAddAmount) : 0,
+        deliveryTime: deliveryTime || null,
       },
     });
 

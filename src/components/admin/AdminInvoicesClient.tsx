@@ -87,6 +87,10 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
     description: '',
     paymentMethod: 'bKash',
     sendEmail: false,
+    totalProjectAmount: '',
+    advanceAmount: '',
+    extraAddAmount: '',
+    deliveryTime: '',
   });
   const [customLoading, setCustomLoading] = useState(false);
 
@@ -179,6 +183,10 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
         description: '',
         paymentMethod: 'bKash',
         sendEmail: false,
+        totalProjectAmount: '',
+        advanceAmount: '',
+        extraAddAmount: '',
+        deliveryTime: '',
       });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to create invoice.');
@@ -744,6 +752,84 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Total Project Amount
+                  </label>
+                  <input
+                    type="number"
+                    value={customForm.totalProjectAmount}
+                    onChange={(e) => {
+                      const total = parseFloat(e.target.value) || 0;
+                      const extra = parseFloat(customForm.extraAddAmount) || 0;
+                      const advance = parseFloat(customForm.advanceAmount) || 0;
+                      setCustomForm((prev) => ({ 
+                        ...prev, 
+                        totalProjectAmount: e.target.value,
+                        amount: String((total + extra) - advance)
+                      }));
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Advance Paid
+                  </label>
+                  <input
+                    type="number"
+                    value={customForm.advanceAmount}
+                    onChange={(e) => {
+                      const advance = parseFloat(e.target.value) || 0;
+                      const total = parseFloat(customForm.totalProjectAmount) || 0;
+                      const extra = parseFloat(customForm.extraAddAmount) || 0;
+                      setCustomForm((prev) => ({ 
+                        ...prev, 
+                        advanceAmount: e.target.value,
+                        amount: String((total + extra) - advance)
+                      }));
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Extra Additions / Fees
+                  </label>
+                  <input
+                    type="number"
+                    value={customForm.extraAddAmount}
+                    onChange={(e) => {
+                      const extra = parseFloat(e.target.value) || 0;
+                      const total = parseFloat(customForm.totalProjectAmount) || 0;
+                      const advance = parseFloat(customForm.advanceAmount) || 0;
+                      setCustomForm((prev) => ({ 
+                        ...prev, 
+                        extraAddAmount: e.target.value,
+                        amount: String((total + extra) - advance)
+                      }));
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    Due Amount (Calculated) *
+                  </label>
+                  <input
+                    required
+                    type="number"
+                    value={customForm.amount}
+                    onChange={(e) => setCustomForm((prev) => ({ ...prev, amount: e.target.value }))}
+                    className="w-full px-4 py-2.5 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-900/10 text-sm font-bold text-blue-700 dark:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
                     Client Type
                   </label>
                   <select
@@ -757,13 +843,12 @@ export default function AdminInvoicesClient({ initialInvoices }: { initialInvoic
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                    Amount (BDT) *
+                    Delivery Time
                   </label>
                   <input
-                    required
-                    type="number"
-                    value={customForm.amount}
-                    onChange={(e) => setCustomForm((prev) => ({ ...prev, amount: e.target.value }))}
+                    type="date"
+                    value={customForm.deliveryTime}
+                    onChange={(e) => setCustomForm((prev) => ({ ...prev, deliveryTime: e.target.value }))}
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

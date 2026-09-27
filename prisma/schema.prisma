@@ -291,6 +291,12 @@ model Invoice {
   description       String?
   items             Json?
   dueDate           DateTime?
+  
+  totalProjectAmount Float?
+  advanceAmount      Float?   @default(0)
+  extraAddAmount     Float?   @default(0)
+  deliveryTime       String?
+
   paymentMethod     String?
   stripeSessionId   String?
   stripePaymentLink String?
